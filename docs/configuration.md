@@ -7,7 +7,8 @@ also takes a JSON revision body. Catalog creation supplies a stable UUID in the
 definition. Edit paths and definition IDs must match. Assignment IDs are created
 by the service. Writes validate remote HTTPS, structured commands, authentication
 combinations, target existence, and tool-name bounds. A deployment supports up to
-512 catalog entries in this MVP.
+512 catalog entries and 1 MiB of serialized definitions in this MVP, leaving
+bounded space for snapshot identity, enablement and secret references.
 
 Creating an MCP creates no grant or enablement. User, group and all-user grants
 combine additively. Empty allowlists expose no tools. Original upstream names are

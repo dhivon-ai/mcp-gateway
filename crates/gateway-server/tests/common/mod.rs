@@ -12,6 +12,24 @@ use tower::ServiceExt;
 use uuid::Uuid;
 
 pub const PASSWORD: &str = "test-password-for-identity";
+
+#[derive(Clone, Default)]
+pub struct CapturedLogs(pub std::sync::Arc<std::sync::Mutex<Vec<u8>>>);
+impl std::io::Write for CapturedLogs {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.0.lock().expect("log lock").extend_from_slice(buf);
+        Ok(buf.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+impl<'a> tracing_subscriber::fmt::MakeWriter<'a> for CapturedLogs {
+    type Writer = Self;
+    fn make_writer(&'a self) -> Self::Writer {
+        self.clone()
+    }
+}
 pub struct Harness {
     pub state: AppState,
     pub app: Router,
@@ -45,6 +63,11 @@ impl Harness {
             Options {
                 public_url: "http://127.0.0.1:18080".into(),
                 allow_loopback_http: true,
+                vault: gateway_core::crypto::KeyRing::new(
+                    "fixture-key".into(),
+                    std::collections::BTreeMap::from([("fixture-key".into(), [42; 32])]),
+                )
+                .expect("fixture vault key"),
             },
         )
         .await
@@ -73,8 +96,25 @@ impl Harness {
         method: &str,
         path: &str,
         token: Option<&str>,
-        value: Option<Value>,
+        mut value: Option<Value>,
     ) -> (u16, HeaderMap, Value) {
+        // Identity writes carry the same revision contract as catalog writes.
+        // Tests that exercise stale/missing revisions use custom() explicitly.
+        if method != "GET"
+            && (path.starts_with("/api/admin/users") || path.starts_with("/api/admin/groups"))
+        {
+            let revision: i64 =
+                sqlx::query_scalar("SELECT revision FROM deployment WHERE singleton=true")
+                    .fetch_one(&self.state.pool)
+                    .await
+                    .expect("fixture revision");
+            if value.is_none() {
+                value = Some(json!({}));
+            }
+            if let Some(Value::Object(ref mut object)) = value {
+                object.entry("expectedRevision").or_insert(json!(revision));
+            }
+        }
         self.custom(method, path, token, value, &[]).await
     }
     pub async fn custom(

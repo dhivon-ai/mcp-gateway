@@ -63,6 +63,31 @@ async fn bootstrap_roles_revocation_and_membership() {
     assert!(!hash.contains(PASSWORD));
     let alice_id = h.user(&admin.token, "alice").await;
     let bob_id = h.user(&admin.token, "bob").await;
+    let stale = json!({"role":"user","active":false,"expectedRevision":0});
+    assert_eq!(
+        h.custom(
+            "PUT",
+            &format!("/api/admin/users/{alice_id}"),
+            Some(&admin.token),
+            Some(stale),
+            &[]
+        )
+        .await
+        .0,
+        409
+    );
+    assert_eq!(
+        h.custom(
+            "PUT",
+            &format!("/api/admin/users/{alice_id}"),
+            Some(&admin.token),
+            Some(json!({"role":"user","active":false})),
+            &[]
+        )
+        .await
+        .0,
+        400
+    );
     let alice = h.login("alice", PASSWORD).await;
     let bob = h.login("bob", PASSWORD).await;
     let hashes: Vec<Vec<u8>> = sqlx::query_scalar("SELECT token_hash FROM sessions")

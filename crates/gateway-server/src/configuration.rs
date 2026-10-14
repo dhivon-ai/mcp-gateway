@@ -37,7 +37,7 @@ struct AssignmentRow {
 pub(crate) fn revision(value: i64) -> Result<u32, AppError> {
     u32::try_from(value).map_err(|_| AppError::internal())
 }
-fn check_revision(expected: u32, current: u32) -> Result<(), AppError> {
+pub(crate) fn check_revision(expected: u32, current: u32) -> Result<(), AppError> {
     if expected != current {
         let mut e =
             AppError::conflict("Configuration changed. Review the current state before retrying.");
@@ -46,7 +46,7 @@ fn check_revision(expected: u32, current: u32) -> Result<(), AppError> {
     }
     Ok(())
 }
-async fn current_revision(tx: &mut Transaction<'_, Postgres>) -> Result<u32, AppError> {
+pub(crate) async fn current_revision(tx: &mut Transaction<'_, Postgres>) -> Result<u32, AppError> {
     revision(
         sqlx::query_scalar("SELECT revision FROM deployment WHERE singleton=true")
             .fetch_one(&mut **tx)
@@ -64,10 +64,24 @@ fn validate_definition(state: &AppState, definition: &McpDefinition) -> Result<U
     }
     Ok(id)
 }
+async fn catalog_budget(tx: &mut Transaction<'_, Postgres>) -> Result<(), AppError> {
+    let bytes: i64 = sqlx::query_scalar(
+        "SELECT COALESCE(sum(octet_length(definition::text)),0)::bigint FROM mcps",
+    )
+    .fetch_one(&mut **tx)
+    .await?;
+    if bytes > 1024 * 1024 {
+        return Err(AppError::bad(
+            "Catalog definitions exceed the 1 MiB endpoint budget. Reduce command or tool metadata.",
+        ));
+    }
+    Ok(())
+}
 /// Delete opt-ins whenever their final grant disappears. Regranting is a new opt-in.
 pub(crate) async fn reconcile(tx: &mut Transaction<'_, Postgres>) -> Result<(), AppError> {
     sqlx::query("DELETE FROM user_settings s WHERE NOT EXISTS (SELECT 1 FROM mcps m JOIN users u ON u.id=s.user_id WHERE m.id=s.mcp_id AND u.active AND m.definition->>'active'='true' AND EXISTS (SELECT 1 FROM assignments a WHERE a.mcp_id=m.id AND (a.target_kind='all' OR a.target_user=s.user_id OR EXISTS (SELECT 1 FROM memberships g WHERE g.user_id=s.user_id AND g.group_id=a.target_group))))").execute(&mut **tx).await?;
     sqlx::query("DELETE FROM tool_inventory i WHERE NOT EXISTS (SELECT 1 FROM assignments a WHERE a.mcp_id=i.mcp_id AND (a.target_kind='all' OR a.target_user=i.user_id OR EXISTS(SELECT 1 FROM memberships g WHERE g.user_id=i.user_id AND g.group_id=a.target_group)))").execute(&mut **tx).await?;
+    sqlx::query("DELETE FROM oauth_credentials c WHERE NOT EXISTS(SELECT 1 FROM mcps m JOIN users u ON u.id=c.user_id WHERE m.id=c.mcp_id AND u.active AND m.definition->>'active'='true' AND EXISTS(SELECT 1 FROM assignments a WHERE a.mcp_id=m.id AND (a.target_kind='all' OR a.target_user=c.user_id OR EXISTS(SELECT 1 FROM memberships g WHERE g.user_id=c.user_id AND g.group_id=a.target_group))))").execute(&mut **tx).await?;
     Ok(())
 }
 pub(crate) async fn assigned(
@@ -222,6 +236,7 @@ pub async fn create_mcp(
         .bind(DbJson(input.definition))
         .execute(&mut *tx)
         .await?;
+    catalog_budget(&mut tx).await?;
     bump_revision(&mut tx).await?;
     let revision = current_revision(&mut tx).await?;
     tx.commit().await?;
@@ -243,6 +258,10 @@ pub async fn edit_mcp(
     check_revision(input.expected_revision, current_revision(&mut tx).await?)?;
     let old = definition(&mut tx, id).await?;
     if old.transport != input.definition.transport || old.auth != input.definition.auth {
+        sqlx::query("DELETE FROM oauth_credentials WHERE mcp_id=$1")
+            .bind(id)
+            .execute(&mut *tx)
+            .await?;
         sqlx::query("DELETE FROM user_settings WHERE mcp_id=$1")
             .bind(id)
             .execute(&mut *tx)
@@ -257,6 +276,7 @@ pub async fn edit_mcp(
         .bind(DbJson(input.definition))
         .execute(&mut *tx)
         .await?;
+    catalog_budget(&mut tx).await?;
     reconcile(&mut tx).await?;
     bump_revision(&mut tx).await?;
     let revision = current_revision(&mut tx).await?;

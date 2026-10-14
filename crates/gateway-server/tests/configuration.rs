@@ -403,6 +403,24 @@ async fn concurrent_settings_conflict_and_restart_durability() {
     assert!(!v.to_string().contains("must-never-persist"));
 
     // A concurrent opt-in cannot silently resurrect a revoked grant.
+    let env: serde_json::Map<String, Value> = (0..64)
+        .map(|n| (format!("KEY_{n}"), json!("a".repeat(16384))))
+        .collect();
+    let mut oversized = def.clone();
+    oversized["transport"] = json!({"kind":"stdio","command":{"program":"/usr/bin/true","args":[],"env":env,"cwd":null}});
+    assert_eq!(
+        h.request(
+            "PUT",
+            &format!("/api/admin/mcps/{id}"),
+            Some(&admin.token),
+            Some(
+                json!({"expectedRevision":revision(&h,&admin.token).await,"definition":oversized})
+            )
+        )
+        .await
+        .0,
+        400
+    );
     let (_, _, admin_state) = h
         .request("GET", "/api/admin/configuration", Some(&admin.token), None)
         .await;

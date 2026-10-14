@@ -5,6 +5,7 @@ pub const MAX_CONFIG_AGE_SECONDS: i64 = 3_600;
 pub const REFRESH_INTERVAL_SECONDS: u64 = 60;
 
 pub mod contracts;
+pub mod crypto;
 pub mod policy;
 
 pub use contracts::*;

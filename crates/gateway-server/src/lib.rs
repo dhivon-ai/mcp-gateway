@@ -19,10 +19,12 @@ use uuid::Uuid;
 
 pub mod configuration;
 pub mod identity;
+pub mod vault;
 #[derive(Clone)]
 pub struct Options {
     pub public_url: String,
     pub allow_loopback_http: bool,
+    pub vault: gateway_core::crypto::KeyRing,
 }
 #[derive(Clone)]
 pub struct AppState {
@@ -270,6 +272,31 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/endpoint/inventory",
             post(configuration::report_inventory),
+        )
+        .route(
+            "/api/secrets",
+            get(vault::list_secrets).post(vault::create_secret),
+        )
+        .route(
+            "/api/secrets/{id}",
+            put(vault::replace_secret).delete(vault::delete_secret),
+        )
+        .route("/api/secrets/{id}/key", put(vault::rename_secret))
+        .route(
+            "/api/endpoint/credentials/{id}",
+            post(vault::resolve_credential),
+        )
+        .route(
+            "/api/endpoint/oauth/{id}",
+            put(vault::store_oauth).delete(vault::disconnect_oauth),
+        )
+        .route(
+            "/api/endpoint/oauth/{id}/lease",
+            post(vault::acquire_refresh).delete(vault::release_refresh),
+        )
+        .route(
+            "/api/oauth/{id}/status/{installation}",
+            get(vault::oauth_status),
         )
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), origin_guard))

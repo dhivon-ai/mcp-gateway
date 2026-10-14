@@ -30,6 +30,10 @@ administrator's live authority in the transaction.
 
 Admin-only routes:
 
+All user/group writes also require the deployment's `expectedRevision` from
+`GET /api/admin/configuration`, including a JSON body on group deletion.
+Stale identity/group changes return 409 without overwriting concurrent edits.
+
 | Route                                | Behavior                                             |
 | ------------------------------------ | ---------------------------------------------------- |
 | GET/POST `/api/admin/users`          | List metadata / create with username, password, role |

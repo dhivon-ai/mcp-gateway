@@ -23,6 +23,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     SettingsUpdate::export_all(&config)?;
     SecretWrite::export_all(&config)?;
     SecretRename::export_all(&config)?;
+    VersionInput::export_all(&config)?;
+    OAuthStatus::export_all(&config)?;
     InventoryReport::export_all(&config)?;
     UiContext::export_all(&config)?;
     ApiError::export_all(&config)?;

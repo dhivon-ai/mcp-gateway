@@ -30,6 +30,7 @@ pub struct GroupInfo {
 #[derive(Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UserCreate {
+    pub expected_revision: u32,
     pub username: String,
     pub password: String,
     pub role: Role,
@@ -38,6 +39,7 @@ pub struct UserCreate {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UserEdit {
+    pub expected_revision: u32,
     pub role: Role,
     pub active: bool,
 }
@@ -45,12 +47,14 @@ pub struct UserEdit {
 #[derive(Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct PasswordReset {
+    pub expected_revision: u32,
     pub password: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct GroupWrite {
+    pub expected_revision: u32,
     pub name: String,
     pub member_ids: Vec<String>,
 }
@@ -230,6 +234,60 @@ pub struct SecretWrite {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SecretRename {
     pub key: String,
+    pub expected_version: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct VersionInput {
+    pub expected_version: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthStatus {
+    pub connected: bool,
+    pub version: Option<u32>,
+    pub expires_at: Option<i64>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CredentialRequest {
+    pub expected_revision: u32,
+    pub installation_id: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthStoreRequest {
+    pub expected_revision: u32,
+    pub installation_id: String,
+    pub expected_version: Option<u32>,
+    pub refresh_lease: Option<String>,
+    pub credentials: OAuthCredentials,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RefreshRequest {
+    pub installation_id: String,
+    pub expected_version: u32,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RefreshLease {
+    pub lease_id: String,
+    pub expires_at: i64,
+    pub version: u32,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RefreshRelease {
+    pub installation_id: String,
+    pub lease_id: String,
+}
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthDisconnect {
+    pub expected_revision: u32,
+    pub installation_id: String,
     pub expected_version: u32,
 }
 

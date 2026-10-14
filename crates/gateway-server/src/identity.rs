@@ -223,6 +223,17 @@ pub(crate) async fn begin_user<'a>(
     let p = principal(row, p.token_hash.clone(), p.endpoint);
     Ok((tx, p, revision))
 }
+
+async fn begin_admin_checked<'a>(
+    state: &'a AppState,
+    p: &Principal,
+    expected: u32,
+) -> Result<Transaction<'a, Postgres>, AppError> {
+    let mut tx = begin_admin(state, p).await?;
+    let revision = crate::configuration::current_revision(&mut tx).await?;
+    crate::configuration::check_revision(expected, revision)?;
+    Ok(tx)
+}
 fn ui_context(state: &AppState, p: Principal) -> UiContext {
     let mut ctx = empty_context(state);
     ctx.user = Some(p.user);
@@ -468,7 +479,7 @@ pub async fn create_user(
     check_password(&input.password)?;
     let hash = hash_password(input.password).await?;
     let id = Uuid::new_v4();
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     sqlx::query("INSERT INTO users(id,username,password_hash,role) VALUES($1,$2,$3,$4)")
         .bind(id)
         .bind(&username)
@@ -494,7 +505,7 @@ pub async fn edit_user(
 ) -> Result<Json<UserInfo>, AppError> {
     let p = admin(&state, &headers, true).await?;
     let id = uuid(&id)?;
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     let current = sqlx::query_as::<_, UserRow>(
         "SELECT id,username,role,active FROM users WHERE id=$1 FOR UPDATE",
     )
@@ -544,7 +555,7 @@ pub async fn reset_password(
     let id = uuid(&id)?;
     check_password(&input.password)?;
     let hash = hash_password(input.password).await?;
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     let result = sqlx::query("UPDATE users SET password_hash=$2 WHERE id=$1")
         .bind(id)
         .bind(hash)
@@ -646,7 +657,7 @@ pub async fn create_group(
     let p = admin(&state, &headers, true).await?;
     let name = group_name(&input.name)?;
     let id = Uuid::new_v4();
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     sqlx::query("INSERT INTO groups(id,name) VALUES($1,$2)")
         .bind(id)
         .bind(&name)
@@ -668,7 +679,7 @@ pub async fn edit_group(
     let p = admin(&state, &headers, true).await?;
     let id = uuid(&id)?;
     let name = group_name(&input.name)?;
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     let result = sqlx::query("UPDATE groups SET name=$2 WHERE id=$1")
         .bind(id)
         .bind(&name)
@@ -689,10 +700,11 @@ pub async fn delete_group(
     State(state): State<AppState>,
     headers: HeaderMap,
     Path(id): Path<String>,
+    Input(input): Input<gateway_core::RevisionInput>,
 ) -> Result<StatusCode, AppError> {
     let p = admin(&state, &headers, true).await?;
     let id = uuid(&id)?;
-    let mut tx = begin_admin(&state, &p).await?;
+    let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     let result = sqlx::query("DELETE FROM groups WHERE id=$1")
         .bind(id)
         .execute(&mut *tx)
