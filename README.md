@@ -20,6 +20,8 @@ cargo test --workspace
 cargo build --workspace
 pnpm typecheck
 pnpm lint
+pnpm test
+pnpm format:check
 pnpm build
 cargo run -p gateway-server -- --help
 cargo run -p gateway-cli -- --help
@@ -39,3 +41,6 @@ secrets and OAuth tokens are encrypted separately with an operator-held key.
 
 The current approved delivery specification and plan are in
 `.cadre/tracks/mac-mvp/`. Deployment and user runbooks are added with delivery.
+
+See [wire/policy contracts](docs/contracts.md) and [fixture/testing setup](docs/testing.md)
+for isolated PostgreSQL, MCP/OAuth fixtures, and generated-contract verification.
