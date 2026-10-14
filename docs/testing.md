@@ -21,6 +21,16 @@ never production credentials. Database API integration tests use a separate
 schema/database lifecycle and must not connect to production instances.
 Remove only this owned fixture stack with its exact Compose project when done.
 
+Run real database API tests explicitly (normal platform checks skip this external
+prerequisite):
+
+```sh
+TEST_DATABASE_URL=postgres://gateway_test:isolated-fixture-password@127.0.0.1:18432/gateway_test cargo test -p gateway-server -- --ignored
+```
+
+Each test creates/migrates/drops a uniquely named owned database. The harness
+rejects non-loopback DSNs and any base database other than `gateway_test`.
+
 ## MCP and OAuth fixtures
 
 ```sh

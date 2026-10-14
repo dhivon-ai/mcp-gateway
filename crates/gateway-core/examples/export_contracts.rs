@@ -8,6 +8,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let config = Config::new().with_large_int("number").with_out_dir(dir);
     ConfigSnapshot::export_all(&config)?;
     GroupInfo::export_all(&config)?;
+    UserCreate::export_all(&config)?;
+    UserEdit::export_all(&config)?;
+    PasswordReset::export_all(&config)?;
+    GroupWrite::export_all(&config)?;
     Assignment::export_all(&config)?;
     SecretMetadata::export_all(&config)?;
     LoginRequest::export_all(&config)?;
