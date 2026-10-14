@@ -592,6 +592,17 @@ impl NativeCredentials {
         record: CredentialHead,
     ) -> Result<()> {
         let store = &self.cache.sessions.store;
+        // Reject before journaling or touching Keychain: the eventual head must fit too.
+        let limit = crate::store::MAX_UPSTREAM_HEADS;
+        if (!metadata.upstream_heads.contains_key(&record.mcp_id)
+            && metadata.upstream_heads.len() >= limit)
+            || (!metadata
+                .upstream_publication_pending
+                .contains(&record.mcp_id)
+                && metadata.upstream_publication_pending.len() >= limit)
+        {
+            return Err(EndpointError::CredentialCapacity);
+        }
         let account = StateStore::account(
             &record.identity,
             record.generation,

@@ -11,6 +11,8 @@ use std::{
 };
 use uuid::Uuid;
 
+pub(crate) const MAX_UPSTREAM_HEADS: usize = 128;
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct Identity {
@@ -80,6 +82,102 @@ impl Default for Metadata {
             upstream_publication_pending: BTreeSet::new(),
             pending_cleanup: Vec::new(),
         }
+    }
+}
+impl Metadata {
+    fn validate(&self) -> Result<()> {
+        if self.schema_version != 1 || self.credential_accounts.len() > 2048 {
+            return Err(EndpointError::Invalid);
+        }
+        if self.upstream_heads.len() > MAX_UPSTREAM_HEADS
+            || self.upstream_publication_pending.len() > MAX_UPSTREAM_HEADS
+        {
+            return Err(EndpointError::Invalid);
+        }
+        for id in self
+            .upstream_heads
+            .keys()
+            .chain(&self.upstream_publication_pending)
+        {
+            if id.is_empty() || id.len() > 128 || id.contains(['\0', '\r', '\n']) {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        if let Some(origin) = &self.selected_server_origin {
+            let url = url::Url::parse(origin).map_err(|_| EndpointError::Invalid)?;
+            if !matches!(url.scheme(), "https" | "http")
+                || url.origin().ascii_serialization() != *origin
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        if let Some(identity) = &self.active {
+            identity.validate()?;
+            if self
+                .selected_server_origin
+                .as_ref()
+                .is_some_and(|origin| *origin != identity.server_origin)
+            {
+                return Err(EndpointError::Invalid);
+            }
+            let prefix = StateStore::account_prefix(identity, self.generation);
+            if self
+                .credential_accounts
+                .iter()
+                .any(|s| !s.starts_with(&prefix) || s.len() > 256)
+            {
+                return Err(EndpointError::Invalid);
+            }
+        } else if !self.credential_accounts.is_empty() {
+            return Err(EndpointError::Invalid);
+        }
+        if let Some(head) = &self.cache_head_account {
+            let identity = self.active.as_ref().ok_or(EndpointError::Invalid)?;
+            let prefix = format!(
+                "{}cache-head:",
+                StateStore::account_prefix(identity, self.generation)
+            );
+            if head
+                .strip_prefix(&prefix)
+                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
+                || !self.credential_accounts.contains(head)
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        for head in self.upstream_heads.values() {
+            let identity = self.active.as_ref().ok_or(EndpointError::Invalid)?;
+            let prefix = format!(
+                "{}upstream-head:",
+                StateStore::account_prefix(identity, self.generation)
+            );
+            if head
+                .strip_prefix(&prefix)
+                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
+                || !self.credential_accounts.contains(head)
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        if self.active.is_none() && !self.upstream_publication_pending.is_empty() {
+            return Err(EndpointError::Invalid);
+        }
+        if self.pending_cleanup.len() > 16 {
+            return Err(EndpointError::Invalid);
+        }
+        for cleanup in &self.pending_cleanup {
+            cleanup.identity.validate()?;
+            let prefix = StateStore::account_prefix(&cleanup.identity, cleanup.generation);
+            if cleanup.accounts.len() > 2048
+                || cleanup
+                    .accounts
+                    .iter()
+                    .any(|s| !s.starts_with(&prefix) || s.len() > 256)
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        Ok(())
     }
 }
 #[derive(Clone)]
@@ -175,102 +273,14 @@ impl StateStore {
         } else {
             Metadata::default()
         };
-        if metadata.schema_version != 1 || metadata.credential_accounts.len() > 2048 {
-            return Err(EndpointError::Invalid);
-        }
-        if metadata.upstream_heads.len() > 128 || metadata.upstream_publication_pending.len() > 128
-        {
-            return Err(EndpointError::Invalid);
-        }
-        for id in metadata
-            .upstream_heads
-            .keys()
-            .chain(&metadata.upstream_publication_pending)
-        {
-            if id.is_empty() || id.len() > 128 || id.contains(['\0', '\r', '\n']) {
-                return Err(EndpointError::Invalid);
-            }
-        }
-        if let Some(origin) = &metadata.selected_server_origin {
-            let url = url::Url::parse(origin).map_err(|_| EndpointError::Invalid)?;
-            if !matches!(url.scheme(), "https" | "http")
-                || url.origin().ascii_serialization() != *origin
-            {
-                return Err(EndpointError::Invalid);
-            }
-        }
-        if let Some(identity) = &metadata.active {
-            identity.validate()?;
-            if metadata
-                .selected_server_origin
-                .as_ref()
-                .is_some_and(|origin| *origin != identity.server_origin)
-            {
-                return Err(EndpointError::Invalid);
-            }
-            let prefix = Self::account_prefix(identity, metadata.generation);
-            if metadata
-                .credential_accounts
-                .iter()
-                .any(|s| !s.starts_with(&prefix) || s.len() > 256)
-            {
-                return Err(EndpointError::Invalid);
-            }
-        } else if !metadata.credential_accounts.is_empty() {
-            return Err(EndpointError::Invalid);
-        }
-        if let Some(head) = &metadata.cache_head_account {
-            let identity = metadata.active.as_ref().ok_or(EndpointError::Invalid)?;
-            let prefix = format!(
-                "{}cache-head:",
-                Self::account_prefix(identity, metadata.generation)
-            );
-            if head
-                .strip_prefix(&prefix)
-                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
-                || !metadata.credential_accounts.contains(head)
-            {
-                return Err(EndpointError::Invalid);
-            }
-        }
-        for head in metadata.upstream_heads.values() {
-            let identity = metadata.active.as_ref().ok_or(EndpointError::Invalid)?;
-            let prefix = format!(
-                "{}upstream-head:",
-                Self::account_prefix(identity, metadata.generation)
-            );
-            if head
-                .strip_prefix(&prefix)
-                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
-                || !metadata.credential_accounts.contains(head)
-            {
-                return Err(EndpointError::Invalid);
-            }
-        }
-        if metadata.active.is_none() && !metadata.upstream_publication_pending.is_empty() {
-            return Err(EndpointError::Invalid);
-        }
-        if metadata.pending_cleanup.len() > 16 {
-            return Err(EndpointError::Invalid);
-        }
-        for cleanup in &metadata.pending_cleanup {
-            cleanup.identity.validate()?;
-            let prefix = Self::account_prefix(&cleanup.identity, cleanup.generation);
-            if cleanup.accounts.len() > 2048
-                || cleanup
-                    .accounts
-                    .iter()
-                    .any(|s| !s.starts_with(&prefix) || s.len() > 256)
-            {
-                return Err(EndpointError::Invalid);
-            }
-        }
+        metadata.validate()?;
         f(&mut metadata)
     }
     pub fn read(&self) -> Result<Metadata> {
         self.locked(|m| Ok(m.clone()))
     }
     pub fn write(&self, metadata: &Metadata) -> Result<()> {
+        metadata.validate()?;
         let bytes = serde_json::to_vec(metadata).map_err(|_| EndpointError::Invalid)?;
         if bytes.len() > 65536 {
             return Err(EndpointError::Storage);

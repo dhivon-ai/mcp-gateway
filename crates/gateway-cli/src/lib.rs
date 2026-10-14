@@ -32,6 +32,10 @@ pub enum EndpointError {
     Invalid,
     #[error("Protected local storage is unavailable; check owner-only permissions")]
     Storage,
+    #[error(
+        "Local credential capacity reached; logout and sign in again to clear retired MCP credentials"
+    )]
+    CredentialCapacity,
     #[error("macOS Keychain is unavailable; unlock it and retry")]
     Keychain,
     #[error("Login is required")]

@@ -530,3 +530,130 @@ fn oauth_partial_publication_recovery_preserves_the_existing_sleep_aware_deadlin
         Err(EndpointError::UpstreamExpired)
     ));
 }
+
+#[test]
+fn sequential_mcp_capacity_keeps_identity_and_existing_credentials_usable() {
+    let mut fixture = Fixture::new(false);
+    let first = fixture.snapshot.mcps[0].clone();
+    for index in 0..128 {
+        if index > 0 {
+            fixture.snapshot.mcps[0].definition.id = Uuid::new_v4().to_string();
+            fixture.change(true);
+        }
+        fixture
+            .publish(fixture.credential(1))
+            .expect("bounded head");
+    }
+    let store = &fixture.cache.sessions.store;
+    assert_eq!(
+        store
+            .read()
+            .expect("readable boundary")
+            .upstream_heads
+            .len(),
+        128
+    );
+    fixture.snapshot.mcps[0].definition.id = Uuid::new_v4().to_string();
+    fixture.change(true);
+    assert!(matches!(
+        fixture.publish(fixture.credential(1)),
+        Err(EndpointError::CredentialCapacity)
+    ));
+    let metadata = fixture
+        .cache
+        .sessions
+        .store
+        .read()
+        .expect("capacity must not corrupt identity");
+    assert_eq!(metadata.upstream_heads.len(), 128);
+    assert!(metadata.upstream_publication_pending.is_empty());
+    fixture
+        .cache
+        .sessions
+        .load()
+        .expect("session/status still usable");
+    fixture.cache.latest().expect("shared cache still usable");
+    // A complete subsequent sync can still refresh an existing identity at capacity.
+    fixture.snapshot.mcps[0] = first;
+    fixture.change(true);
+    fixture
+        .publish(fixture.credential(1))
+        .expect("existing MCP revalidation at capacity");
+    let proof = fixture.cache.latest().expect("proof");
+    let scope = fixture
+        .native
+        .cached_scope(&proof, &fixture.snapshot.mcps[0])
+        .expect("scope");
+    fixture
+        .native
+        .load(&scope)
+        .expect("existing credential")
+        .access(fixture.time.sample().expect("time"))
+        .expect("usable token");
+    fixture
+        .cache
+        .sessions
+        .store
+        .locked(|m| fixture.cache.sessions.store.clear_locked(m))
+        .expect("logout at capacity");
+    let metadata = fixture
+        .cache
+        .sessions
+        .store
+        .read()
+        .expect("cleared identity");
+    assert!(
+        metadata.active.is_none()
+            && metadata.credential_accounts.is_empty()
+            && metadata.pending_cleanup.is_empty()
+    );
+    assert!(fixture.memory.values.lock().expect("keys").is_empty());
+}
+
+#[test]
+fn invalid_metadata_write_preserves_the_last_readable_identity() {
+    let fixture = Fixture::new(false);
+    let store = &fixture.cache.sessions.store;
+    let good = std::fs::read(store.root().join("identity.json")).expect("original metadata");
+    let original = store.read().expect("identity");
+    let mut cases = Vec::new();
+    let mut invalid = original.clone();
+    invalid.schema_version = 2;
+    cases.push(invalid);
+    let mut invalid = original.clone();
+    invalid.upstream_publication_pending = (0..129).map(|i| format!("mcp-{i}")).collect();
+    cases.push(invalid);
+    let mut invalid = original.clone();
+    invalid
+        .credential_accounts
+        .push("foreign-owner-account".into());
+    cases.push(invalid);
+    let mut invalid = original.clone();
+    invalid
+        .upstream_heads
+        .insert("mcp".into(), "untracked-head".into());
+    cases.push(invalid);
+    let mut invalid = original.clone();
+    invalid.pending_cleanup = (0..17)
+        .map(|_| gateway_cli::store::Cleanup {
+            identity: original.active.clone().expect("identity"),
+            generation: original.generation,
+            accounts: vec![],
+        })
+        .collect();
+    cases.push(invalid);
+    for invalid in cases {
+        assert!(
+            store.write(&invalid).is_err(),
+            "invalid write must fail before replacement"
+        );
+        assert_eq!(
+            std::fs::read(store.root().join("identity.json")).expect("bytes"),
+            good
+        );
+        store
+            .read()
+            .expect("last valid state survives rejected write");
+        fixture.cache.sessions.load().expect("login remains usable");
+    }
+}

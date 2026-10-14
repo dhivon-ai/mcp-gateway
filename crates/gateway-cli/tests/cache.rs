@@ -895,13 +895,15 @@ fn checkpoint_pointer_replay_retirement_failure_and_recovery_are_guarded() {
             .expect("retired checkpoint")
             .is_none()
     );
-    f.sessions
-        .store
-        .locked(|m| {
-            m.cache_head_account = Some(original_head.clone());
-            f.sessions.store.write(m)
-        })
-        .expect("owned old-pointer replay fixture");
+    let mut replay = current.clone();
+    replay.cache_head_account = Some(original_head.clone());
+    assert!(f.sessions.store.write(&replay).is_err());
+    // An attacker bypasses the writer; raw file tampering must still fail on read.
+    std::fs::write(
+        f.root.join("identity.json"),
+        serde_json::to_vec(&replay).expect("replay fixture JSON"),
+    )
+    .expect("owned old-pointer replay fixture");
     assert!(f.cache.latest().is_err());
     // Restore only the ordinary pointer so the independent failure scenario can proceed.
     std::fs::write(

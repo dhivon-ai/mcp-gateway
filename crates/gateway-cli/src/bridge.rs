@@ -35,6 +35,10 @@ impl From<EndpointError> for BridgeError {
             | EndpointError::UpstreamExpired => {
                 (StatusCode::PRECONDITION_REQUIRED, ErrorCode::AuthRequired)
             }
+            EndpointError::CredentialCapacity => (
+                StatusCode::SERVICE_UNAVAILABLE,
+                ErrorCode::UpstreamUnavailable,
+            ),
             EndpointError::OAuthUnsupported => {
                 (StatusCode::UNPROCESSABLE_ENTITY, ErrorCode::Unsupported)
             }
