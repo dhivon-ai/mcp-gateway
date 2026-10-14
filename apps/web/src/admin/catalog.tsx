@@ -40,6 +40,7 @@ import { accessLabel, AssignmentRows, AssignmentEditor } from "./access";
 import { ConfirmDelete } from "./identities";
 import type { AdminData, Actions } from "./types";
 import { cn } from "@/lib/utils";
+import * as decode from "@/lib/decode";
 
 interface CommandDraft {
   program: string;
@@ -50,28 +51,24 @@ interface CommandDraft {
 function draft(command?: CommandSpec | null): CommandDraft {
   return {
     program: command?.program ?? "",
-    args: command?.args.join("\n") ?? "",
-    env: Object.entries(command?.env ?? {})
-      .map(([k, v]) => `${k}=${v}`)
-      .join("\n"),
+    args: JSON.stringify(command?.args ?? [], null, 2),
+    env: JSON.stringify(command?.env ?? {}, null, 2),
     cwd: command?.cwd ?? "",
   };
 }
 function parseCommand(value: CommandDraft): CommandSpec {
-  const env = new Map<string, string>();
-  for (const entry of value.env ? value.env.split("\n") : []) {
-    const i = entry.indexOf("=");
-    if (i < 1) throw new Error("Environment entries must use KEY=value.");
-    const key = entry.slice(0, i);
-    if (env.has(key)) throw new Error("Environment keys must be unique.");
-    env.set(key, entry.slice(i + 1));
+  try {
+    return decode.command({
+      program: value.program,
+      args: JSON.parse(value.args) as unknown,
+      env: JSON.parse(value.env) as unknown,
+      cwd: value.cwd || null,
+    });
+  } catch {
+    throw new Error(
+      "Arguments must be a bounded JSON array of strings; environment must be a JSON object with string values.",
+    );
   }
-  return {
-    program: value.program,
-    args: value.args ? value.args.split("\n") : [],
-    env: Object.fromEntries(env),
-    cwd: value.cwd || null,
-  };
 }
 function CommandFields({
   value,
@@ -93,20 +90,24 @@ function CommandFields({
           required
         />
         <TextField
-          label="Arguments"
+          label={`${prefix} arguments`}
           multiline
           value={value.args}
           onChange={(args) => onChange({ ...value, args })}
-          maxLength={1048576}
-          description="One argument per line. Spaces stay inside the argument; no shell expansion."
+          maxLength={2097152}
+          description={
+            'JSON array of strings, for example ["--port", "8080"]. Use [] for no arguments and "\\n" for a literal newline. No shell expansion.'
+          }
         />
         <TextField
-          label="Environment"
+          label={`${prefix} environment`}
           multiline
           value={value.env}
           onChange={(env) => onChange({ ...value, env })}
-          maxLength={1048576}
-          description="KEY=value, one entry per line. Use the user secret store for bearer tokens."
+          maxLength={2097152}
+          description={
+            'JSON object of string values, for example {"MODE": "work"}. Use {} for no environment values. Use the user secret store for bearer tokens.'
+          }
         />
         <TextField
           label="Working directory"
@@ -270,7 +271,7 @@ function CatalogEditor({
                   value={name}
                   onChange={setName}
                   required
-                  maxLength={128}
+                  maxLength={decode.MCP_NAME_BYTE_LIMIT}
                 />
                 <TextField
                   label="Description"

@@ -235,7 +235,7 @@ export function Editor({
         }}
       >
         <SheetHeader>
-          <SheetTitle>{title}</SheetTitle>
+          <SheetTitle className="min-w-0 truncate pr-8">{title}</SheetTitle>
           <SheetDescription className={hideDescription ? "sr-only" : undefined}>
             {description}
           </SheetDescription>

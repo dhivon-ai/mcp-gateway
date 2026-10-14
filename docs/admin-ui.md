@@ -26,8 +26,17 @@ session rules and [configuration.md](configuration.md) for policy semantics.
 Changes use the revision at editor opening. A conflict retains the edit and offers
 **Reload current state**; it never silently resubmits with a newer revision. Saved
 means the server confirmed the write. If the follow-up read fails, the interface
-requires a reload before another write. Separate identity/group/config reads are
-not a transactional snapshot; the server's revision check resolves concurrent edits.
+requires a reload before another write. Identity and group reads are bracketed by
+configuration reads with the same global revision. A concurrent change produces
+explicit reload feedback before any editor can pair stale values with a newer
+revision. The same consistency check protects the read after a confirmed save.
+
+Runtime and installation arguments use JSON arrays of strings; environment values
+use JSON objects of strings. Empty arguments, escaped newlines and literal characters
+remain unchanged when saving another field or tool policy. For example, `["-c",
+"print(1)\nprint(2)", ""]` contains three arguments, including an empty final argument.
+MCP names may contain up to 200 UTF-8 bytes. Catalog decoders share the server's byte
+limits, including long environment keys within the 1 MiB catalog budget.
 
 Passwords clear after requests. CSRF remains in memory; browser sessions are
 HttpOnly cookies. No native session tokens, bearer/OAuth values or endpoint
@@ -108,3 +117,27 @@ same component system. No unrelated product area was introduced.
 This evidence does not claim Safari/Firefox coverage, older macOS validation,
 hosted CI execution, endpoint installation or remote OAuth execution; those
 endpoint and release acceptance checks belong to their later implementation phases.
+
+## Review remediation verification
+
+The cumulative review added Rust-compatible UTF-8 catalog bounds, lossless JSON
+command editing and revision-bracketed administration reads. The compiled Rust
+websites were exercised again on macOS 27.0.1 arm64 in the in-app browser at
+1584×993 and 390×844. A backend-valid 200-byte name and 129-byte environment key
+loaded in both websites; policy-only save preserved runtime/installation arrays
+and maps exactly, including empty strings and embedded newlines. Invalid command
+JSON was rejected before saving, and a valid explicit edit succeeded. Long sheet
+headings truncate visually while retaining their complete accessible names and
+keeping the close control available. Narrow sheets retain reachable actions with
+no page overflow; Escape returns focus to the opening control.
+
+A second fixture administrator removed a group member during an open edit. The
+stale save returned 409 and explicit full reload showed the member still removed.
+Deterministic interaction tests additionally interleave both group and account
+changes during initial loading and post-save reads: inconsistent data never opens
+an editor, confirmed mutations are not replayed, and read failures require reload.
+Local native login, assigned long-name management, confirmed enable/disable and
+logout passed. Both consoles were free of relevant errors/overlays. Final screenshots
+remain outside the repository. All 34 frontend tests, strict TypeScript, lint,
+formatting and embedded production builds pass. This controlled fixture evidence
+does not extend the previously declared browser/provider/platform compatibility.

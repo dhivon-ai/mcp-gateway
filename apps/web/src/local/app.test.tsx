@@ -130,6 +130,21 @@ afterEach(() => {
   window.location.hash = "";
 });
 describe("Local management journeys", () => {
+  it("loads and manages an assigned MCP with a valid 200-byte name", async () => {
+    const config = catalog();
+    config.mcps[0].name = "N".repeat(200);
+    api(initial(), config);
+    render(<LocalApp />);
+    expect(await screen.findByText(config.mcps[0].name)).toBeVisible();
+    fireEvent.click(
+      (await screen.findAllByRole("button", { name: "Manage" }))[0],
+    );
+    expect(
+      screen.getByRole("dialog", { name: config.mcps[0].name }),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Enable MCP" })).toBeEnabled();
+  });
+
   it("ignores a late context response from the previous identity", async () => {
     const alice = initial(),
       bob = initial();

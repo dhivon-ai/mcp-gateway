@@ -1,4 +1,12 @@
-import { object, string, bool, integer, nullable, array } from "@/lib/decode";
+import {
+  object,
+  string,
+  bool,
+  integer,
+  nullable,
+  array,
+  MCP_NAME_BYTE_LIMIT,
+} from "@/lib/decode";
 import type { LocalCatalog } from "@/generated/LocalCatalog";
 import type { LocalMcpMetadata } from "@/generated/LocalMcpMetadata";
 import type { SecretMetadata } from "@/generated/SecretMetadata";
@@ -74,7 +82,7 @@ export function mcp(value: unknown): LocalMcpMetadata {
     throw new Error("Invalid MCP");
   return {
     id: string(v.id, 64),
-    name: string(v.name, 128),
+    name: string(v.name, MCP_NAME_BYTE_LIMIT),
     description: string(v.description, 4096),
     transport: string(v.transport),
     auth: string(v.auth),

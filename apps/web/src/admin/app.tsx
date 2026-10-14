@@ -23,6 +23,7 @@ import { Catalog } from "./catalog";
 import { Access } from "./access";
 import { Users, Groups } from "./identities";
 import type { AdminData, Actions } from "./types";
+import { readAdminData } from "./read-data";
 
 const navigation = [
   { id: "catalog", label: "Catalog", icon: FileText },
@@ -154,21 +155,9 @@ function Administration({
     const abort = new AbortController();
     async function load() {
       try {
-        const [config, users, groups] = await Promise.all([
-          apiRequest("/api/admin/configuration", decode.configuration, {
-            signal: abort.signal,
-          }),
-          apiRequest("/api/admin/users", (v) => decode.array(v, decode.user), {
-            signal: abort.signal,
-          }),
-          apiRequest(
-            "/api/admin/groups",
-            (v) => decode.array(v, decode.group),
-            { signal: abort.signal },
-          ),
-        ]);
+        const current = await readAdminData(abort.signal);
         if (!abort.signal.aborted) {
-          setData({ config, users, groups });
+          setData(current);
           setError(null);
         }
       } catch (e) {
@@ -190,12 +179,7 @@ function Administration({
     setGeneration((old) => old + 1);
   }
   async function refreshData() {
-    const [config, users, groups] = await Promise.all([
-      apiRequest("/api/admin/configuration", decode.configuration),
-      apiRequest("/api/admin/users", (v) => decode.array(v, decode.user)),
-      apiRequest("/api/admin/groups", (v) => decode.array(v, decode.group)),
-    ]);
-    setData({ config, users, groups });
+    setData(await readAdminData());
   }
   async function execute(path: string, method: string, body: unknown) {
     if (busy) return false;

@@ -18,8 +18,16 @@ export function object(value: unknown): Record<string, unknown> {
     return invalid();
   return value as Record<string, unknown>;
 }
+const utf8 = new TextEncoder();
+// Rust wire limits count UTF-8 bytes. The whole serialized catalog is capped at 1 MiB.
+export const CATALOG_BYTE_LIMIT = 1048576;
+export const MCP_NAME_BYTE_LIMIT = 200;
 export function string(value: unknown, max = 65536): string {
-  return typeof value === "string" && value.length <= max ? value : invalid();
+  return typeof value === "string" &&
+    value.length <= max &&
+    utf8.encode(value).length <= max
+    ? value
+    : invalid();
 }
 export function bool(value: unknown): boolean {
   return typeof value === "boolean" ? value : invalid();
@@ -74,7 +82,10 @@ export function command(value: unknown): CommandSpec {
     program: string(v.program, 4096),
     args: array(v.args, (v) => string(v, 16384), 128),
     env: Object.fromEntries(
-      entries.map(([k, v]) => [string(k, 128), string(v, 16384)]),
+      entries.map(([k, v]) => [
+        string(k, CATALOG_BYTE_LIMIT),
+        string(v, 16384),
+      ]),
     ),
     cwd: nullable(v.cwd, (v) => string(v, 4096)),
   };
@@ -102,7 +113,7 @@ export function mcp(value: unknown): McpDefinition {
   if (p.mode !== "allowlist" && p.mode !== "denylist") return invalid();
   return {
     id: string(v.id, 64),
-    name: string(v.name, 128),
+    name: string(v.name, MCP_NAME_BYTE_LIMIT),
     description: string(v.description, 4096),
     active: bool(v.active),
     transport: transport(v.transport),
