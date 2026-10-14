@@ -1,0 +1,10 @@
+/target/
+/dist/
+node_modules/
+/apps/web/dist/
+*.tsbuildinfo
+.DS_Store
+.env
+.env.*
+!.env.example
+/.local/

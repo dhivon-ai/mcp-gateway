@@ -1,0 +1,41 @@
+[workspace]
+members = ["crates/*"]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+
+[workspace.dependencies]
+gateway-core = { path = "crates/gateway-core" }
+tokio = { version = "1.53.3", features = ["full"] }
+axum = { version = "0.8.9", features = ["macros"] }
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls-ring", "postgres", "json", "uuid", "migrate", "macros"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+clap = { version = "4.6.7", features = ["derive", "env"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+thiserror = "2.0.21"
+anyhow = "1.0.104"
+uuid = { version = "1.28.0", features = ["serde", "v4"] }
+reqwest = { version = "0.13.5", default-features = false, features = ["json", "form", "rustls"] }
+argon2 = { version = "0.6.0", features = ["getrandom"] }
+aes-gcm = { version = "0.11.1", features = ["getrandom"] }
+rand = "0.10.3"
+base64 = "0.23.1"
+ts-rs = { version = "12.0.1", features = ["serde-json-impl"] }
+tower-http = { version = "0.7.1", features = ["fs", "trace", "limit", "set-header"] }
+tower = { version = "0.5.3", features = ["util"] }
+rmcp = { version = "=3.5.1", features = ["client", "server", "transport-io", "transport-child-process", "transport-streamable-http-client-reqwest", "transport-streamable-http-server", "auth", "reqwest"] }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+unwrap_used = "warn"
+
+[profile.release]
+strip = true
+lto = "thin"

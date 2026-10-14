@@ -1,0 +1,20 @@
+{
+  "name": "enterprise-mcp-gateway",
+  "private": true,
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": ">=24.19.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @mcp-gateway/web dev",
+    "build": "pnpm --filter @mcp-gateway/web build",
+    "typecheck": "pnpm --filter @mcp-gateway/web typecheck",
+    "lint": "pnpm --filter @mcp-gateway/web lint",
+    "test": "pnpm --filter @mcp-gateway/web test",
+    "format": "prettier --write apps/web package.json pnpm-workspace.yaml",
+    "format:check": "prettier --check apps/web package.json pnpm-workspace.yaml"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
+  }
+}
