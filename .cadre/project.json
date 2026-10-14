@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 2,
+  "runtimeVersion": "4.0.0",
+  "templateSetVersion": "v6",
+  "project": {
+    "name": "MCP Gateway",
+    "context": "greenfield"
+  },
+  "setup": {
+    "status": "completed",
+    "checkpoint": "completed",
+    "commit": "op:create-377522b6ca706ce062f7d131548ece4e",
+    "artifactProgress": [
+      "guidelines.md",
+      "product.md",
+      "styleguides/general.md",
+      "styleguides/html-css.md",
+      "styleguides/javascript.md",
+      "styleguides/react.md",
+      "styleguides/typescript.md",
+      "tech-stack.md",
+      "workflow.md"
+    ],
+    "operation": null
+  },
+  "lastRefresh": null,
+  "history": [
+    {
+      "action": "create",
+      "commit": "op:create-377522b6ca706ce062f7d131548ece4e"
+    }
+  ]
+}

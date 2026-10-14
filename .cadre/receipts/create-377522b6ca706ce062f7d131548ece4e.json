@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "operationId": "create-377522b6ca706ce062f7d131548ece4e",
+  "kind": "create",
+  "status": "completed",
+  "approvalDigest": "a89b97d37ae71a27e03969cde0edda38ac5c1dffcfc71d3e6d2546080abbd72b",
+  "baseCommit": null,
+  "artifacts": [
+    {
+      "path": ".cadre/.gitignore",
+      "sha256": "df85675758b7363ee66be34ecc8c4fa10776c6922982fb70ee6c55422a1119e0"
+    },
+    {
+      "path": ".cadre/archive/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".cadre/guidelines.md",
+      "sha256": "3f3e4a2d417bd1dd3cd8550f85d8d01a9ea5629c21d79e9c8c991a8d48325615"
+    },
+    {
+      "path": ".cadre/operations/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".cadre/patterns/index.md",
+      "sha256": "1c84ebad609451054cf83941ca7744652ee849960fbf9245e2e11c4b62c1c740"
+    },
+    {
+      "path": ".cadre/product.md",
+      "sha256": "53d457a8698e334c0bbcf82421c38b32f8fe876d12a5b6ef51b4be91d512ff86"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "09800445631349ada99ebac3627b07477a90d5b3d9e48a6bf4478962258973d1"
+    },
+    {
+      "path": ".cadre/refreshes/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".cadre/styleguides/general.md",
+      "sha256": "4cc5d83048e95db7ffd42be525ffa346a4e44105fffac20c99d1420d3981b39f"
+    },
+    {
+      "path": ".cadre/styleguides/html-css.md",
+      "sha256": "3f9de7c33a3da43b9941027abebdf9ff67522f91544820e4ac9c4d5323091288"
+    },
+    {
+      "path": ".cadre/styleguides/javascript.md",
+      "sha256": "7507f0bd8c07698888898bf0d6a91458172d43930cd1a1d66c9a369feced9602"
+    },
+    {
+      "path": ".cadre/styleguides/react.md",
+      "sha256": "0055aae1ccb4c5252fecbf4c4058a92a28898e6840d4c6adb8eba7ab42b7815b"
+    },
+    {
+      "path": ".cadre/styleguides/typescript.md",
+      "sha256": "360cb74e46a075c1f3b1fb8f4f65e4ccac411b0abe30dbbfe2106dba95f0b538"
+    },
+    {
+      "path": ".cadre/tech-stack.md",
+      "sha256": "3b963b6b93d2e9bb215dbfd18da5a4de4bb6924e43551dcc1712f0e1b51a4465"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "b7d6730e473223c86622e7ecc3a21d5f7c76e3c1a623e0aa58d6087d1f44cc00"
+    },
+    {
+      "path": ".cadre/tracks/.gitkeep",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".cadre/workflow.md",
+      "sha256": "f144ddd55d9546e58fbebe291dc610612287e67e8522b0e9b1492ce17c565e2a"
+    }
+  ]
+}
