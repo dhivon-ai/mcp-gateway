@@ -663,6 +663,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "enum-as-inner"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1e6a265c649f3f5979b601d26f1d05ada116434c87741c9493cb56218f76cbc"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -845,11 +857,13 @@ dependencies = [
  "clap",
  "gateway-core",
  "getrandom 0.4.3",
+ "nix",
  "reqwest",
  "security-framework",
  "serde",
  "serde_json",
  "sha2 0.11.1",
+ "sysctl",
  "thiserror 2.0.21",
  "tokio",
  "tower",
@@ -2569,6 +2583,20 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 3.0.9",
+]
+
+[[package]]
+name = "sysctl"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cca424247104946a59dacd27eaad296223b7feec3d168a6dd04585183091eb0b"
+dependencies = [
+ "bitflags",
+ "byteorder",
+ "enum-as-inner",
+ "libc",
+ "thiserror 2.0.21",
+ "walkdir",
 ]
 
 [[package]]

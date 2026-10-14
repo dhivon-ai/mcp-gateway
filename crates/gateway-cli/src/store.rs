@@ -51,7 +51,13 @@ pub struct Metadata {
     pub installation_id: Uuid,
     pub generation: Uuid,
     pub active: Option<Identity>,
+    #[serde(default)]
+    pub selected_server_origin: Option<String>,
     pub credential_accounts: Vec<String>,
+    #[serde(default)]
+    pub cache_head_account: Option<String>,
+    #[serde(default)]
+    pub cache_publication_pending: bool,
     pub pending_cleanup: Vec<Cleanup>,
 }
 impl Default for Metadata {
@@ -61,7 +67,10 @@ impl Default for Metadata {
             installation_id: Uuid::new_v4(),
             generation: Uuid::new_v4(),
             active: None,
+            selected_server_origin: None,
             credential_accounts: Vec::new(),
+            cache_head_account: None,
+            cache_publication_pending: false,
             pending_cleanup: Vec::new(),
         }
     }
@@ -162,8 +171,23 @@ impl StateStore {
         if metadata.schema_version != 1 || metadata.credential_accounts.len() > 2048 {
             return Err(EndpointError::Invalid);
         }
+        if let Some(origin) = &metadata.selected_server_origin {
+            let url = url::Url::parse(origin).map_err(|_| EndpointError::Invalid)?;
+            if !matches!(url.scheme(), "https" | "http")
+                || url.origin().ascii_serialization() != *origin
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
         if let Some(identity) = &metadata.active {
             identity.validate()?;
+            if metadata
+                .selected_server_origin
+                .as_ref()
+                .is_some_and(|origin| *origin != identity.server_origin)
+            {
+                return Err(EndpointError::Invalid);
+            }
             let prefix = Self::account_prefix(identity, metadata.generation);
             if metadata
                 .credential_accounts
@@ -174,6 +198,20 @@ impl StateStore {
             }
         } else if !metadata.credential_accounts.is_empty() {
             return Err(EndpointError::Invalid);
+        }
+        if let Some(head) = &metadata.cache_head_account {
+            let identity = metadata.active.as_ref().ok_or(EndpointError::Invalid)?;
+            let prefix = format!(
+                "{}cache-head:",
+                Self::account_prefix(identity, metadata.generation)
+            );
+            if head
+                .strip_prefix(&prefix)
+                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
+                || !metadata.credential_accounts.contains(head)
+            {
+                return Err(EndpointError::Invalid);
+            }
         }
         if metadata.pending_cleanup.len() > 16 {
             return Err(EndpointError::Invalid);
@@ -197,6 +235,9 @@ impl StateStore {
     }
     pub fn write(&self, metadata: &Metadata) -> Result<()> {
         let bytes = serde_json::to_vec(metadata).map_err(|_| EndpointError::Invalid)?;
+        if bytes.len() > 65536 {
+            return Err(EndpointError::Storage);
+        }
         self.atomic_write("identity.json", &bytes)
     }
     /// Caller holds locked(); cache group may reuse this for protected ciphertext.
@@ -257,6 +298,8 @@ impl StateStore {
                 accounts: std::mem::take(&mut metadata.credential_accounts),
             });
         }
+        metadata.cache_head_account = None;
+        metadata.cache_publication_pending = false;
         metadata.generation = Uuid::new_v4();
         self.write(metadata)?;
         let cache = self.root.join("snapshot.enc");

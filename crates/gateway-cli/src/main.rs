@@ -1,10 +1,13 @@
 use clap::{Parser, Subcommand};
 use gateway_cli::{
+    cache::SnapshotCache,
     central::CentralClient,
+    clock::NativeClock,
     credentials::MacKeychain,
     management::{ManagementState, router},
     session::SessionManager,
     store::StateStore,
+    sync::{NativeTransport, SyncEngine},
 };
 use std::sync::Arc;
 
@@ -56,7 +59,14 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
     match Args::parse().command {
-        Command::Status => println!("{}", serde_json::to_string(&manager(false)?.status()?)?),
+        Command::Status => {
+            let sessions = manager(false)?;
+            let engine = SyncEngine::new(
+                SnapshotCache::new(sessions, Arc::new(NativeClock::new()?)),
+                Arc::new(NativeTransport),
+            );
+            println!("{}", serde_json::to_string(&engine.status()?)?);
+        }
         Command::Mcp => {
             // P4 provides aggregation. No stdin interaction or browser opening, including cold startup.
             anyhow::bail!(
@@ -73,22 +83,30 @@ async fn main() -> anyhow::Result<()> {
             let central = CentralClient::new(&server, allow_fixture_http)?;
             let listener =
                 tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).await?;
-            let state = ManagementState::new(
-                manager(allow_fixture_http)?,
-                central,
-                listener.local_addr()?,
-                None,
-            )?;
+            let sessions = manager(allow_fixture_http)?.select_server(&central).await?;
+            let engine = SyncEngine::new(
+                SnapshotCache::new(sessions.clone(), Arc::new(NativeClock::new()?)),
+                Arc::new(NativeTransport),
+            );
+            let state = ManagementState::new(sessions, central, listener.local_addr()?, None)?
+                .with_sync(engine.clone())?;
             let url = format!("{}/", state.origin());
             eprintln!("Local management: {url}");
             if !no_open {
                 open_browser(&url).await?;
             }
-            axum::serve(listener, router(state))
+            let (stop, stopped) = tokio::sync::watch::channel(false);
+            let sync_task = tokio::spawn(async move {
+                engine.run(stopped).await;
+            });
+            let serving = axum::serve(listener, router(state))
                 .with_graceful_shutdown(async {
                     let _ = tokio::signal::ctrl_c().await;
                 })
-                .await?;
+                .await;
+            let _ = stop.send(true);
+            sync_task.abort();
+            serving?;
         }
     }
     Ok(())

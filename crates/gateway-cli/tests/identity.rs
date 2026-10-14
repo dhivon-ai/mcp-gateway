@@ -4,10 +4,12 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
+#[cfg(target_os = "macos")]
+use gateway_cli::credentials::MacKeychain;
 use gateway_cli::{
     EndpointError,
     central::CentralClient,
-    credentials::{CredentialKind, CredentialStore, MacKeychain},
+    credentials::{CredentialKind, CredentialStore},
     epoch,
     session::SessionManager,
     store::{StateStore, check_private},
@@ -695,69 +697,80 @@ async fn management_host_origin_local_cookie_csrf_callback_and_redaction() {
 
 #[tokio::test]
 async fn in_flight_login_cannot_resurrect_logout() {
-    let f = Fixture::new(Arc::new(Memory::default()));
-    let entered = Arc::new(tokio::sync::Notify::new());
-    let release = Arc::new(tokio::sync::Notify::new());
-    let revoked = Arc::new(AtomicU16::new(0));
-    let entered_handler = entered.clone();
-    let release_handler = release.clone();
-    let revoked_handler = revoked.clone();
-    let app = Router::new()
-        .route(
-            "/api/endpoint/login",
-            post(move || {
-                let entered = entered_handler.clone();
-                let release = release_handler.clone();
-                async move {
-                    entered.notify_one();
-                    release.notified().await;
-                    axum::Json(EndpointSession {
-                        token: "stale-central-session".into(),
-                        user: UserInfo {
-                            id: Uuid::new_v4().to_string(),
-                            username: "alice".into(),
-                            role: Role::User,
-                            active: true,
-                        },
-                        deployment_id: Uuid::new_v4().to_string(),
-                        expires_at: epoch().expect("clock") + 43200,
-                    })
-                }
-            }),
+    for selecting_other_server in [false, true] {
+        let f = Fixture::new(Arc::new(Memory::default()));
+        let entered = Arc::new(tokio::sync::Notify::new());
+        let release = Arc::new(tokio::sync::Notify::new());
+        let revoked = Arc::new(AtomicU16::new(0));
+        let entered_handler = entered.clone();
+        let release_handler = release.clone();
+        let revoked_handler = revoked.clone();
+        let app = Router::new()
+            .route(
+                "/api/endpoint/login",
+                post(move || {
+                    let entered = entered_handler.clone();
+                    let release = release_handler.clone();
+                    async move {
+                        entered.notify_one();
+                        release.notified().await;
+                        axum::Json(EndpointSession {
+                            token: "stale-central-session".into(),
+                            user: UserInfo {
+                                id: Uuid::new_v4().to_string(),
+                                username: "alice".into(),
+                                role: Role::User,
+                                active: true,
+                            },
+                            deployment_id: Uuid::new_v4().to_string(),
+                            expires_at: epoch().expect("clock") + 43200,
+                        })
+                    }
+                }),
+            )
+            .route(
+                "/api/auth/logout",
+                post(move || {
+                    let revoked = revoked_handler.clone();
+                    async move {
+                        revoked.fetch_add(1, Ordering::Relaxed);
+                        StatusCode::NO_CONTENT
+                    }
+                }),
+            );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("listener");
+        let client = CentralClient::new(
+            &format!("http://{}", listener.local_addr().expect("address")),
+            true,
         )
-        .route(
-            "/api/auth/logout",
-            post(move || {
-                let revoked = revoked_handler.clone();
-                async move {
-                    revoked.fetch_add(1, Ordering::Relaxed);
-                    StatusCode::NO_CONTENT
-                }
-            }),
-        );
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("listener");
-    let client = CentralClient::new(
-        &format!("http://{}", listener.local_addr().expect("address")),
-        true,
-    )
-    .expect("fixture client");
-    let server = tokio::spawn(async move {
-        axum::serve(listener, app).await.expect("server");
-    });
-    let manager = f.manager.clone();
-    let pending = tokio::spawn(async move { manager.login(&client, login("alice")).await });
-    entered.notified().await;
-    f.manager.logout().await.expect("logout during login");
-    release.notify_one();
-    assert!(matches!(
-        pending.await.expect("login task"),
-        Err(EndpointError::IdentityChanged)
-    ));
-    assert_eq!(f.manager.status().expect("status").state, "login_required");
-    assert_eq!(revoked.load(Ordering::Relaxed), 1);
-    server.abort();
+        .expect("fixture client");
+        let server = tokio::spawn(async move {
+            axum::serve(listener, app).await.expect("server");
+        });
+        let manager = f.manager.clone();
+        let pending = tokio::spawn(async move { manager.login(&client, login("alice")).await });
+        entered.notified().await;
+        if selecting_other_server {
+            let new_server =
+                CentralClient::new("http://127.0.0.1:2", true).expect("other configured origin");
+            f.manager
+                .select_server(&new_server)
+                .await
+                .expect("select other origin during login");
+        } else {
+            f.manager.logout().await.expect("logout during login");
+        }
+        release.notify_one();
+        assert!(matches!(
+            pending.await.expect("login task"),
+            Err(EndpointError::IdentityChanged)
+        ));
+        assert_eq!(f.manager.status().expect("status").state, "login_required");
+        assert_eq!(revoked.load(Ordering::Relaxed), 1);
+        server.abort();
+    }
 }
 
 #[test]
@@ -926,4 +939,144 @@ async fn real_cli_loopback_development_page_and_clean_stdio() {
     assert!(status.status.success());
     assert!(String::from_utf8_lossy(&status.stdout).contains("login_required"));
     std::fs::remove_dir_all(fixture_home).expect("clean fixture home");
+}
+
+#[tokio::test]
+async fn configured_server_selection_preserves_same_origin_and_isolates_other_ui() {
+    use gateway_cli::management::{ManagementState, router};
+    let credentials = Arc::new(Memory::default());
+    let f = Fixture::new(credentials.clone());
+    let old = server().await;
+    let new = server().await;
+    let old_sessions = f
+        .manager
+        .select_server(&old.client)
+        .await
+        .expect("old startup selection");
+    old_sessions
+        .login(&old.client, login("alice"))
+        .await
+        .expect("old login");
+    let first = old_sessions.load().expect("old session");
+    let owned = old_sessions
+        .save_credential(
+            first.metadata.generation,
+            CredentialKind::Upstream {
+                mcp_id: Uuid::new_v4(),
+                version: 1,
+            },
+            b"private-old-origin-token",
+        )
+        .expect("old credential");
+    f.manager
+        .store
+        .locked(|_| {
+            f.manager
+                .store
+                .atomic_write("snapshot.enc", b"old-origin-owned-cache-fixture")
+        })
+        .expect("old cache fixture");
+    let same = f
+        .manager
+        .select_server(&old.client)
+        .await
+        .expect("same origin startup");
+    assert_eq!(
+        same.load().expect("preserved session").metadata.generation,
+        first.metadata.generation
+    );
+    assert!(f.root.join("snapshot.enc").exists());
+    assert!(
+        credentials
+            .get(&owned)
+            .expect("preserved credential")
+            .is_some()
+    );
+    assert_eq!(old.state.revoked.load(Ordering::Relaxed), 0);
+    let old_app = router(
+        ManagementState::new(
+            old_sessions.clone(),
+            old.client.clone(),
+            "127.0.0.1:18125".parse().expect("address"),
+            None,
+        )
+        .expect("old management"),
+    );
+    let (_, headers, _) =
+        local_request(&old_app, "GET", "/", &[("host", "127.0.0.1:18125")], "").await;
+    let cookie = headers["set-cookie"]
+        .to_str()
+        .expect("cookie")
+        .split(';')
+        .next()
+        .expect("cookie pair");
+    let selected = f
+        .manager
+        .select_server(&new.client)
+        .await
+        .expect("explicit new origin startup");
+    assert!(matches!(selected.load(), Err(EndpointError::LoginRequired)));
+    assert!(matches!(
+        old_sessions.load(),
+        Err(EndpointError::ServerMismatch)
+    ));
+    assert!(!f.root.join("snapshot.enc").exists());
+    assert!(
+        credentials
+            .get(&owned)
+            .expect("old credential retired")
+            .is_none()
+    );
+    assert_eq!(old.state.revoked.load(Ordering::Relaxed), 1);
+    selected
+        .login(&new.client, login("bob"))
+        .await
+        .expect("new login");
+    let current = selected.load().expect("new active identity");
+    let before = std::fs::read(f.root.join("identity.json")).expect("current metadata");
+    let (code, _, context) = local_request(
+        &old_app,
+        "GET",
+        "/api/context",
+        &[("host", "127.0.0.1:18125"), ("cookie", cookie)],
+        "",
+    )
+    .await;
+    assert_eq!(code, StatusCode::OK);
+    let context: serde_json::Value = serde_json::from_str(&context).expect("context");
+    assert_eq!(context["status"]["state"], "server_mismatch");
+    assert_eq!(context["serverUrl"], old.client.origin());
+    assert!(context["status"]["identity"].is_null());
+    assert!(matches!(
+        old_sessions
+            .request(reqwest::Method::GET, "/api/config", None)
+            .await,
+        Err(EndpointError::ServerMismatch)
+    ));
+    assert!(matches!(
+        old_sessions.logout().await,
+        Err(EndpointError::ServerMismatch)
+    ));
+    assert_eq!(
+        std::fs::read(f.root.join("identity.json")).expect("read-only older UI"),
+        before
+    );
+    assert_eq!(
+        selected
+            .load()
+            .expect("new identity unaffected")
+            .metadata
+            .generation,
+        current.metadata.generation
+    );
+    assert_eq!(new.state.revoked.load(Ordering::Relaxed), 0);
+    old_sessions
+        .login(&old.client, login("alice"))
+        .await
+        .expect("explicit old UI login may select old server");
+    assert_eq!(new.state.revoked.load(Ordering::Relaxed), 1);
+    assert!(matches!(
+        selected.load(),
+        Err(EndpointError::ServerMismatch)
+    ));
 }

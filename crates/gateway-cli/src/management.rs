@@ -34,6 +34,7 @@ pub struct EmbeddedAsset {
 pub struct ManagementState {
     pub sessions: SessionManager,
     pub central: CentralClient,
+    pub sync: Option<crate::sync::SyncEngine>,
     authority: String,
     cookie_name: String,
     origin: String,
@@ -56,14 +57,25 @@ impl ManagementState {
         }
         let authority = address.to_string();
         Ok(Self {
-            sessions,
+            sessions: sessions.for_server(&central),
             central,
+            sync: None,
             origin: format!("http://{authority}"),
             authority,
             cookie_name: format!("gateway_local_{}", address.port()),
             browser_sessions: Arc::new(Mutex::new(HashMap::new())),
             assets,
         })
+    }
+    pub fn with_sync(mut self, sync: crate::sync::SyncEngine) -> Result<Self> {
+        if sync.cache.sessions.store.root() != self.sessions.store.root() {
+            return Err(EndpointError::Invalid);
+        }
+        if !sync.cache.sessions.is_selected_for(&self.central) {
+            return Err(EndpointError::ServerMismatch);
+        }
+        self.sync = Some(sync);
+        Ok(self)
     }
     pub fn origin(&self) -> &str {
         &self.origin
@@ -83,6 +95,7 @@ fn error(e: EndpointError) -> Response {
         }
         EndpointError::Offline => (StatusCode::SERVICE_UNAVAILABLE, "offline"),
         EndpointError::IdentityChanged => (StatusCode::CONFLICT, "identity_changed"),
+        EndpointError::ServerMismatch => (StatusCode::CONFLICT, "server_mismatch"),
         EndpointError::Invalid => (StatusCode::BAD_REQUEST, "invalid_request"),
         _ => (StatusCode::SERVICE_UNAVAILABLE, "endpoint_unavailable"),
     };
@@ -214,8 +227,15 @@ async fn page(State(state): State<ManagementState>) -> Response {
     .await;
     result.unwrap_or_else(error)
 }
+fn redacted_status(state: &ManagementState) -> Result<serde_json::Value> {
+    let status = match &state.sync {
+        Some(sync) => serde_json::to_value(sync.status()?),
+        None => serde_json::to_value(state.sessions.status()?),
+    };
+    status.map_err(|_| EndpointError::Invalid)
+}
 async fn context(State(state): State<ManagementState>, headers: HeaderMap) -> Response {
-    match state.sessions.status() {
+    match redacted_status(&state) {
         Ok(status) => {
             let sessions = state.browser_sessions.lock().await;
             let csrf = cookie(&headers, &state.cookie_name)
@@ -228,7 +248,7 @@ async fn context(State(state): State<ManagementState>, headers: HeaderMap) -> Re
     }
 }
 async fn status(State(state): State<ManagementState>) -> Response {
-    match state.sessions.status() {
+    match redacted_status(&state) {
         Ok(s) => axum::Json(s).into_response(),
         Err(e) => error(e),
     }
@@ -251,7 +271,12 @@ async fn login(State(state): State<ManagementState>, request: Request) -> Respon
         Err(_) => return error(EndpointError::Invalid),
     };
     match state.sessions.login(&state.central, input).await {
-        Ok(()) => status(State(state)).await,
+        Ok(()) => {
+            if let Some(sync) = &state.sync {
+                let _ = sync.refresh().await;
+            }
+            status(State(state)).await
+        }
         Err(e) => error(e),
     }
 }
