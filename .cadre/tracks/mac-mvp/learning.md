@@ -315,3 +315,84 @@ Canonical source/artifact identity checks with reused unchanged verification are
 
 - Product/canonical head:4469f1aaba87f2f1d447900da28afc2a78bfe860. All implementation nodes complete; phase/workers removed.
 - Human verification: not performed or claimed. Actual automated evidence authorized by persisted policy-v2 Autonomous; implementation bookkeeping then autonomous review/remediation and one explicit final completion decision remain.
+
+## Phase 10: Bounded endpoint credential metadata
+
+### Inputs read
+
+Complete current approved project/spec/plan and preserved P1–P9 learning, BUG-001, native metadata/credential/cache/session code and tests. Original pattern catalog remains empty. Main executes directly; no worker/worktree required for this focused change.
+
+### Task observations
+
+- T10.1: `798b0fb` centralizes metadata schema/ownership/pointer/count validation for reads and writes, preflights new credential head/pending capacity before journaling or Keychain effects, and exposes actionable bounded-capacity recovery.
+- Full CLI tests:61 passed plus one intentional Mac subprocess helper marker invoked by its parent. Eight native credential tests include128/129 sequential MCPs with one assigned at a time, preserved identity/cache/session/existing-credential revalidation and complete logout cleanup. Actual Mac Keychain/cache restart, four-auth-mode CLI41.49s, management39.03s and identity/protocol suites pass. All-target Clippy-Dwarnings/fmt/diff pass.
+
+### Decisions and corrections
+
+- Keep bounded128 head identities per login generation, including retired MCP identities; do not weaken reader bounds or protected rollback/publication/token-anchor fences. Existing head updates remain available at capacity; logout and online sign-in clear retired generation state. Ordinary metadata never gains token values.
+- Shared writer validation rejects malformed publication before replacing valid durable bytes. Raw attack replay tests must bypass the normal writer; the existing fixture now asserts write rejection then tampers directly, preserving the negative security test.
+- Initial move left three multiline metadata identifiers; compiler caught these and they were corrected before verification. Reused original execution-owned Cargo/assets to avoid duplicating20GiB build dependencies; current execution owns test logs. No production credentials touched.
+
+### Phase completion
+
+- Product/canonical commit:798b0fb; actual automated phase verification is authorized by persisted policy-v2 Autonomous. No human verification or approval claimed.
+
+## Phase 11: Consistent administrator state and lossless catalog editing
+
+### Inputs read
+
+Full approved current spec/plan/project guidance, P9 evidence and BUG-002/003/004, relevant central transaction/identity/catalog contracts and browser/native UI/callers/tests. React/shadcn/testing skills and current official Field/Textarea documentation were applied. Main executes directly with no workers/worktrees.
+
+### Task observations
+
+- T11.1/T11.2 deliver shared Rust-compatible UTF-8 name/environment bounds, lossless JSON command editing and consistent revision-bracketed admin reads for both initial and post-save loading. Long title overflow found in actual browser was fixed with shared visual truncation/full accessible name.
+- Final34 frontend tests/strictTS/lint/format/production/embedded builds pass. Boundary data includes valid200-byte ASCII/Unicode names and129-byte environment keys, invalid overlimits, literal empty/multiline runtime/install arrays/maps and explicit edits. Deterministic initial group/account races and post-confirmation race/network failures deny mixed read sets and never replay a mutation.
+- Actual macOS27.0.1 arm64 compiled Rust websites/IAB at1584x993 and390x844: admin login, long catalog/editor, policy-only save with backend byte-exact command witness, invalidJSON feedback/valid explicit save, second-admin member removal/stale409/explicit reload retaining removal, Escape/focus and no page overflow; native login/long catalog/manage/confirmed enable-disable/refresh/logout pass. No relevant console errors/overlay; screenshots retained outside repository.
+
+### Decisions and corrections
+
+- Both identity arrays must belong to the global revision used by editors. Configuration reads bracket parallel identity/group reads; mismatch fails explicitly, without automatic write replay. Server lock/repeatable-read behavior and every relevant bump were checked. Preserve frozen revisions and saved-but-followup-read-failed semantics.
+- JSON arrays and string maps keep literal values rather than newline joining/splitting. Browser limits count UTF-8 bytes; no existing server data contract tightened. Truncated headings retain full accessible names and visible close controls.
+- Browser plugin unavailable; package Playwright exists but its browser binary is absent. Existing CUA in-app browser was used without dependency installation. Exact viewport CDP screenshots corrected scaled capture artifacts. One interrupted fixture was recovered only by exact PID absence/creatingCLI logout/empty journals/owned DB witnesses. Final fixtures cleaned their Keychain/native state, child PIDs, unique databases/files; QA tabs closed and viewport reset. Production selection untouched.
+
+### Phase completion
+
+- Current browser group product/canonical commit recorded in execution journal. Human verification not performed or claimed; actual automated/browser evidence is authorized by original persisted policy-v2 Autonomous authority. P12/P13 and cumulative clean review remain.
+
+## Phase 12: Rebuilt and verified MVP artifacts
+
+### Inputs read
+
+Complete approved current scope/plan/project guidance, declared P10/P11 fixes/learning and P1–P9 cumulative acceptance evidence; current package/deploy/restore/client test and runbook source. Main executed direct canonical verification without workers/worktrees. No production DSN, provider, account, signing identity or agent configuration was accepted.
+
+### Task observations
+
+- T12.1 rebuilds the reviewed service image and arm64 embedded archive, updates acceptance/release/design/Mac/compatibility runbooks and records current artifact identities. All original AC001–012 and four regression witnesses are covered.
+- Final workspace83 Rust tests pass;9 intentional ignored markers comprise the Mac child invoked by its parent and8 DB tests separately executed. All8 realPG tests pass, including actual SDK/MacKeychain OAuth71.49s. Frontend34 tests, workspaceClippy-Dwarnings/fmt/build, generatedcontracts, strictTS/lint/format and production builds pass.
+- Actual final extracted archive officialrmcp client suite38.48s passes local+none/bearer/OAuth remote, sameMac updates, cold valid-cache offline restart/reconnect, protocol-only stdout and signals/owned descendant cleanup. Fresh Linuxarm64 Compose→packagedMac compiledUI login/explicit install/enable→Node childprocess Unixsocketpair oneSTDIO exacttool call→confirmeddisable rejection/creatingbinaryKeychain cleanup passes.
+- Fresh migrations/health/assets/defaultdeny/roles/vault, restart durability, pg_dump/freshpg_restore, copied-session401, independentwrong-key503/matchingkeyrecover and log redaction pass. Both owned stacks/volumes/private native directories removed. Sole canonical main, no stashes/worktrees and no active generated fixtures verified.
+
+### Decisions and corrections
+
+- Final archiveSHA256:1f35a72c4438e283fe039e65c0b338af858a0fa8b8e87896a2119691030a7349; local serviceimageID:sha256:2bee0c4125c011e7a619c7aa29144a8f9c3c4b02360b84010bd1a9e433c0ba21. Native binary and packaged README/COMPATIBILITY exactly match current source/build. Mach-Oarm64 min27.0.1/system dependencies inspected. Service and Mac build have identical production asset filenames.
+- Current execution owns archive/assets/logs and extracted rehearsal output; original owned Cargo target is reused for dependencies. Compiled P11 browser/source bytes are unchanged, so its real login/commands/long-data/409-reload/confirmedsettings/keyboard/desktop/mobile/console evidence is reused. No additional code change followed those checks.
+- docs/release.md and acceptance map now name83Rust/8PG/34frontend and all four review fixes. Original OS/provider/agent/CI/signing/SAML/SaaS limits remain explicit. No new failure or external/human-only verification requirement occurred.
+
+### Phase completion
+
+- Product/canonical head:b3ea6ab. Actual automated P12 evidence is authorized by original policy-v2 Autonomous; no human verification or approval claimed. P13 canonical verification, implementation bookkeeping and cumulative review remain.
+
+## Phase 13: Track-level User Manual Verification
+
+### Inputs read
+
+Complete approved scope/plan/project guidance, P1–P12 learning and current execution handoffs; canonical product/artifact/log identity and initial review findings. Full scoped context is ready with no stale memory.
+
+### Task observations
+
+- T13.1 verifies integrated b3ea6ab52ce58249946831d67cba30106cbd8f90. Reused unchanged83 workspaceRust/8 realPG/34 frontend checks, actual compiled-browser evidence, final archive official client38.48s and disposable deployment-to-Mac-to-Node/restart/freshrestore/keyrecovery proofs. Source/artifact bytes and checksums match; no generated fixtures/worktrees/stashes remain.
+- Separate review follow-up is confirmed: generic browser array10000 cap rejects valid10001 assignments/users/groups even though these backend collections have no such row cap. Actual source decoder probe accepts10000 and rejects10001 for all three. This recurs under stable finding catalog-decoder-contract-bounds; prior string-bound fixes remain verified. No clean completion is claimed; append remediation after execution bookkeeping and cumulative review.
+
+### Decisions and phase completion
+
+- Record actual available verification under original persisted policy-v2 Autonomous, separately from final human completion approval. Preserve completed phase identities/history; never reopen P10/P11 to hide the newly found contract gap. Current product head remains b3ea6ab52ce58249946831d67cba30106cbd8f90.
