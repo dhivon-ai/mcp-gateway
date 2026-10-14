@@ -245,19 +245,29 @@ pub async fn context(
     State(state): State<AppState>,
     headers: HeaderMap,
 ) -> Result<Response, AppError> {
-    if headers.contains_key(header::AUTHORIZATION) || cookie(&headers, "gateway_session").is_some()
-    {
+    if headers.contains_key(header::AUTHORIZATION) {
         return Ok(Json(ui_context(
             &state,
             authenticate(&state, &headers, false).await?,
         ))
         .into_response());
     }
+    let stale_cookie = cookie(&headers, "gateway_session").is_some();
+    if stale_cookie {
+        match authenticate(&state, &headers, false).await {
+            Ok(principal) => return Ok(Json(ui_context(&state, principal)).into_response()),
+            Err(error) if error.status == StatusCode::UNAUTHORIZED => {}
+            Err(error) => return Err(error),
+        }
+    }
     let token = cookie(&headers, "gateway_preauth").unwrap_or_else(opaque);
     let mut ctx = empty_context(&state);
     ctx.csrf_token = Some(token.clone());
     let mut response = Json(ctx).into_response();
     set_cookie(&mut response, &state, "gateway_preauth", &token, 600)?;
+    if stale_cookie {
+        set_cookie(&mut response, &state, "gateway_session", "", 0)?;
+    }
     Ok(response)
 }
 async fn throttle(

@@ -14,6 +14,41 @@ const status = (value: unknown): string => {
 };
 
 describe("API boundary", () => {
+  it("accepts confirmed 204 responses and preserves a validated conflict revision", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce(new Response(null, { status: 204 }))
+        .mockResolvedValueOnce(
+          new Response(
+            JSON.stringify({
+              code: "conflict",
+              message: "Current state changed.",
+              revision: 7,
+            }),
+            { status: 409 },
+          ),
+        ),
+    );
+    expect(
+      await apiRequest(
+        "/api/auth/logout",
+        (value) => {
+          if (value !== null) throw new Error("not empty");
+          return null;
+        },
+        { method: "POST", csrfToken: "challenge" },
+      ),
+    ).toBeNull();
+    await expect(
+      apiRequest("/api/admin/mcps", status, {
+        method: "POST",
+        csrfToken: "challenge",
+        body: {},
+      }),
+    ).rejects.toMatchObject({ code: "conflict", revision: 7, status: 409 });
+  });
   it("decodes responses and keeps session transport same-origin", async () => {
     const fetch = vi.fn().mockResolvedValue(new Response('{"status":"ok"}'));
     vi.stubGlobal("fetch", fetch);

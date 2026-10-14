@@ -20,6 +20,7 @@ export class ApiFailure extends Error {
     public readonly code: ErrorCode,
     message: string,
     public readonly status: number,
+    public readonly revision: number | null = null,
   ) {
     super(message);
     this.name = "ApiFailure";
@@ -37,7 +38,20 @@ function serverFailure(value: unknown, status: number): ApiFailure {
     typeof value.message === "string" &&
     value.message.length <= 512
   ) {
-    return new ApiFailure(value.code as ErrorCode, value.message, status);
+    const revision =
+      "revision" in value &&
+      typeof value.revision === "number" &&
+      Number.isInteger(value.revision) &&
+      value.revision >= 0 &&
+      value.revision <= 4294967295
+        ? value.revision
+        : null;
+    return new ApiFailure(
+      value.code as ErrorCode,
+      value.message,
+      status,
+      revision,
+    );
   }
   return new ApiFailure(
     "internal",
@@ -57,7 +71,11 @@ export async function apiRequest<T>(
     signal?: AbortSignal;
   } = {},
 ): Promise<T> {
-  if (!path.startsWith("/api/") || path.includes("://") || path.includes("#")) {
+  if (
+    !path.startsWith("/api/") ||
+    /[:#\\\\]/.test(path) ||
+    path.includes("..")
+  ) {
     throw new ApiFailure(
       "invalid_request",
       "Only application API paths are permitted.",
@@ -78,7 +96,9 @@ export async function apiRequest<T>(
       method,
       credentials: "same-origin",
       redirect: "error",
-      signal: options.signal,
+      signal: options.signal
+        ? AbortSignal.any([options.signal, AbortSignal.timeout(10_000)])
+        : AbortSignal.timeout(10_000),
       headers: {
         "Content-Type": "application/json",
         ...(options.csrfToken ? { "X-CSRF-Token": options.csrfToken } : {}),
@@ -95,7 +115,7 @@ export async function apiRequest<T>(
   }
   let value: unknown;
   try {
-    value = await response.json();
+    value = response.status === 204 ? null : await response.json();
   } catch {
     throw new ApiFailure(
       "internal",

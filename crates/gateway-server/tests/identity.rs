@@ -366,6 +366,40 @@ async fn browser_security_redaction_and_throttling() {
         .0,
         204
     );
+    // A revoked browser cookie must recover a fresh login challenge without waiting twelve hours.
+    let (code, fresh_headers, fresh_context) = h
+        .custom("GET", "/api/context", None, None, &[("cookie", session)])
+        .await;
+    assert_eq!(code, 200);
+    assert!(fresh_context["user"].is_null());
+    let fresh_csrf = fresh_context["csrfToken"]
+        .as_str()
+        .expect("fresh preauth challenge");
+    let fresh_preauth = fresh_headers
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|h| h.to_str().ok())
+        .find(|s| s.starts_with("gateway_preauth="))
+        .expect("preauth cookie")
+        .split(';')
+        .next()
+        .expect("pair");
+    assert!(fresh_headers.get_all("set-cookie").iter().any(|h| {
+        h.to_str()
+            .is_ok_and(|s| s.starts_with("gateway_session=;") && s.contains("Max-Age=0"))
+    }));
+    assert_eq!(
+        h.custom(
+            "POST",
+            "/api/auth/login",
+            None,
+            Some(json!({"username":"admin","password":PASSWORD})),
+            &[("cookie", fresh_preauth), ("x-csrf-token", fresh_csrf)]
+        )
+        .await
+        .0,
+        200
+    );
     assert_eq!(
         h.custom(
             "GET",

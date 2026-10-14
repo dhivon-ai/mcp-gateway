@@ -17,6 +17,7 @@ use std::{
 use tokio::sync::{Mutex, Semaphore};
 use uuid::Uuid;
 
+pub mod assets;
 pub mod configuration;
 pub mod identity;
 pub mod vault;
@@ -220,6 +221,16 @@ async fn origin_guard(State(state): State<AppState>, request: Request, next: Nex
         "cache-control",
         axum::http::HeaderValue::from_static("no-store"),
     );
+    response.headers_mut().insert(
+        "x-content-type-options",
+        axum::http::HeaderValue::from_static("nosniff"),
+    );
+    response.headers_mut().insert(
+        "referrer-policy",
+        axum::http::HeaderValue::from_static("no-referrer"),
+    );
+    // Radix positions its accessible controls using inline styles; scripts remain same-origin only.
+    response.headers_mut().insert("content-security-policy", axum::http::HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"));
     response
 }
 async fn health(State(state): State<AppState>) -> Result<Json<serde_json::Value>, AppError> {
@@ -228,6 +239,8 @@ async fn health(State(state): State<AppState>) -> Result<Json<serde_json::Value>
 }
 pub fn router(state: AppState) -> Router {
     Router::new()
+        .route("/", get(assets::index))
+        .route("/assets/{*path}", get(assets::asset))
         .route("/healthz", get(health))
         .route("/api/context", get(identity::context))
         .route("/api/auth/login", post(identity::browser_login))
