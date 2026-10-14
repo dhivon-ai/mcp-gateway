@@ -734,12 +734,18 @@ fn message(state: &InstallState) -> &'static str {
         InstallState::Failed => {
             "Installation failed; output is private; rerun only by explicit request"
         }
-        InstallState::Cancelled => "Installation cancelled; MCP remains disabled",
-        InstallState::Expired => {
-            "Installation authorization or time limit expired; MCP remains disabled"
+        InstallState::Cancelled => {
+            "Installation cancelled; no automatic enablement was attempted; review current configuration"
         }
-        InstallState::Revoked => "Installation authorization changed; MCP remains disabled",
-        InstallState::InstalledDisabled => "Installed locally; MCP remains disabled",
+        InstallState::Expired => {
+            "Installation authorization or time limit expired; no automatic enablement was attempted; review current configuration"
+        }
+        InstallState::Revoked => {
+            "Installation authorization changed; no automatic enablement was attempted; review current configuration"
+        }
+        InstallState::InstalledDisabled => {
+            "Installed locally; no automatic enablement was attempted; review current configuration"
+        }
         InstallState::Enabled => "Installed and central enablement confirmed",
         InstallState::Interrupted => {
             "Installation outcome uncertain; rerun only by explicit request"

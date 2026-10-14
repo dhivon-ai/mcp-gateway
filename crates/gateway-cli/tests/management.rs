@@ -1147,6 +1147,60 @@ async fn actual_mac_cancel_expiry_revocation_clock_failure_and_timeout_remain_di
 
 #[cfg(target_os = "macos")]
 #[tokio::test]
+async fn concurrent_client_enablement_is_not_overruled_by_install_receipt() {
+    let files = OwnedFiles::new();
+    let marker = files.path("concurrent-client");
+    let f = Fixture::new(tree_command(marker.clone(), None)).await;
+    let generation = f.generation();
+    let started = f
+        .installs
+        .start(&generation, "fixture-mcp", install_input(true))
+        .await
+        .expect("explicit install");
+    let pids = read_pids(&marker).await;
+    // A second management client confirms enablement while the installer is running.
+    let another_client = ControlBridge::new(f.sync.clone());
+    let confirmed = another_client
+        .settings(&generation, "fixture-mcp", f.settings(true))
+        .await
+        .expect("concurrent central enable");
+    assert!(confirmed.mcps[0].enabled);
+    let progress = f.finish(&generation, &started.id).await;
+    assert_gone(&pids).await;
+    assert_eq!(progress.state, InstallState::Revoked);
+    assert!(
+        progress
+            .message
+            .contains("no automatic enablement was attempted")
+    );
+    assert!(!progress.message.contains("remains disabled"));
+    assert_eq!(f.central.mutations.load(Ordering::Relaxed), 1);
+    assert!(
+        f.installs
+            .catalog(&generation)
+            .expect("current catalog")
+            .mcps[0]
+            .enabled
+    );
+    let restarted = InstallManager::new(f.installs.bridge.clone());
+    assert_eq!(
+        restarted
+            .progress(&generation, &started.id)
+            .expect("durable receipt")
+            .message,
+        progress.message
+    );
+    assert!(
+        restarted
+            .catalog(&generation)
+            .expect("current catalog")
+            .mcps[0]
+            .enabled
+    );
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
 async fn actual_mac_failed_install_and_missing_program_have_fixed_actionable_progress() {
     for (command, expected_message) in [
         (
