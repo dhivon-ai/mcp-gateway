@@ -6,11 +6,11 @@ Never overwrite an earlier phase. Each phase begins by reading the learning of e
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":2,"patterns":[]}
+{"schemaVersion":1,"specRevision":1,"planRevision":3,"patterns":[]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 1
-- Plan revision: 2
+- Plan revision: 3
 
 | Pattern | Relevance to this track | Constraints to carry forward |
 | --- | --- | --- |
@@ -18,6 +18,8 @@ Never overwrite an earlier phase. Each phase begins by reading the learning of e
 No existing pattern applies: `.cadre/patterns/index.md` is an empty approved catalog and contains no pattern records. No active/archived delivery tracks exist. The empty memory array records that inspection, not missing research. Carry the approved product/guidelines/styleguides and this track's specification into execution context; do not invent reusable learning before implementation.
 
 - Review-cycle 1 reassessment: the approved pattern catalog remains empty. Append-only remediation P10–P13 preserves prior phase history and the unchanged specification. Carry the full P3/P5 identity/credential invariants and P6/P7 browser contracts into the new phases; findings are confirmed defects within those requirements. No dependency track or reusable pattern was introduced.
+
+- Review-cycle 2 reassessment: same empty approved catalog and unchanged specification. Preserve all P1–P13 history. P14 carries forward backend/frontend contract validation and P11 revision/command fixes; accept server-valid unbounded admin collections without weakening explicit bounded contracts. No dependency/pattern introduced.
 
 <!-- cadre:pattern-seed:end -->
 

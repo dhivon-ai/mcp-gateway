@@ -2,7 +2,7 @@
 
 - Track: `mac-mvp`
 - Spec revision: 1
-- Plan revision: 2
+- Plan revision: 3
 - Status: proposed
 
 ## Phase 1: Workspace and policy contracts
@@ -395,6 +395,41 @@ Verify the complete integrated MVP and remediation against the unchanged approve
 - [x] T13.1 User Manual Verification <!-- commit: b3ea6ab52ce58249946831d67cba30106cbd8f90 -->
 
 - Phase completion commit: `b3ea6ab52ce58249946831d67cba30106cbd8f90`
+
+## Phase 14: Complete administrator collection contract
+
+- Phase dependencies: P13
+
+### Outcome
+
+Valid administrator collections remain loadable beyond10,000 records while actual server-defined field and collection limits stay enforced (recurring BUG-002).
+
+- [ ] T14.1 Align collection decoding with backend contracts
+  - Task dependencies: none
+  - Commit group: admin-collection-contract
+  - Scope: Remove the arbitrary generic browser row cap from server-unbounded user/group/assignment collections. Keep explicit limits matching actually bounded contracts, including10,000 group members,512 MCPs and bounded commands/tools. Validate every element and preserve strict TypeScript, revision-bracketed reads and safe error handling. Add regression coverage for large valid read sets and malformed/over-limit bounded data; do not tighten valid backend data or expand scope into pagination/performance promises.
+  - Verification: Reproduce10,000/10,001 on current decoders, then accept valid larger assignment/user/group collections. Verify malformed late elements and actual bounded fields still reject. Confirm central collection constraints with source and real isolated PostgreSQL/API data; frontend behavioral/read-helper tests, strictTS/lint/format/build/contracts pass.
+  - Handoff: Exact aligned contracts, source/API/decoder evidence, preserved security/concurrency checks.
+- [ ] T14.2 Rebuild current artifacts and verify changed embedded assets
+  - Task dependencies: T14.1
+  - Commit group: collection-release
+  - Scope: Rebuild current service container and Apple Silicon embedded archive/checksum. Update acceptance/release documentation with current artifact identities and regression results. Run actual packaged Mac/client and disposable deployment-to-agent smoke for the changed embedded build; reuse unchanged Rust/security/database/restore and compiled-browser layout evidence only after source/input/policy checks. Clean owned fixtures and retain documented compatibility limits.
+  - Verification: Currentfrontend/embedded builds, archive checksum/source identity, actual packagedMac STDIO/Keychain and freshcontainer/Node one-entry journey pass. Existing83Rust/8PG/fullrestore checks may be reused only for unchanged relevant source; no publication/signing or production mutations.
+  - Handoff: Exact artifact hashes and validation/cleanup evidence.
+- [ ] T14.3 User Manual Verification
+  - Verification: Verify recurringBUG-002 and unchanged originalAC001–012 under persisted Autonomous authority; distinguish automated verification from human approval.
+
+- Phase completion commit: pending
+
+## Phase 15: Track-level User Manual Verification
+
+### Outcome
+
+Verify the complete canonical MVP and all remediation against unchanged scope before cumulative review and one explicit human completion decision.
+
+- [ ] T15.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 
