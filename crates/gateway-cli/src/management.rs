@@ -101,21 +101,8 @@ fn denied() -> Response {
         .into_response()
 }
 fn error(e: EndpointError) -> Response {
-    let (status, code) = match e {
-        EndpointError::Rejected | EndpointError::LoginRequired => {
-            (StatusCode::UNAUTHORIZED, "login_required")
-        }
-        EndpointError::Offline => (StatusCode::SERVICE_UNAVAILABLE, "offline"),
-        EndpointError::IdentityChanged => (StatusCode::CONFLICT, "identity_changed"),
-        EndpointError::ServerMismatch => (StatusCode::CONFLICT, "server_mismatch"),
-        EndpointError::Invalid => (StatusCode::BAD_REQUEST, "invalid_request"),
-        _ => (StatusCode::SERVICE_UNAVAILABLE, "endpoint_unavailable"),
-    };
-    (
-        status,
-        axum::Json(json!({"code":code,"message": e.to_string()})),
-    )
-        .into_response()
+    let error = crate::bridge::BridgeError::from(e);
+    (error.status, axum::Json(error.body)).into_response()
 }
 fn cookie<'a>(headers: &'a HeaderMap, name: &str) -> Option<&'a str> {
     let mut values = headers
@@ -196,7 +183,8 @@ async fn guard(State(state): State<ManagementState>, request: Request, next: Nex
     response
         .headers_mut()
         .insert("referrer-policy", HeaderValue::from_static("no-referrer"));
-    response.headers_mut().insert("content-security-policy", HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"));
+    // Radix positioning/focus uses inline style attributes; scripts remain same-origin only.
+    response.headers_mut().insert("content-security-policy", HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"));
     response
 }
 fn random() -> Result<String> {
@@ -225,7 +213,8 @@ async fn page(State(state): State<ManagementState>) -> Response {
             .assets
             .as_ref()
             .map_or(DEVELOPMENT_PAGE, |a| a.index_html.as_ref());
-        let mut response = Html(html.to_owned()).into_response();
+        let mut response =
+            Html(html.replacen("<html", "<html data-gateway-mode=\"local\"", 1)).into_response();
         response.headers_mut().insert(
             header::SET_COOKIE,
             HeaderValue::from_str(&format!(
@@ -253,7 +242,7 @@ async fn context(State(state): State<ManagementState>, headers: HeaderMap) -> Re
             let csrf = cookie(&headers, &state.cookie_name)
                 .and_then(|c| sessions.get(c))
                 .map(|s| s.csrf.clone());
-            axum::Json(json!({"status":status,"csrfToken":csrf,"serverUrl":state.central.origin()}))
+            axum::Json(json!({"mode":"local","status":status,"csrfToken":csrf,"serverUrl":state.central.origin()}))
                 .into_response()
         }
         Err(e) => error(e),
@@ -264,6 +253,20 @@ async fn status(State(state): State<ManagementState>) -> Response {
         Ok(s) => axum::Json(s).into_response(),
         Err(e) => error(e),
     }
+}
+async fn refresh(State(state): State<ManagementState>, request: Request) -> Response {
+    bridge_response(
+        async {
+            let action = input::<()>(request).await?;
+            let generation = crate::bridge::ControlBridge::generation(&action.expected_generation)?;
+            state.sessions.guard_generation(generation)?;
+            let sync = state.sync.as_ref().ok_or(EndpointError::SyncRequired)?;
+            sync.refresh().await?;
+            state.sessions.guard_generation(generation)?;
+            sync.status().map_err(Into::into)
+        }
+        .await,
+    )
 }
 async fn login(State(state): State<ManagementState>, request: Request) -> Response {
     if request
@@ -643,6 +646,7 @@ pub fn router(state: ManagementState) -> Router {
         .route("/assets/{*path}", get(asset))
         .route("/api/context", get(context))
         .route("/api/status", get(status))
+        .route("/api/refresh", post(refresh))
         .route("/api/auth/login", post(login))
         .route("/api/auth/logout", post(logout))
         .route("/api/catalog", get(catalog))

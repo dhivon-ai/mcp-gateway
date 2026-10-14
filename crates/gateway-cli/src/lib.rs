@@ -1,5 +1,6 @@
 //! Native endpoint identity and protected loopback management. Credentials never cross the browser boundary.
 pub mod aggregation;
+pub mod assets;
 pub mod bridge;
 pub mod cache;
 pub mod central;

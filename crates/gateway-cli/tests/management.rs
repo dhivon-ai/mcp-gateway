@@ -620,6 +620,10 @@ async fn protected_routes_bind_generation_host_origin_csrf_and_bound_values() {
         .next()
         .expect("owned management fixture")
         .to_string();
+    let page = axum::body::to_bytes(response.into_body(), 8192)
+        .await
+        .expect("page");
+    assert!(String::from_utf8_lossy(&page).contains("data-gateway-mode=\"local\""));
     let response = app
         .clone()
         .oneshot(
@@ -639,9 +643,35 @@ async fn protected_routes_bind_generation_host_origin_csrf_and_bound_values() {
     )
     .expect("owned management fixture");
     assert_eq!(context["status"]["identity"]["generation"], generation);
+    assert_eq!(context["mode"], "local");
+    assert_eq!(context["status"]["identity"]["username"], "alice");
     let csrf = context["csrfToken"]
         .as_str()
         .expect("owned management fixture");
+    for (expected_generation, expected_status) in
+        [(Uuid::new_v4().to_string(), 409), (generation.clone(), 200)]
+    {
+        let response = app
+            .clone()
+            .oneshot(
+                axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/api/refresh")
+                    .header("host", "127.0.0.1:18239")
+                    .header("origin", "http://127.0.0.1:18239")
+                    .header("cookie", &cookie)
+                    .header("x-csrf-token", csrf)
+                    .header("content-type", "application/json")
+                    .body(axum::body::Body::from(
+                        serde_json::json!({"expectedGeneration":expected_generation,"input":null})
+                            .to_string(),
+                    ))
+                    .expect("refresh request"),
+            )
+            .await
+            .expect("refresh response");
+        assert_eq!(response.status().as_u16(), expected_status);
+    }
     let body = serde_json::to_string(&LocalAction {
         expected_generation: generation.clone(),
         input: SecretWrite {
@@ -725,6 +755,47 @@ async fn protected_routes_bind_generation_host_origin_csrf_and_bound_values() {
 
 #[cfg(target_os = "macos")]
 struct OwnedFiles(PathBuf);
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn catalog_diagnostics_never_execute_commands_or_claim_enablement() {
+    let files = OwnedFiles::new();
+    let marker = files.path("catalog-must-not-execute");
+    let command = CommandSpec {
+        program: "/usr/bin/touch".into(),
+        args: vec![marker.clone()],
+        env: BTreeMap::new(),
+        cwd: None,
+    };
+    let f = Fixture::new(command).await;
+    let catalog = f.installs.catalog(&f.generation()).expect("catalog");
+    assert!(!std::path::Path::new(&marker).exists());
+    assert!(!catalog.mcps[0].enabled && !catalog.mcps[0].installed);
+    {
+        let mut snapshot = f.central.snapshot.lock().expect("fixture config");
+        snapshot.revision += 1;
+        snapshot.mcps[0].definition.transport = Transport::Stdio {
+            command: CommandSpec {
+                program: files.path("missing-executable"),
+                args: vec![],
+                env: BTreeMap::new(),
+                cwd: None,
+            },
+        };
+    }
+    f.sync.refresh().await.expect("new metadata");
+    let catalog = f
+        .installs
+        .catalog(&f.generation())
+        .expect("redacted diagnostic");
+    assert_eq!(catalog.mcps[0].availability, "missing_executable");
+    assert!(!catalog.mcps[0].enabled);
+    assert!(
+        !serde_json::to_string(&catalog)
+            .expect("public metadata")
+            .contains("missing-executable")
+    );
+    assert_eq!(f.central.mutations.load(Ordering::Relaxed), 0);
+}
 #[cfg(target_os = "macos")]
 impl OwnedFiles {
     fn new() -> Self {

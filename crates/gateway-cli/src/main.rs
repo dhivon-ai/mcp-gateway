@@ -184,8 +184,13 @@ async fn main() -> anyhow::Result<()> {
                 SnapshotCache::new(sessions.clone(), Arc::new(NativeClock::new()?)),
                 Arc::new(NativeTransport),
             );
-            let state = ManagementState::new(sessions, central, listener.local_addr()?, None)?
-                .with_sync(engine.clone())?;
+            let state = ManagementState::new(
+                sessions,
+                central,
+                listener.local_addr()?,
+                gateway_cli::assets::bundled(),
+            )?
+            .with_sync(engine.clone())?;
             let url = format!("{}/", state.origin());
             eprintln!("Local management: {url}");
             if !no_open {

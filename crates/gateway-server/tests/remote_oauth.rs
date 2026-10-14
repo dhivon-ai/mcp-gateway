@@ -280,6 +280,22 @@ async fn consent_central_encryption_gateway_refresh_coordination_and_disconnect(
         )
         .await
         .expect("start consent");
+    let before_poll = sync.cache.latest().expect("pending proof").snapshot;
+    let pending_status = control
+        .status(&generation, &id)
+        .await
+        .expect("pending status");
+    assert_eq!(pending_status.readiness, "authorization_pending");
+    assert!(!pending_status.connected);
+    assert_eq!(
+        sync.cache
+            .latest()
+            .expect("proof after poll")
+            .snapshot
+            .validated_at,
+        before_poll.validated_at,
+        "ephemeral consent polling must not rotate the callback's protected policy receipt"
+    );
     let response = browser
         .get(start.authorization_url)
         .send()
@@ -369,6 +385,14 @@ async fn consent_central_encryption_gateway_refresh_coordination_and_disconnect(
     tokio::time::timeout(std::time::Duration::from_secs(10), token_entered.notified())
         .await
         .expect("provider processed the code before cancellation");
+    assert_eq!(
+        control
+            .status(&generation, &id)
+            .await
+            .expect("status during exchange")
+            .readiness,
+        "authorization_pending"
+    );
     control
         .cancel(&generation, &in_flight.flow_id)
         .await

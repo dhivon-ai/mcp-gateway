@@ -19,6 +19,14 @@ pub struct CredentialScope {
     receipt: Uuid,
     binding: String,
 }
+impl CredentialScope {
+    pub(crate) fn receipt(&self) -> Uuid {
+        self.receipt
+    }
+    pub(crate) fn revision(&self) -> u32 {
+        self.revision
+    }
+}
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CredentialFault {

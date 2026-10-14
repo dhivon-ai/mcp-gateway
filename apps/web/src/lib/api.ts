@@ -69,6 +69,8 @@ export async function apiRequest<T>(
     body?: unknown;
     csrfToken?: string;
     signal?: AbortSignal;
+    endpointGeneration?: string;
+    timeoutMs?: number;
   } = {},
 ): Promise<T> {
   if (
@@ -97,11 +99,17 @@ export async function apiRequest<T>(
       credentials: "same-origin",
       redirect: "error",
       signal: options.signal
-        ? AbortSignal.any([options.signal, AbortSignal.timeout(10_000)])
-        : AbortSignal.timeout(10_000),
+        ? AbortSignal.any([
+            options.signal,
+            AbortSignal.timeout(options.timeoutMs ?? 10_000),
+          ])
+        : AbortSignal.timeout(options.timeoutMs ?? 10_000),
       headers: {
         "Content-Type": "application/json",
         ...(options.csrfToken ? { "X-CSRF-Token": options.csrfToken } : {}),
+        ...(options.endpointGeneration
+          ? { "X-Endpoint-Generation": options.endpointGeneration }
+          : {}),
       },
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),

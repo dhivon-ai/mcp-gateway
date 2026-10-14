@@ -21,10 +21,10 @@ export function object(value: unknown): Record<string, unknown> {
 export function string(value: unknown, max = 65536): string {
   return typeof value === "string" && value.length <= max ? value : invalid();
 }
-function bool(value: unknown): boolean {
+export function bool(value: unknown): boolean {
   return typeof value === "boolean" ? value : invalid();
 }
-function integer(value: unknown, max = Number.MAX_SAFE_INTEGER): number {
+export function integer(value: unknown, max = Number.MAX_SAFE_INTEGER): number {
   return typeof value === "number" &&
     Number.isSafeInteger(value) &&
     value >= 0 &&
@@ -32,7 +32,10 @@ function integer(value: unknown, max = Number.MAX_SAFE_INTEGER): number {
     ? value
     : invalid();
 }
-function nullable<T>(value: unknown, decode: (value: unknown) => T): T | null {
+export function nullable<T>(
+  value: unknown,
+  decode: (value: unknown) => T,
+): T | null {
   return value === null ? null : decode(value);
 }
 export function array<T>(

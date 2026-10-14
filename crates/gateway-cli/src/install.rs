@@ -181,6 +181,41 @@ impl InstallManager {
             .store
             .locked(|_| self.receipts())?;
         for mcp in &mut catalog.mcps {
+            let definition = validated
+                .snapshot
+                .mcps
+                .iter()
+                .find(|item| item.definition.id == mcp.id);
+            if let Some(item) = definition {
+                if let gateway_core::Transport::Stdio { command } = &item.definition.transport
+                    && executable_missing(command)
+                {
+                    mcp.availability = "missing_executable".into();
+                } else if mcp.enabled
+                    && !matches!(item.definition.auth, gateway_core::AuthMode::None {})
+                {
+                    let native = crate::upstream_credentials::NativeCredentials::new(
+                        self.bridge.sync.cache.clone(),
+                    );
+                    let readiness = native
+                        .scope(&validated, item)
+                        .and_then(|scope| native.load(&scope))
+                        .and_then(|head| head.access(self.bridge.sync.cache.sample()?));
+                    mcp.availability = match readiness {
+                        Ok(_) => "configured",
+                        Err(EndpointError::UpstreamExpired) => "token_expired",
+                        Err(EndpointError::UpstreamRejected) => "auth_rejected",
+                        Err(EndpointError::UpstreamRequired)
+                            if mcp.auth == "bearer" && mcp.secret.is_some() =>
+                        {
+                            "credential_sync_required"
+                        }
+                        _ => "auth_required",
+                    }
+                    .into();
+                    mcp.auth_required = mcp.availability != "configured";
+                }
+            }
             mcp.installed = receipts.iter().any(|r| {
                 r.scope == scope
                     && r.progress.mcp_id == mcp.id
@@ -649,6 +684,44 @@ impl InstallManager {
             }
         }
     }
+}
+
+/// A redacted filesystem diagnostic only: browsing never executes a command.
+fn executable_missing(command: &CommandSpec) -> bool {
+    let cwd = command
+        .cwd
+        .as_ref()
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::current_dir().ok());
+    if command
+        .cwd
+        .as_ref()
+        .is_some_and(|path| !std::path::Path::new(path).is_dir())
+    {
+        return true;
+    }
+    let program = std::path::Path::new(&command.program);
+    if program.is_absolute() {
+        return !program.is_file();
+    }
+    if command.program.contains('/') {
+        return cwd.is_none_or(|cwd| !cwd.join(program).is_file());
+    }
+    let path = command
+        .env
+        .get("PATH")
+        .map_or("/usr/bin:/bin:/usr/sbin:/sbin", String::as_str);
+    !path.split(':').take(128).any(|dir| {
+        let dir = std::path::Path::new(dir);
+        let candidate = if dir.is_absolute() {
+            dir.join(program)
+        } else if let Some(cwd) = &cwd {
+            cwd.join(dir).join(program)
+        } else {
+            return false;
+        };
+        candidate.is_file()
+    })
 }
 fn fingerprint(command: &CommandSpec) -> Result<String> {
     Ok(hash(

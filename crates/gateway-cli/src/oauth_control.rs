@@ -130,6 +130,25 @@ impl OAuthControl {
         generation: &str,
         id: &str,
     ) -> Result<gateway_core::LocalOAuthStatus> {
+        // Polling a pending browser flow must not start recovery/refresh against its own
+        // in-flight callback. This is ephemeral flow feedback, never token readiness.
+        let expected = Uuid::parse_str(generation).map_err(|_| EndpointError::Invalid)?;
+        self.sync.cache.sessions.guard_generation(expected)?;
+        let now = self.sync.cache.sample()?;
+        if self.flows.lock().await.values().any(|flow| {
+            flow.generation == expected
+                && flow.mcp.definition.id == id
+                && !flow.cancelled.is_cancelled()
+                && flow.consent.live(now)
+        }) {
+            self.sync.cache.latest()?;
+            return Ok(gateway_core::LocalOAuthStatus {
+                connected: false,
+                version: None,
+                expires_at: None,
+                readiness: "authorization_pending".into(),
+            });
+        }
         self.recover(
             Uuid::parse_str(generation).map_err(|_| EndpointError::Invalid)?,
             id,
@@ -342,11 +361,6 @@ impl OAuthControl {
             .sessions
             .guard_generation(session.metadata.generation)?;
         let native = NativeCredentials::new(self.sync.cache.clone());
-        let proof = self.sync.cache.latest()?;
-        let scope = native.management_scope(&proof, mcp)?;
-        if proof.snapshot.revision != revision {
-            return Err(EndpointError::IdentityChanged);
-        }
         let journal = PendingToken::new(
             session,
             mcp,
@@ -355,7 +369,23 @@ impl OAuthControl {
             credentials.clone(),
             observed,
         )?;
-        journal.remember(&self.sync.cache, proof.receipt)?;
+        // Unchanged complete refreshes may rotate protected receipts while the provider
+        // responds. Retry only this local durable publication, never the token exchange.
+        let mut attempts = 0;
+        let scope = loop {
+            let proof = self.sync.cache.latest()?;
+            let scope = native.management_scope(&proof, mcp)?;
+            if scope.revision() != revision {
+                return Err(EndpointError::IdentityChanged);
+            }
+            match journal.remember(&self.sync.cache, scope.receipt()) {
+                Ok(()) => break scope,
+                Err(EndpointError::IdentityChanged) if attempts < 3 => {
+                    attempts += 1;
+                }
+                Err(error) => return Err(error),
+            }
+        };
         // A request with an unknown outcome must not leave an old native token dispatchable.
         native.reject(&scope, None, CredentialFault::SyncRequired)?;
         if cancelled

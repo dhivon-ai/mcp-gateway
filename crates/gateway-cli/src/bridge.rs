@@ -330,7 +330,7 @@ async fn decode<T: DeserializeOwned>(response: reqwest::Response) -> BridgeResul
 fn fixed_message(code: &ErrorCode) -> &'static str {
     match code {
         ErrorCode::Conflict => {
-            "The central revision or secret version changed; review and retry explicitly"
+            "Current server state prevents this change; review configuration, active bindings and versions before retrying"
         }
         ErrorCode::Forbidden => "The control plane refused this operation",
         ErrorCode::InvalidRequest => "The control plane rejected the input",
