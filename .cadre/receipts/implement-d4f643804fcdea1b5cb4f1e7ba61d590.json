@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "operationId": "implement-d4f643804fcdea1b5cb4f1e7ba61d590",
+  "kind": "implement",
+  "status": "completed",
+  "approvalDigest": "321f9317e592bd855d9d0f9c5b3049caefc4ad4db52b9f8b1134143af4c8d052",
+  "baseCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "40bca5d4b47778450a50a72a5991cf1daa635ce44d6dfb82fa92e026aa5d45e6"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/executions/execution-2026-10-14T09-21-15-303Z.json",
+      "sha256": "2bff90869d98c43736a19a2e3ffabfd715e3984d7e06f554f389ee47578c2a4b"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/learning.md",
+      "sha256": "b457a2d11f70cd2a514807420eebadf23fab7bda36d1b5c5b9ca47711b290de6"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/plan.md",
+      "sha256": "0307e6e6420c148be9210003cd61472791d2f7171ff7f565c482f5f35bb609c4"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/state.json",
+      "sha256": "50f1ca03ee1cf4ed71d0818d2b2b30d490a76b9dfa5ff68348fb2420e2f7a5c1"
+    }
+  ]
+}

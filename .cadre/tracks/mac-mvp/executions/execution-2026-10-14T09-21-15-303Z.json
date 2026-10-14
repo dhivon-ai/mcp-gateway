@@ -1,0 +1,2149 @@
+{
+  "executionContract": "cohesive-v1",
+  "schemaVersion": 1,
+  "executionId": "2026-10-14T09-21-15-303Z",
+  "trackId": "mac-mvp",
+  "status": "completed",
+  "checkpoint": "completed",
+  "requestedMode": "parallel",
+  "effectiveMode": "parallel",
+  "approvalMode": "autonomous",
+  "approvalPolicyVersion": 2,
+  "maxWorkers": 3,
+  "planRevision": 1,
+  "planCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
+  "planSource": ".cadre/tracks/mac-mvp/plan.md",
+  "graphDigest": "fbabfc847709292a08b29d56cdeb31dc479303e5328bb1fa78778c3e18a4dc71",
+  "baseCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
+  "startedAt": "2026-10-14T09:21:15.303Z",
+  "completedAt": "2026-10-14T22:41:29.630Z",
+  "headCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+  "nodes": {
+    "P1": {
+      "id": "P1",
+      "kind": "phase",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "187754250b4ff432715796ae512f4121fb2b24db",
+      "mergeCommit": "187754250b4ff432715796ae512f4121fb2b24db",
+      "verification": "All P1 sibling tasks and T1.5 verification are complete against canonical product HEAD; passing workspace/frontend checks, SDK fixture integration and live Postgres evidence recorded; dependency-aware learning persisted; no worker worktrees.",
+      "approval": "Persisted policy-v2 Autonomous authorizes direct-main phase completion, without human approval claims.",
+      "blocker": null
+    },
+    "T1.1": {
+      "commitGroup": "workspace-foundation",
+      "id": "T1.1",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "926e9a41d6d5d01dec79dcef869e91709d054136",
+      "mergeCommit": null,
+      "verification": "Passed cargo build --workspace; cargo clippy --workspace --all-targets -- -D warnings; cargo fmt --all -- --check; pnpm typecheck/lint/build/format:check; peer check; CLI/server --help; healthz startup/shutdown smoke; unauthenticated MCP startup returned nonzero with empty stdout. Node 24.19.0 used for frontend build. All build output in runtime-owned cache.",
+      "approval": "User invoked cadre:implement autonomous; persisted policy-v2 Autonomous authorizes in-scope workspace-foundation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Rust 1.95.0, Node 24.19.0 LTS, pnpm 11.4.0 pinned; React 19.3, Vite 8.3, TS 6.0.3, Radix Nova shadcn baseline.",
+          "Only workspace scaffolding is implemented; actual app screens and auth/gateway flows follow later nodes.",
+          "Opened existing OrbStack; Docker 29.8.2 is now available for isolated Postgres fixtures."
+        ],
+        "failedApproaches": [
+          "TypeScript 7 was incompatible with typescript-eslint peer range; pinned supported TS 6.0.3.",
+          "Installed shadcn CLI requires --preset nova --base radix instead of skill's older radix-nova CLI spelling."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement shared wire contracts and policy/lease evaluators in the policy-contracts group.",
+        "sources": [
+          {
+            "path": "Cargo.toml",
+            "sha256": "74e76badc322d0c481005764ce6b5d280eae49cbf28cb56dbbb7eb22073e37fd"
+          },
+          {
+            "path": "apps/web/package.json",
+            "sha256": "4f4c7a46e91c856a12ff3c0aa9016606774a92da8bfcc0e40d1753ebb4518ada"
+          },
+          {
+            "path": "apps/web/components.json",
+            "sha256": "d0ada54e59710099b766eae59a1a35d31b717a6ec43d73a8814de1815ddc1749"
+          }
+        ]
+      }
+    },
+    "T1.2": {
+      "commitGroup": "policy-contracts",
+      "id": "T1.2",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2be53f911eb3f3d89db4278541d3eff36736ff08",
+      "mergeCommit": null,
+      "verification": "Passed JSON round-trip/unknown auth-field rejection and OAuth wire-tag tests; generated frontend bindings compile under TS 6 strict checks and exactly match a second exporter run; cargo fmt and workspace Clippy passed.",
+      "approval": "Persisted policy-v2 Autonomous authorizes this approved policy-contracts group.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Rust contracts own typed JSON; ts-rs exports public types only, with bounded numeric timestamps/revisions.",
+          "Empty struct tagged auth/grant variants reject unexpected fields. Credential payloads have no Debug implementation or frontend exports."
+        ],
+        "failedApproaches": [
+          "Serde deny_unknown_fields does not reject extra fields on tagged unit variants; replaced unit variants with empty struct variants and retained regression tests."
+        ],
+        "openQuestions": [],
+        "nextAction": "Establish fixture services and CI verification entry points in T1.4.",
+        "sources": [
+          {
+            "path": "crates/gateway-core/src/contracts.rs",
+            "sha256": "e32f87de911fc5c57901d83e90fe4c44859be67cee917b0b4eaa533f81505f72"
+          },
+          {
+            "path": "crates/gateway-core/src/policy.rs",
+            "sha256": "15b7c90201a9787a0df331cce22e4ec8801c06554d7597a4aeb6a7ecd53619b0"
+          },
+          {
+            "path": "crates/gateway-core/tests/policy.rs",
+            "sha256": "5cbedddc6b820fd9c871d8db91f5c7271d91f1300265f64e7b9dc7975b77f757"
+          },
+          {
+            "path": "docs/contracts.md",
+            "sha256": "b1808fb390e7b3a09186c9ba823bbe68be5a44a136900d693ea7035b15f4eb7f"
+          }
+        ]
+      }
+    },
+    "T1.3": {
+      "commitGroup": "policy-contracts",
+      "id": "T1.3",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2be53f911eb3f3d89db4278541d3eff36736ff08",
+      "mergeCommit": null,
+      "verification": "Eight core tests passed: additive grants/default deny, every dispatch axis, exact one-hour expiry, oversized/corrupt leases, clock rollback, session bound, credential binding, tool modes and strict URL validation. cargo fmt and workspace Clippy passed.",
+      "approval": "Persisted policy-v2 Autonomous authorizes this approved policy-contracts group.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Shared policy evaluator checks cache integrity, identity, active/enabled state, auth readiness and original tool names.",
+          "Production URL helper rejects HTTP and embedded credentials/fragments; only explicit loopback test fixtures can opt into HTTP."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Establish fixture services and CI verification entry points in T1.4.",
+        "sources": [
+          {
+            "path": "crates/gateway-core/src/contracts.rs",
+            "sha256": "e32f87de911fc5c57901d83e90fe4c44859be67cee917b0b4eaa533f81505f72"
+          },
+          {
+            "path": "crates/gateway-core/src/policy.rs",
+            "sha256": "15b7c90201a9787a0df331cce22e4ec8801c06554d7597a4aeb6a7ecd53619b0"
+          },
+          {
+            "path": "crates/gateway-core/tests/policy.rs",
+            "sha256": "5cbedddc6b820fd9c871d8db91f5c7271d91f1300265f64e7b9dc7975b77f757"
+          },
+          {
+            "path": "docs/contracts.md",
+            "sha256": "b1808fb390e7b3a09186c9ba823bbe68be5a44a136900d693ea7035b15f4eb7f"
+          }
+        ]
+      }
+    },
+    "T1.4": {
+      "commitGroup": "quality-foundation",
+      "id": "T1.4",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "187754250b4ff432715796ae512f4121fb2b24db",
+      "mergeCommit": null,
+      "verification": "Passed all workspace Rust tests (8 policy + 3 MCP/OAuth integration), workspace Clippy -D warnings, Rust fmt, generated-contract diff, 4 frontend API boundary tests, frontend lint/typecheck/build/format checks. PostgreSQL 18.6 arm64 fixture started healthy and SELECT version succeeded. CI workflow authored for Linux and macos-15 arm64; hosted CI has not run.",
+      "approval": "Persisted policy-v2 Autonomous authorizes the approved quality-foundation group.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Fixture uses real rmcp 3.5.1 STDIO/Streamable HTTP with 2025-11-25 negotiation, pagination and tool-error behavior.",
+          "OAuth fixture validates PKCE/redirect/resource and rotates one-use refresh tokens, without real provider credentials.",
+          "Postgres fixture image pinned by version and digest; Docker project cadre-gateway-tests is owned for test use.",
+          "Browser API helper requires a decoder, enforces same-origin/CSRF and avoids exposing malformed raw error payloads."
+        ],
+        "failedApproaches": [
+          "SDK 3 uses ContentBlock/ServerConfig and a non-exhaustive HTTP config builder; updated to current APIs.",
+          "Reqwest 0.13 requires explicit query feature for OAuth fixture requests."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify and complete Phase 1, then implement central identity in Phase 2.",
+        "sources": [
+          {
+            "path": "crates/gateway-fixtures/src/lib.rs",
+            "sha256": "f9bcd80914afd3f1e2888fbce101adb6ddaa943e48c486f0c3d1ee6bc11265dd"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/transports.rs",
+            "sha256": "85f5220a56fa2f14b35af5e9614726defc1425ade4bebe6c74f15f78eb13e760"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/oauth.rs",
+            "sha256": "0a1d2ce04659dfd063eeea36d0f270706856495cf240b6c4cf9fddfa953cd48b"
+          },
+          {
+            "path": "deploy/compose.test.yaml",
+            "sha256": "ee738be9803e57bbf5f35004539e61772b9e42afdd6eb5f8bbe46103275ee8b8"
+          },
+          {
+            "path": "docs/testing.md",
+            "sha256": "5c62943687fd6a7f275022b3a0038039e6e25baef450e698987aa7831e0058bd"
+          },
+          {
+            "path": "apps/web/src/lib/api.ts",
+            "sha256": "e52fc99e771f13b1356ce23e2f84b9d6f1c33d877b076d68c7e9f3bff6309e27"
+          }
+        ]
+      }
+    },
+    "T1.5": {
+      "id": "T1.5",
+      "kind": "manual-verification",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1",
+        "T1.2",
+        "T1.3",
+        "T1.4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "187754250b4ff432715796ae512f4121fb2b24db",
+      "mergeCommit": null,
+      "verification": "Foundation outcome verified against P1: Rust CLI/service help, healthz graceful lifecycle and fail-closed STDIO startup; strict React/TS/shadcn scaffold build; typed contract generation and policy/expiry tests; SDK transport/OAuth fixtures and live isolated Postgres. All applicable format/lint/type/build/tests and contract diff passed. Real product screens and account/vault/runtime integration remain later phases.",
+      "approval": "Policy-v2 Autonomous authorizes automated phase verification; no human approval is claimed.",
+      "blocker": null
+    },
+    "P2": {
+      "id": "P2",
+      "kind": "phase",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ce051f249b8110858813339ced107dcb86fb1dec",
+      "mergeCommit": "ce051f249b8110858813339ced107dcb86fb1dec",
+      "verification": "All P2 groups and T2.7 are verified; declared dependency learning, task observations and provenance persisted in track learning. No worker worktrees exist.",
+      "approval": "Persisted policy-v2 Autonomous execution of approved mac-mvp revision 1.",
+      "blocker": null
+    },
+    "T2.1": {
+      "commitGroup": "service-identity",
+      "id": "T2.1",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "37911cbc3912e2baca39159c5406235d41be9842",
+      "mergeCommit": null,
+      "verification": "Real PostgreSQL 18.6 isolated-database identity suite passed (2 comprehensive tests): bootstrap, Argon2id, role bypass, group membership, CSRF/Host/Origin, logout/reset/disable/expiry and throttling. Captured logs exclude passwords/tokens/CSRF/parser input. Workspace tests, Clippy -D warnings, rustfmt, frontend typecheck/format, and byte-exact generated contracts passed. Hosted CI not run.",
+      "approval": "Persisted policy-v2 Autonomous implementation authorization; approved mac-mvp revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Browser session cookies never return raw tokens; native endpoint response is private and distinct.",
+          "12-hour absolute revocable sessions; serial authority recheck protects admin mutations and last active administrator.",
+          "Argon2id 19 MiB/two iterations; username and real peer-IP throttling; bounded verification pool.",
+          "PostgreSQL harness creates and drops unique owned databases; Linux CI adds explicit database tests."
+        ],
+        "failedApproaches": [
+          "Axum ConnectInfo has no optional extractor implementation; optional Extension<ConnectInfo> supports fixture routers.",
+          "SQLx 0.9 requires audited dynamic SQL; test-only identifier strings are fixed prefix plus generated hex UUID, wrapped in AssertSqlSafe."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement service-configuration catalog, additive grants, revisions and complete effective snapshots.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/identity.rs",
+            "sha256": "0ad320d1420afc8b161972290d00502f8f4ebe174a48df7b856ebee3d4486f67"
+          },
+          {
+            "path": "crates/gateway-server/tests/identity.rs",
+            "sha256": "e8e95b6d13d398911dac41edbe57d81866959de65a94dd2b395dc9a77ad3570a"
+          },
+          {
+            "path": "docs/identity.md",
+            "sha256": "53f57f99795e9eee2f71d0a39ace2327c5056eed241ccf390d0d4c4bc1b86ac5"
+          }
+        ]
+      }
+    },
+    "T2.2": {
+      "commitGroup": "service-identity",
+      "id": "T2.2",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "37911cbc3912e2baca39159c5406235d41be9842",
+      "mergeCommit": null,
+      "verification": "Real PostgreSQL 18.6 isolated-database identity suite passed (2 comprehensive tests): bootstrap, Argon2id, role bypass, group membership, CSRF/Host/Origin, logout/reset/disable/expiry and throttling. Captured logs exclude passwords/tokens/CSRF/parser input. Workspace tests, Clippy -D warnings, rustfmt, frontend typecheck/format, and byte-exact generated contracts passed. Hosted CI not run.",
+      "approval": "Persisted policy-v2 Autonomous implementation authorization; approved mac-mvp revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Browser session cookies never return raw tokens; native endpoint response is private and distinct.",
+          "12-hour absolute revocable sessions; serial authority recheck protects admin mutations and last active administrator.",
+          "Argon2id 19 MiB/two iterations; username and real peer-IP throttling; bounded verification pool.",
+          "PostgreSQL harness creates and drops unique owned databases; Linux CI adds explicit database tests."
+        ],
+        "failedApproaches": [
+          "Axum ConnectInfo has no optional extractor implementation; optional Extension<ConnectInfo> supports fixture routers.",
+          "SQLx 0.9 requires audited dynamic SQL; test-only identifier strings are fixed prefix plus generated hex UUID, wrapped in AssertSqlSafe."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement service-configuration catalog, additive grants, revisions and complete effective snapshots.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/identity.rs",
+            "sha256": "0ad320d1420afc8b161972290d00502f8f4ebe174a48df7b856ebee3d4486f67"
+          },
+          {
+            "path": "crates/gateway-server/tests/identity.rs",
+            "sha256": "e8e95b6d13d398911dac41edbe57d81866959de65a94dd2b395dc9a77ad3570a"
+          },
+          {
+            "path": "docs/identity.md",
+            "sha256": "53f57f99795e9eee2f71d0a39ace2327c5056eed241ccf390d0d4c4bc1b86ac5"
+          }
+        ]
+      }
+    },
+    "T2.3": {
+      "commitGroup": "service-configuration",
+      "id": "T2.3",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "8c407380eb3bc0c2fcac6b1310067b5812fea154",
+      "mergeCommit": null,
+      "verification": "PostgreSQL identity/configuration suite passed (4 comprehensive tests), including additive user/group/all grants, last-grant/membership/group/catalog removal, regrant requiring opt-in, policy modes and non-authoritative inventory; competing user writes and admin-revocation races produce one success/one409 with current snapshot and cannot resurrect settings. Repeat migrations/restarted service retain deployment/settings. Clippy -D warnings, fmt, server build, frontend typecheck and generated-type diff passed.",
+      "approval": "Persisted policy-v2 Autonomous implementation of approved revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Deployment-wide revisions serialize authority changes; conflicts return current revision and current user snapshot.",
+          "Removal of final grant, inactive catalog/account, or group membership deletes opt-ins; upstream transport/auth changes clear bindings.",
+          "Configuration stays plaintext centrally; snapshot contains metadata only, leases <=3600 seconds and session expiry.",
+          "Secret schema/composite ownership FK introduced for settings; encrypted values and CRUD remain next group.",
+          "Inventory is bounded untrusted metadata and never modifies revision, policy or grants."
+        ],
+        "failedApproaches": [
+          "Replaced complex SQL row tuples with named FromRow structures to satisfy strict Clippy and clarify joins."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement encrypted per-user secrets, endpoint-only resolution, and scoped OAuth refresh coordination.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/configuration.rs",
+            "sha256": "8adb71c25fef799ca9ff4c62c60bea3b4a3f314322bcaa398ff42cc10ee44333"
+          },
+          {
+            "path": "crates/gateway-server/tests/configuration.rs",
+            "sha256": "fc586f74b4df3ec7c8b858d53ff2df912ebc8818a01d691cf1bf9a4a2d4b6642"
+          },
+          {
+            "path": "docs/configuration.md",
+            "sha256": "768b41e864c13167263639a5ba9feb8245c8024d3eadcd138c431bc12a17a25b"
+          }
+        ]
+      }
+    },
+    "T2.4": {
+      "commitGroup": "service-configuration",
+      "id": "T2.4",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "8c407380eb3bc0c2fcac6b1310067b5812fea154",
+      "mergeCommit": null,
+      "verification": "PostgreSQL identity/configuration suite passed (4 comprehensive tests), including additive user/group/all grants, last-grant/membership/group/catalog removal, regrant requiring opt-in, policy modes and non-authoritative inventory; competing user writes and admin-revocation races produce one success/one409 with current snapshot and cannot resurrect settings. Repeat migrations/restarted service retain deployment/settings. Clippy -D warnings, fmt, server build, frontend typecheck and generated-type diff passed.",
+      "approval": "Persisted policy-v2 Autonomous implementation of approved revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Deployment-wide revisions serialize authority changes; conflicts return current revision and current user snapshot.",
+          "Removal of final grant, inactive catalog/account, or group membership deletes opt-ins; upstream transport/auth changes clear bindings.",
+          "Configuration stays plaintext centrally; snapshot contains metadata only, leases <=3600 seconds and session expiry.",
+          "Secret schema/composite ownership FK introduced for settings; encrypted values and CRUD remain next group.",
+          "Inventory is bounded untrusted metadata and never modifies revision, policy or grants."
+        ],
+        "failedApproaches": [
+          "Replaced complex SQL row tuples with named FromRow structures to satisfy strict Clippy and clarify joins."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement encrypted per-user secrets, endpoint-only resolution, and scoped OAuth refresh coordination.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/configuration.rs",
+            "sha256": "8adb71c25fef799ca9ff4c62c60bea3b4a3f314322bcaa398ff42cc10ee44333"
+          },
+          {
+            "path": "crates/gateway-server/tests/configuration.rs",
+            "sha256": "fc586f74b4df3ec7c8b858d53ff2df912ebc8818a01d691cf1bf9a4a2d4b6642"
+          },
+          {
+            "path": "docs/configuration.md",
+            "sha256": "768b41e864c13167263639a5ba9feb8245c8024d3eadcd138c431bc12a17a25b"
+          }
+        ]
+      }
+    },
+    "T2.5": {
+      "commitGroup": "service-secrets",
+      "id": "T2.5",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ce051f249b8110858813339ced107dcb86fb1dec",
+      "mergeCommit": null,
+      "verification": "Seven real PostgreSQL tests passed (identity2/configuration2/vault2/live operator1), plus normal workspace tests (13). Vault checks cover write-only metadata, cross-owner/admin denials, binding ownership, referenced deletion, stable IDs/version replacement/rename, missing keys and AAD substitution, secret and OAuth key rotation. OAuth concurrent leases, cancellation, wrong/expired lease, CAS versions and installation isolation passed. Captured logs exclude credentials. Live CLI key generation/bootstrap/server login/health/SIGINT shutdown passed. Workspace Clippy -D warnings/build/fmt, frontend lint/typecheck/test4/build/format and generated-contract diff passed.",
+      "approval": "Persisted policy-v2 Autonomous authorization for approved mac-mvp revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "External 0600 key-ring file; AES-256-GCM format1 authenticates record kind/owner/ID/version/key ID; central configuration remains plaintext.",
+          "Browser APIs return metadata only; endpoint Bearer-session credential resolution requires assigned/enabled MCP/current revision.",
+          "Managed OAuth records scoped to user/MCP/installation; exclusive60s refresh lease plus CAS and atomic token persistence; no upstream network inside transaction.",
+          "Operator key generation never prints key values; bounded-batch rotation preserves credential versions/values and supports retained backup keys.",
+          "All identity/group writes now also require current deployment revision; catalog serialized definitions bounded to1MiB to fit encrypted endpoint snapshots."
+        ],
+        "failedApproaches": [
+          "An added OAuth lease-expiry test initially ran before credential version2 existed; corrected test sequencing and reran the complete database suite.",
+          "Strict Clippy motivated removal of unused internal metadata fields/methods."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify and complete P2, then execute independent P3 endpoint identity and P6 admin design groups with isolated parallel work.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/vault.rs",
+            "sha256": "14cceef8bd7f80db81742d156fef6b85faf77ad966dbbd998bf0708321946288"
+          },
+          {
+            "path": "crates/gateway-server/tests/vault.rs",
+            "sha256": "d7a756b0e7ad8c87fcefe52aaddcb77e9e47a8bba19a8b9830a7c5f2cd046e5d"
+          },
+          {
+            "path": "crates/gateway-core/src/crypto.rs",
+            "sha256": "635a6e6d20e56482a8615e3dd87b51b9f140623889645836f4ea035e0911892c"
+          },
+          {
+            "path": "docs/vault.md",
+            "sha256": "9f0a8e7df1413e4bc234f943fc17ad769a15716bff6cd155585e96501e8b343b"
+          }
+        ]
+      }
+    },
+    "T2.6": {
+      "commitGroup": "service-secrets",
+      "id": "T2.6",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ce051f249b8110858813339ced107dcb86fb1dec",
+      "mergeCommit": null,
+      "verification": "Seven real PostgreSQL tests passed (identity2/configuration2/vault2/live operator1), plus normal workspace tests (13). Vault checks cover write-only metadata, cross-owner/admin denials, binding ownership, referenced deletion, stable IDs/version replacement/rename, missing keys and AAD substitution, secret and OAuth key rotation. OAuth concurrent leases, cancellation, wrong/expired lease, CAS versions and installation isolation passed. Captured logs exclude credentials. Live CLI key generation/bootstrap/server login/health/SIGINT shutdown passed. Workspace Clippy -D warnings/build/fmt, frontend lint/typecheck/test4/build/format and generated-contract diff passed.",
+      "approval": "Persisted policy-v2 Autonomous authorization for approved mac-mvp revision 1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "External 0600 key-ring file; AES-256-GCM format1 authenticates record kind/owner/ID/version/key ID; central configuration remains plaintext.",
+          "Browser APIs return metadata only; endpoint Bearer-session credential resolution requires assigned/enabled MCP/current revision.",
+          "Managed OAuth records scoped to user/MCP/installation; exclusive60s refresh lease plus CAS and atomic token persistence; no upstream network inside transaction.",
+          "Operator key generation never prints key values; bounded-batch rotation preserves credential versions/values and supports retained backup keys.",
+          "All identity/group writes now also require current deployment revision; catalog serialized definitions bounded to1MiB to fit encrypted endpoint snapshots."
+        ],
+        "failedApproaches": [
+          "An added OAuth lease-expiry test initially ran before credential version2 existed; corrected test sequencing and reran the complete database suite.",
+          "Strict Clippy motivated removal of unused internal metadata fields/methods."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify and complete P2, then execute independent P3 endpoint identity and P6 admin design groups with isolated parallel work.",
+        "sources": [
+          {
+            "path": "crates/gateway-server/src/vault.rs",
+            "sha256": "14cceef8bd7f80db81742d156fef6b85faf77ad966dbbd998bf0708321946288"
+          },
+          {
+            "path": "crates/gateway-server/tests/vault.rs",
+            "sha256": "d7a756b0e7ad8c87fcefe52aaddcb77e9e47a8bba19a8b9830a7c5f2cd046e5d"
+          },
+          {
+            "path": "crates/gateway-core/src/crypto.rs",
+            "sha256": "635a6e6d20e56482a8615e3dd87b51b9f140623889645836f4ea035e0911892c"
+          },
+          {
+            "path": "docs/vault.md",
+            "sha256": "9f0a8e7df1413e4bc234f943fc17ad769a15716bff6cd155585e96501e8b343b"
+          }
+        ]
+      }
+    },
+    "T2.7": {
+      "id": "T2.7",
+      "kind": "manual-verification",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1",
+        "T2.2",
+        "T2.3",
+        "T2.4",
+        "T2.5",
+        "T2.6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ce051f249b8110858813339ced107dcb86fb1dec",
+      "mergeCommit": null,
+      "verification": "P2 requirements verified against canonical product HEAD: identity, role/session revocation, additive/default-deny catalog, synchronized user settings/revision conflicts, bounded snapshots, encrypted owned KV/OAuth records, private endpoint resolution and refresh leases. Seven real database tests plus thirteen normal workspace tests passed; live CLI/bootstrap/HTTP/shutdown and redaction/ciphertext/key rotation checks passed. Rust/frontend quality and generated contracts passed. Actual UI, Mac Keychain/runtime and provider discovery remain their approved dependent phases.",
+      "approval": "Persisted policy-v2 Autonomous phase-verification authority; no human verification or approval is claimed.",
+      "blocker": null
+    },
+    "P3": {
+      "id": "P3",
+      "kind": "phase",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P3",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p3",
+      "workerCommit": "3c0de2000a830cf788851658164d366b2585cb10",
+      "mergeCommit": "e23a8e25675117892d381cb4fdc5334875330e13",
+      "verification": "Integrated P3 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous phase authorization, actual T3.7 verification completed; main-owned P3 phase head is clean and exact task groups verified/integrated.",
+      "blocker": null
+    },
+    "T3.1": {
+      "commitGroup": "endpoint-identity",
+      "id": "T3.1",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/tasks/P3--t3-1",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/task-t3-1",
+      "workerCommit": "723ea7a600bf6797a91bc6d258bf58462ca3d71c",
+      "mergeCommit": "723ea7a600bf6797a91bc6d258bf58462ca3d71c",
+      "verification": "Actual Mac Keychain roundtrip/replacement/logout and deployment/account isolation; command/session/storage/generation tests passed. Fmt/Clippy/build passed; bounded valid-JSON oversize regression passed.",
+      "approval": "Persisted policy-v2 Autonomous; exact worker diff inspected and shared commit integrated into P3 phase head.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Native Keychain credentials are identity/deployment/generation scoped; only central 401 invalidates matching native session.",
+          "Atomic private metadata and generation guards prevent in-flight login resurrecting logout; bounded metadata reads.",
+          "Local loopback cookie, exact Host/Origin/Fetch metadata and CSRF checks precede every management API."
+        ],
+        "failedApproaches": [
+          "Canonicalized macOS fixture parents to retain production symlink rejection."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate shared endpoint-identity commit before atomic group completion, then implement encrypted snapshots.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/store.rs",
+            "sha256": "6ebcfb4079668296e615bb7d75a2dfd9fda84fc8c582eadb82b338fa1bffb299"
+          },
+          {
+            "path": "crates/gateway-cli/src/session.rs",
+            "sha256": "c932d1a48bb236f54c1f3af162385afdc5128d14ee5181e48b4b9dff13553719"
+          },
+          {
+            "path": "crates/gateway-cli/src/management.rs",
+            "sha256": "92442ca3f075bd2095a9cda563215acdf14040570822c1285206b94dcc870d81"
+          },
+          {
+            "path": "crates/gateway-cli/tests/identity.rs",
+            "sha256": "fd3b49b230de75b60b4698e48b98744e4cff5db6902be2077176437284f41e77"
+          }
+        ]
+      }
+    },
+    "T3.2": {
+      "commitGroup": "endpoint-identity",
+      "id": "T3.2",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "723ea7a600bf6797a91bc6d258bf58462ca3d71c",
+      "mergeCommit": null,
+      "verification": "Loopback exact Host/Origin/Fetch/local cookie/CSRF negative tests, redaction reads/logs/malformed input, callback isolation, logout/cleanup races and real CLI TCP serving/empty stdout all passed.",
+      "approval": "Persisted policy-v2 Autonomous; main scope review and integrated shared commit.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Native Keychain credentials are identity/deployment/generation scoped; only central 401 invalidates matching native session.",
+          "Atomic private metadata and generation guards prevent in-flight login resurrecting logout; bounded metadata reads.",
+          "Local loopback cookie, exact Host/Origin/Fetch metadata and CSRF checks precede every management API."
+        ],
+        "failedApproaches": [
+          "Single process-wide fixture tracing subscriber captures redacted events reliably."
+        ],
+        "openQuestions": [],
+        "nextAction": "Preserve management security layer while cache and online bridge groups add explicit redacted handlers.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/store.rs",
+            "sha256": "6ebcfb4079668296e615bb7d75a2dfd9fda84fc8c582eadb82b338fa1bffb299"
+          },
+          {
+            "path": "crates/gateway-cli/src/session.rs",
+            "sha256": "c932d1a48bb236f54c1f3af162385afdc5128d14ee5181e48b4b9dff13553719"
+          },
+          {
+            "path": "crates/gateway-cli/src/management.rs",
+            "sha256": "92442ca3f075bd2095a9cda563215acdf14040570822c1285206b94dcc870d81"
+          },
+          {
+            "path": "crates/gateway-cli/tests/identity.rs",
+            "sha256": "fd3b49b230de75b60b4698e48b98744e4cff5db6902be2077176437284f41e77"
+          }
+        ]
+      }
+    },
+    "T3.3": {
+      "commitGroup": "endpoint-cache",
+      "id": "T3.3",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/tasks/P3--t3-3",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/task-t3-3",
+      "workerCommit": "cd2d02ab4881ccbcb9a0981af9e083aaf504bbbc",
+      "mergeCommit": "cd2d02ab4881ccbcb9a0981af9e083aaf504bbbc",
+      "verification": "Complete atomic sync and origin isolation: 27 behavioral tests passed plus explicitly invoked actual-Mac subprocess helper; startup/60s/unchanged/reconnect/10s/401, revision/logout/origin races, publication/retirement failure, exact3599/3600/3601 expiry, session limit, rollback/boot/tamper/copy/missing-key, Keychain cross-process restart and redaction. fmt/Clippy-Dwarnings/build/diffcheck passed. Sleep/reboot simulated; actual suspended machine and olderOS unclaimed.",
+      "approval": "Persisted policy-v2 Autonomous; exact shared product diff reviewed and commit authorized by main.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "AES-GCM identity/installation/generation-bound complete snapshots; immutable Keychain keys and fresh protected checkpoints with retirement/publication barriers.",
+          "Success-only startup/60s sync with 10s deadline and scoped server selection; older UIs return server_mismatch without affecting newer selection.",
+          "Darwin RAW continuous clock plus protected boot/watermark and exclusive earlier wall/native deadline survive same-boot restart; latest shared cache required before dispatch."
+        ],
+        "failedApproaches": [
+          "Existing Keychain item update failed across processes on macOS27.0.1; immutable keys/fresh checkpoints passed actual subprocess tests.",
+          "Pre-persistence freshness alone was insufficient; post-publication checks reject expiry/uncertainty."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate before endpoint-management; publish every confirmed write through the guarded cache transaction. P4 must enforce latest cache and cancellation per call.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/cache.rs",
+            "sha256": "b72818c17237ef298e04bd1451cc22fbe67e0bba4d84c79b78263375d326f62d"
+          },
+          {
+            "path": "crates/gateway-cli/src/sync.rs",
+            "sha256": "23d9cdc97abdf7332a1be34d5b796458066511668b7413f3f6bc2dcc0c60886e"
+          },
+          {
+            "path": "crates/gateway-cli/src/session.rs",
+            "sha256": "431730d7e883dbe39b7c47eda1feb02d8cf479d6f60748ba6fb55a73c1b96fbc"
+          },
+          {
+            "path": "crates/gateway-cli/src/clock.rs",
+            "sha256": "ee2294b00ebe4c97c921623e1c8d80ebb5213d5ed0f4485141658f1902635800"
+          },
+          {
+            "path": "crates/gateway-cli/tests/cache.rs",
+            "sha256": "a17cad44eaa2079fd49b64a0e1e578e80a3f550a6609371dc3797f2bf800891a"
+          },
+          {
+            "path": "docs/endpoint-cache.md",
+            "sha256": "8818ac13c04802d86e95d6d089b7c752e6c56b0edddb00dd01f01109323816ca"
+          }
+        ]
+      }
+    },
+    "T3.4": {
+      "commitGroup": "endpoint-cache",
+      "id": "T3.4",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "cd2d02ab4881ccbcb9a0981af9e083aaf504bbbc",
+      "mergeCommit": null,
+      "verification": "Exact freshness and actual Mac restart evidence: 27 behavioral tests passed plus explicitly invoked actual-Mac subprocess helper; startup/60s/unchanged/reconnect/10s/401, revision/logout/origin races, publication/retirement failure, exact3599/3600/3601 expiry, session limit, rollback/boot/tamper/copy/missing-key, Keychain cross-process restart and redaction. fmt/Clippy-Dwarnings/build/diffcheck passed. Sleep/reboot simulated; actual suspended machine and olderOS unclaimed.",
+      "approval": "Persisted policy-v2 Autonomous; exact shared product diff reviewed and commit authorized by main.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "AES-GCM identity/installation/generation-bound complete snapshots; immutable Keychain keys and fresh protected checkpoints with retirement/publication barriers.",
+          "Success-only startup/60s sync with 10s deadline and scoped server selection; older UIs return server_mismatch without affecting newer selection.",
+          "Darwin RAW continuous clock plus protected boot/watermark and exclusive earlier wall/native deadline survive same-boot restart; latest shared cache required before dispatch."
+        ],
+        "failedApproaches": [
+          "Existing Keychain item update failed across processes on macOS27.0.1; immutable keys/fresh checkpoints passed actual subprocess tests.",
+          "Pre-persistence freshness alone was insufficient; post-publication checks reject expiry/uncertainty."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate before endpoint-management; publish every confirmed write through the guarded cache transaction. P4 must enforce latest cache and cancellation per call.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/cache.rs",
+            "sha256": "b72818c17237ef298e04bd1451cc22fbe67e0bba4d84c79b78263375d326f62d"
+          },
+          {
+            "path": "crates/gateway-cli/src/sync.rs",
+            "sha256": "23d9cdc97abdf7332a1be34d5b796458066511668b7413f3f6bc2dcc0c60886e"
+          },
+          {
+            "path": "crates/gateway-cli/src/session.rs",
+            "sha256": "431730d7e883dbe39b7c47eda1feb02d8cf479d6f60748ba6fb55a73c1b96fbc"
+          },
+          {
+            "path": "crates/gateway-cli/src/clock.rs",
+            "sha256": "ee2294b00ebe4c97c921623e1c8d80ebb5213d5ed0f4485141658f1902635800"
+          },
+          {
+            "path": "crates/gateway-cli/tests/cache.rs",
+            "sha256": "a17cad44eaa2079fd49b64a0e1e578e80a3f550a6609371dc3797f2bf800891a"
+          },
+          {
+            "path": "docs/endpoint-cache.md",
+            "sha256": "8818ac13c04802d86e95d6d089b7c752e6c56b0edddb00dd01f01109323816ca"
+          }
+        ]
+      }
+    },
+    "T3.5": {
+      "commitGroup": "endpoint-management",
+      "id": "T3.5",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/tasks/P3--t3-5",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/task-t3-5",
+      "workerCommit": "3c0de2000a830cf788851658164d366b2585cb10",
+      "mergeCommit": "3c0de2000a830cf788851658164d366b2585cb10",
+      "verification": "Full CLI/core tests50 passed and one intentional helper ignored; actual Mac native cache parent invokes its subprocess helper separately. Online/offline mutations, conflicts, generation races, write-only metadata, protected routes, durable publication failures and redacted correlation/duration events passed. CLI Clippy all-targets -Dwarnings, build, formatting, generated-contract equality and diff-check passed.",
+      "approval": "Persisted policy-v2 Autonomous; exact shared26-file product diff and passing task evidence reviewed by main; commit3c0de2000a830cf788851658164d366b2585cb10 integrated into P3. No fabricated human approval.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Every central mutation/vault read performs complete online refresh; no offline queue. Expected UI generation matches prepared session and snapshot, and requests pin the original principal.",
+          "Settings acknowledge only after complete durable shared-cache publication. Conflicts retain central status/code/revision and sanitized current metadata; no blind retry.",
+          "Write-only vault APIs return strict metadata and distinguish confirmed mutation from failed follow-up synchronization. Browser logout atomically compares/clears expected generation and cancels only its jobs.",
+          "Local public DTOs exclude native commands/environment/credentials; protected Host/Origin/cookie/CSRF precede every route."
+        ],
+        "failedApproaches": [
+          "Preflight-only generation checks allowed a check-to-load race; explicit comparisons and pinned tokens close it.",
+          "Thread-local capture missed events during parallel tests; an isolated integration binary uses one global dispatcher."
+        ],
+        "openQuestions": [],
+        "nextAction": "P7 consumes generation-bound local DTOs; P4 consumes latest committed cache before dispatch.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/bridge.rs",
+            "sha256": "b679d3ac55b74e60e47062720ab5eccebeea0de18e6f12776f50ca31799634a0"
+          },
+          {
+            "path": "crates/gateway-cli/src/management.rs",
+            "sha256": "3932b3c120f4dd56856baf3c5c236deccd751bde95bef882bfcf24821b958490"
+          },
+          {
+            "path": "crates/gateway-cli/src/session.rs",
+            "sha256": "be4be1a517cc98d54911fe08b93bdbd2c6db7019a945475200f903f5be0bba83"
+          },
+          {
+            "path": "crates/gateway-core/src/contracts.rs",
+            "sha256": "890de748b133b976e0d8e26df45f7e1bca4be93013760ff0b97752c2a547be68"
+          },
+          {
+            "path": "crates/gateway-cli/tests/management.rs",
+            "sha256": "38b29ee9f0ef459a3f0121921371b0a4359d4f23af591bc5274348d5ffbe8111"
+          },
+          {
+            "path": "docs/endpoint-management.md",
+            "sha256": "8fe41a137329e42ca9af71b0048e5e404216389beae3b3f25254dd8178f5c76f"
+          }
+        ]
+      }
+    },
+    "T3.6": {
+      "commitGroup": "endpoint-management",
+      "id": "T3.6",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3c0de2000a830cf788851658164d366b2585cb10",
+      "mergeCommit": null,
+      "verification": "Actual macOS27.0.1 arm64 literal args/env/cwd, success/failure, TERM-ignoring descendants, Drop/abort, cancellation, timeout, revoke/expiry, installed-disabled restart, explicit enable retry/no rerun, process lock and old-generation shutdown passed. Actual CLI SIGTERM/Ctrl-C used real isolated default Keychain, cleaned descendants, and creating-CLI logout removed fixture entries. Post-success cancellation/expiry/revocation/300s simulated deadline caused zero refresh/enable attempts. Same full quality checks passed; no actual sleep/reboot/older-OS/Linux runtime claims.",
+      "approval": "Persisted policy-v2 Autonomous; exact shared26-file product diff and passing task evidence reviewed by main; commit3c0de2000a830cf788851658164d366b2585cb10 integrated into P3. No fabricated human approval.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Explicit assigned online installation runs structured program/args/env/cwd while centrally disabled, with private output and bounded execution.",
+          "Scoped bounded atomic receipts describe local side effects and current command digest; installed-disabled recovery and explicit retry-enable never silently rerun.",
+          "Successful local work persists installed-disabled before optional enablement. Post-cleanup current authorization, cancellation and native deadline checks retain the original lease bound until enable dispatch.",
+          "Safe rustix NOWAIT reserves leader PID through owned-group TERM/KILL/reap and Drop cleanup, sharing a maximum five-second deadline. Zombie-only Darwin EPERM requires safe exact-group libproc proof; query errors/live members fail.",
+          "Native fixtures use existing private roots, separate real-Keychain services, creating-CLI logout and journal retention on cleanup failure."
+        ],
+        "failedApproaches": [
+          "nix waitid is unavailable on macOS; pinned rustix supplies safe NOWAIT.",
+          "Darwin zombie-only groups return EPERM; blind acceptance was rejected and safe libproc verifies empty/live state.",
+          "Parent test-binary Keychain cleanup failed across creator ACLs. Creating-CLI logout replaces it. Three orphaned fixture entries were recovered only by exact creator ACL/namespace/interval evidence and verified absent via metadata-only queries."
+        ],
+        "openQuestions": [
+          "P4 must preserve unreaped leader ownership while adding piped STDIO. Escaped/inaccessible descendants need external supervision; abrupt SIGKILL cannot run graceful cleanup."
+        ],
+        "nextAction": "Complete P3 verification/integration; P4 reuses ownership-safe native lifecycle and adds tools-only STDIO aggregation.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/install.rs",
+            "sha256": "c4f924870870509eecc42d1d7e72fa645fd217a99300debd18b6b33570ebfa7b"
+          },
+          {
+            "path": "crates/gateway-cli/src/owned_process.rs",
+            "sha256": "eab7891e76c9382a36f2cac8bf3c5731f54aa9bbbb94ec276da45983849c1a36"
+          },
+          {
+            "path": "crates/gateway-cli/src/main.rs",
+            "sha256": "d2f36ae750726e6e45f8ff05cb4be27c68cdcd82bbdae4fda23504f77e3e41f4"
+          },
+          {
+            "path": "crates/gateway-cli/src/credentials.rs",
+            "sha256": "d4b5f3f62e1fa5b46c9ebef57f38cbffbb7afe2c82393f0358de6a76fb128e5b"
+          },
+          {
+            "path": "crates/gateway-cli/tests/management.rs",
+            "sha256": "38b29ee9f0ef459a3f0121921371b0a4359d4f23af591bc5274348d5ffbe8111"
+          },
+          {
+            "path": "docs/endpoint-management.md",
+            "sha256": "8fe41a137329e42ca9af71b0048e5e404216389beae3b3f25254dd8178f5c76f"
+          }
+        ]
+      }
+    },
+    "T3.7": {
+      "id": "T3.7",
+      "kind": "manual-verification",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.1",
+        "T3.2",
+        "T3.3",
+        "T3.4",
+        "T3.5",
+        "T3.6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3c0de2000a830cf788851658164d366b2585cb10",
+      "mergeCommit": null,
+      "verification": "P3 phase HEAD3c0de2000a830cf788851658164d366b2585cb10 is clean and contains all three verified groups. Current CLI/core tests50 passed with one intentional helper marker; actual_mac_clock_cache_and_process_restart invokes the ignored child with --exact/--ignored and passed. Actual macOS27.0.1 arm64 Keychain, shared-cache separate-process/restart/logout, CLI Host/Origin/CSRF isolation, real CLI SIGTERM/Ctrl-C and TERM-ignoring owned descendants passed. Deterministic 3599/exact3600/3601 expiry, rollback/reboot/sleep-aware clock, tamper/copy/key/publication failures, sync/reconnect/401, offline no-queue writes, CAS conflicts, pinned identities, install recovery and post-success cancellation/expiry/revoke/300s bounds passed. CLI Clippy all-targets -Dwarnings, fmt/build/generated-contract equality and diff-check passed. No actual sleep/reboot, older Mac, Linux endpoint, browser UI or agent aggregation claim; those remain declared later phases.",
+      "approval": "Actual automated phase verification under persisted policy-v2 Autonomous authority; main source/diff and evidence review completed. Human verification was not performed or claimed.",
+      "blocker": null
+    },
+    "P4": {
+      "id": "P4",
+      "kind": "phase",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P4",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p4",
+      "workerCommit": "fa504880b4d89cd26df3661c6ddab9bf5c981a2d",
+      "mergeCommit": "fa504880b4d89cd26df3661c6ddab9bf5c981a2d",
+      "verification": "Integrated P4 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous; both cohesive groups reviewed and phase barrier verified.",
+      "blocker": null
+    },
+    "T4.1": {
+      "commitGroup": "gateway-aggregation",
+      "id": "T4.1",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "38a858e23fde380bf37a7658367715e96cd333e2",
+      "mergeCommit": null,
+      "verification": "Real SDK STDIO/HTTP pagination and namespace/schema/result/error preservation; 2025-11-25 and empty upstream client capabilities; policy/direct-call witnesses; CLI/core/fixtures full suite 64 passed, one intentional helper marker; fmt and all-target Clippy -D warnings passed.",
+      "approval": "Persisted policy-v2 Autonomous authorizes this reviewed in-scope cohesive gateway-aggregation group; no human verification claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Pinned rmcp 3.5.1; own bounded stdio/HTTP byte seams, exact URL/no redirects, explicit HTTP reinit=false to prevent call replay.",
+          "Owned process group retains unreaped leader while SDK holds detached pipes; startup never runs installers.",
+          "Stable ASCII SHA256 names; strict route registry; current shared-cache/pure policy gate on listing and dispatch; native-only auth resolver for P5."
+        ],
+        "failedApproaches": [
+          "SDK drops execution.taskSupport; raw wire sanitization omits required-task tools and rejects agent task requests before typed decoding.",
+          "SDK defaults permit unbounded JSON/lines and automatic POST replay after session expiry; explicit adapters/settings replace these defaults."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement gateway-runtime T4.3/T4.4 with STDIO command, refresh/notifications and bounded in-flight cancellation.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/aggregation.rs",
+            "sha256": "28e3c6b2678709b622ea92fe64ac004828f8a6c9299b13a07a6ba23b6e722704"
+          },
+          {
+            "path": "crates/gateway-cli/src/upstream_http.rs",
+            "sha256": "96531a2bf0183c31a112eb22c0cb38cb191b82d63f7ecaa50e2b9d749756bba6"
+          },
+          {
+            "path": "docs/gateway-aggregation.md",
+            "sha256": "4c5e5360d674fa2356d161cc409b1ada4128ab6c7a796f3a7441ab95caded095"
+          }
+        ]
+      }
+    },
+    "T4.2": {
+      "commitGroup": "gateway-aggregation",
+      "id": "T4.2",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3",
+        "T4.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "38a858e23fde380bf37a7658367715e96cd333e2",
+      "mergeCommit": null,
+      "verification": "Five multi-upstream aggregation tests plus six protocol tests pass; malformed/looping/duplicate catalogs fail in isolation; no denied-call upstream witness; learned disable pending startup; native sleep-aware30s timeout; fragmented frames/SSE hard and smaller bounds; redirect target receives zero requests; expired HTTP session initializes/calls exactly once; payload logging capture redacted.",
+      "approval": "Persisted policy-v2 Autonomous authorizes reviewed in-scope tests and inventory implementation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Discovery bounded32pages/2048tools/2MiB per upstream; aggregate32upstreams/2048tools/16MiB, startup4 concurrently.",
+          "Original-name inventory ID+names only, authenticated native control API, no lease renewal or grants.",
+          "Hard endpoint logging excludes SDK/network/debug payloads independent of RUST_LOG."
+        ],
+        "failedApproaches": [
+          "A two-second test-only startup limit became timing-sensitive with parallel native validation; five-second test limit remains below production30s and full suite passed."
+        ],
+        "openQuestions": [],
+        "nextAction": "Add downstream paging, call limits/cancellation, same-Mac refresh and complete CLI STDIO tests in gateway-runtime.",
+        "sources": [
+          {
+            "path": "crates/gateway-fixtures/tests/aggregation.rs",
+            "sha256": "0d9733cc227db67cae979c8bb4f8bb2d9115de9372e7da5f2321a1b3534a6710"
+          },
+          {
+            "path": "crates/gateway-cli/tests/protocol.rs",
+            "sha256": "95d110f0afb4d5067816fcf986964166ae4a4b165133b5d8a3b08556ecb08ee7"
+          }
+        ]
+      }
+    },
+    "T4.3": {
+      "commitGroup": "gateway-runtime",
+      "id": "T4.3",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3",
+        "T4.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fa504880b4d89cd26df3661c6ddab9bf5c981a2d",
+      "mergeCommit": null,
+      "verification": "Full CLI/core/fixtures suite67 passed (one intentional helper marker, exercised by actual Mac cache parent), plus affected standard-client runtime and actual CLI/native startup-shutdown tests rerun after final task-ownership fix. Current cache/direct-call gates, native60s deadline, exact3600s expiry, caller cancellation,16-admission/no-queue, notifications, paging and reduced bounds; final fmt, all-target Clippy-Dwarnings, build and generated-contract equality pass.",
+      "approval": "Persisted policy-v2 Autonomous authorizes reviewed in-scope gateway-runtime implementation and actual automated evidence; no human verification is claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "mcp command attempts startup refresh then scheduled60s/10s sync; original generation remains pinned; same-Mac latest-cache reads gate every new dispatch.",
+          "Calls use native+awake60s bounds and50ms current-route fences, including completion; exact SDK request-ID cancellation survives dropped handlers; global16 slots refuse overload.",
+          "Separate reconciliation with abort-on-drop ownership and250ms connection retirement; tool-list-change delivery and1MiB catalog pages/cursor hash."
+        ],
+        "failedApproaches": [
+          "Default Tokio stdin's uncancellable blocking thread kept CLI alive with open agent input after SIGTERM. Safe owned Tokio Unix pipe adapters replace standard stdin/stdout and also handle output backpressure.",
+          "Dropping coordinator JoinHandle would detach discovery work; explicit abort-on-drop handle now owns it, verified with TERM-ignoring descendants during pending initialization."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete P4 barrier/integration; P5 installs native scoped bearer/OAuth resolver, expiry and credential-version fences.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/runtime.rs",
+            "sha256": "02cd3e099a4e85380fe19a5a2dadd1a28457367c40e48d7c59525529d64d2242"
+          },
+          {
+            "path": "crates/gateway-cli/src/aggregation.rs",
+            "sha256": "8432ff66ef8c8af3abdbf2fb699e6e08837a94538668efb7a6c4599f6fd7befd"
+          },
+          {
+            "path": "crates/gateway-cli/src/native_stdio.rs",
+            "sha256": "396713505aa4a971f79f2d2677998442a8f1fae8143963122a108b487fb64bd9"
+          }
+        ]
+      }
+    },
+    "T4.4": {
+      "commitGroup": "gateway-runtime",
+      "id": "T4.4",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3",
+        "T4.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fa504880b4d89cd26df3661c6ddab9bf5c981a2d",
+      "mergeCommit": null,
+      "verification": "Actual macOS27.0.1 arm64 creating-CLI isolated Keychain login; one standard rmcp2025 STDIO client invokes local protocol and SDK HTTP tools; confirmed local disable, cold valid-cache offline restart, immediate reconnection policy refresh, protocol-only stdout, SIGTERM/SIGINT, idle-input/blocked-output/pending-startup exit and exact owned descendant absence. Standard-client cancellation/concurrency/capability/notifications and no-replay tests pass; docs state actual tested profile and limitations.",
+      "approval": "Persisted policy-v2 Autonomous authorizes reviewed in-scope gateway-runtime implementation and actual automated evidence; no human verification is claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Agent uses one absolute executable/mcp entry, no credentials or interactive browser prompts; unusable cold startup prints only fixed stderr diagnostics.",
+          "Owned test processes signal graceful cleanup on assertion failure and retain credential journals on failed cleanup; creating binary logout verifies identity/pendingCleanup empty before deleting fixture.",
+          "Only Mac pipe STDIO is validated; named commercial agents/olderMac/otherendpointOS/provider interoperability not claimed."
+        ],
+        "failedApproaches": [
+          "An incorrect local settings path in the new harness was corrected. Exact failed fixture Keychain scopes were cleared through creating CLI; one orphan was removed only after PID/group/command witness and absence verification.",
+          "Open-input shutdown failure exposed production Tokio stdin hang, corrected in T4.3; both failed native fixture directories removed only after cleared journals and owned PID absence."
+        ],
+        "openQuestions": [],
+        "nextAction": "Record P4 automated barrier, integrate/clean phase, then bearer/OAuth implementation.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/tests/gateway.rs",
+            "sha256": "357d94da5baaa4270d70f694aa9ab3853d15c2b2111b9612834cffb3de5445b3"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/aggregation.rs",
+            "sha256": "949d12e6a70fd28c095cddccba44c3842640e65d150b921d6ababffd844577cd"
+          },
+          {
+            "path": "docs/agent-configuration.md",
+            "sha256": "0e4e68575da0723e58c36f2cf0c1e39b02c9340d511119be66ec76051660ee6e"
+          }
+        ]
+      }
+    },
+    "T4.5": {
+      "id": "T4.5",
+      "kind": "manual-verification",
+      "phaseId": "P4",
+      "dependencies": [
+        "P3",
+        "T4.1",
+        "T4.2",
+        "T4.3",
+        "T4.4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fa504880b4d89cd26df3661c6ddab9bf5c981a2d",
+      "mergeCommit": null,
+      "verification": "P4 outcome checked against FR019-021 and AC010 no-auth subset: real local/remote SDK protocols, names/pagination/schema/result/isolated failure and no direct bypass; current policy/generation/expiry plus native limits/cancellation; original-name inventory; one CLI STDIO journey actual Apple Silicon Keychain/process cleanup, offline restart/reconnect, no installer startup, accurate unsupported capabilities/stdout and no replay. Full relevant suite67 passed with intentional helper marker and affected final lifecycle tests passed again; fmt, Clippy-Dwarnings, build, generated types and diff checks passed. Bearer/OAuth integrations remain approved P5 scope, not claimed in P4.",
+      "approval": "Persisted policy-v2 Autonomous permits this automated phase barrier; no human manual verification performed or claimed.",
+      "blocker": null
+    },
+    "P5": {
+      "id": "P5",
+      "kind": "phase",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P5",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p5",
+      "workerCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "mergeCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "verification": "Integrated P5 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous original execution2026-10-14T09-21-15-303Z under approved spec/plan revision1 authorizes actual automated phase verification; human verification not performed or fabricated.",
+      "blocker": null
+    },
+    "T5.1": {
+      "commitGroup": "remote-bearer",
+      "id": "T5.1",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "d4fb795a60fbb6f93a64575d88861f93ba8c0643",
+      "mergeCommit": null,
+      "verification": "Relevant full CLI/core/fixtures suite73passed+1 intentional cache-child marker before final key-switch regression; final six native credential tests, bearer fixture and actual Mac CLI protected MCP journey passed after publication pruning/key-switch fixes. Final all-target CLI/fixtures Clippy-Dwarnings/build, fmt/diff checks passed; generated contract comparison passed at this commit. Existing central vault ownership/reference deletion tests and exact-URI/no-redirect transport tests retained.",
+      "approval": "Persisted policy-v2 Autonomous approval of spec/plan revision1, original execution2026-10-14T09-21-15-303Z; no human phase approval claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Native-only current-user credential resolution pins original session/revision/MCP/installation; immutable Keychain heads bound to runtime and secretID/version.",
+          "Per-list/dispatch protected readiness; policy receipt distinct from rotating read watermark. Complete config revisions require credential revalidation.",
+          "Partial publication blocks old tokens; protected recovery preserves existing OAuth time anchors. Same-signature remote rejection persists and late old responses cannot poison newer binding."
+        ],
+        "failedApproaches": [
+          "Comparing cache head accounts incorrectly treated read watermarks as new policy; switched to protected receipt.",
+          "Deleting old head before storing new one lost native token lifetime after failed publication; store complete new head first and recover protected anchors."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement remote-oauth T5.3/T5.4/T5.5, management-only consent and centrally coordinated refresh.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/upstream_credentials.rs",
+            "sha256": "b6ef5457a4912d035908adf5fe3222d73147921a652379d4aba823f9860d1c8b"
+          },
+          {
+            "path": "crates/gateway-cli/src/remote_credentials.rs",
+            "sha256": "babd4e42f2b549bfe220bc23ec17c64e42ef64174ecd636db6854b6491d41d33"
+          },
+          {
+            "path": "crates/gateway-cli/tests/upstream_credentials.rs",
+            "sha256": "8aa176192e45c056266301ca9cba27a8c3fe88a9f98402f3d631c4e61aded441"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/aggregation.rs",
+            "sha256": "e40216b775eb0b2d1c82b4d63a2485454c61c58caf28df7f0fa1d1fb81225252"
+          },
+          {
+            "path": "crates/gateway-cli/tests/gateway.rs",
+            "sha256": "70d90211084e8d52f9d41636aaab7387789112adc246e9410f01c747f494992e"
+          },
+          {
+            "path": "docs/remote-credentials.md",
+            "sha256": "97edee9e5e118df622995a2791396458b4f88c77ddf41460055bd616eb9498cd"
+          }
+        ]
+      }
+    },
+    "T5.2": {
+      "commitGroup": "remote-bearer",
+      "id": "T5.2",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4",
+        "T5.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "d4fb795a60fbb6f93a64575d88861f93ba8c0643",
+      "mergeCommit": null,
+      "verification": "Bearer fixture header witnesses, replacement/direct-deny, scoped remote401 isolation, foreign secret response rejection,503 cached fallback,3599 success/3600 zero extra dispatch passed. Actual macOS27.0.1 arm64 creating CLI resolves real Keychain bearer head, invokes protected rmcp HTTP through one STDIO entry, local file scan no tokens, offline/reconnect/signal cleanup and creating-CLI logout passed. Six native tests cover persistent rejection, switched key version reset, late old response, partial publication and unchanged/sleep expiry; final formatting/Clippy/build/contracts/diff passed.",
+      "approval": "Persisted policy-v2 Autonomous approval of spec/plan revision1 and current execution; no fabricated human approval.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Central login tokens reach only control plane; upstream bearer reaches exact configured remote endpoint with redirects rejected.",
+          "Offline fallback requires current protected binding, unexpired token/session/policy. Known scoped refusal cannot restore old token/mode.",
+          "MCP fault isolation keeps unrelated tools available; endpoint credential values absent from ordinary files/browser exports."
+        ],
+        "failedApproaches": [
+          "Fixture mutex explicit drop was insufficient for Clippy async guard analysis; lexical scope used.",
+          "New keyID may start version1 after former key version8; version continuity applies only matching runtime binding."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement OAuth profile fixtures and online-only callback/refresh paths; local React UI follows P5 integration.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/upstream_credentials.rs",
+            "sha256": "b6ef5457a4912d035908adf5fe3222d73147921a652379d4aba823f9860d1c8b"
+          },
+          {
+            "path": "crates/gateway-cli/src/remote_credentials.rs",
+            "sha256": "babd4e42f2b549bfe220bc23ec17c64e42ef64174ecd636db6854b6491d41d33"
+          },
+          {
+            "path": "crates/gateway-cli/tests/upstream_credentials.rs",
+            "sha256": "8aa176192e45c056266301ca9cba27a8c3fe88a9f98402f3d631c4e61aded441"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/aggregation.rs",
+            "sha256": "e40216b775eb0b2d1c82b4d63a2485454c61c58caf28df7f0fa1d1fb81225252"
+          },
+          {
+            "path": "crates/gateway-cli/tests/gateway.rs",
+            "sha256": "70d90211084e8d52f9d41636aaab7387789112adc246e9410f01c747f494992e"
+          },
+          {
+            "path": "docs/remote-credentials.md",
+            "sha256": "97edee9e5e118df622995a2791396458b4f88c77ddf41460055bd616eb9498cd"
+          }
+        ]
+      }
+    },
+    "T5.3": {
+      "commitGroup": "remote-oauth",
+      "id": "T5.3",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4",
+        "T5.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "mergeCommit": null,
+      "verification": "SDK OAuth fixture passes discovery from advertised and well-known protected-resource metadata, preregistered public client, PKCE/resource/client binding, callback origin/duplicate state/issuer-required/mismatch/five-minute equality expiry, one-use code, resource mismatch and token redirect zero-destination witness; unsupported metadata cases fail. Real central/native journey passes consent, pre-exchange and in-flight cancellation preserving working central version, disconnect before a token exists, and same-generation reconnection. Final workspace fmt/Clippy-Dwarnings/build/contracts/diff passed.",
+      "approval": "Persisted policy-v2 Autonomous authority for approved mac-mvp spec/plan revision1 and execution2026-10-14T09-21-15-303Z; no human phase approval claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "SDK rmcp3.5.1 auth manager plus pinned oauth2.5.0.0; metadata chain validates exact resource and issuer, token destination pinned, no ambient auth/proxies/redirects,10s operations/aggregate discovery and1MiB bodies.",
+          "Management consent is generation/revision/registration bound, native300s exclusive,16 pending/one per MCP, cancel tokens retained during exchange; STDIO never prompts.",
+          "Public generated TS contracts include consent inputs and redacted native readiness. Provider profile/fixed callback registration documented."
+        ],
+        "failedApproaches": [
+          "SDK OAuthTokenResponse uses VendorExtraTokenFields rather than EmptyExtraTokenFields.",
+          "Frozen test wall time made advancing server timestamps invalid; portable fixture uses live wall/elapsed anchors.",
+          "Removing a flow before exchange lost its cancellation handle; processing guard retains it until completion."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete P5 barrier/integration, then P7 renders login/catalog/secret/OAuth flows using protected local routes.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/oauth_protocol.rs",
+            "sha256": "5302ed38474341e925e8c574db500fbb4e9fad6be6529691ba680124663e2fe2"
+          },
+          {
+            "path": "crates/gateway-cli/src/oauth_http.rs",
+            "sha256": "2711ab127aafbbe94584b3edb27b7fe9eea508292008e1b5f7707e77e6675d43"
+          },
+          {
+            "path": "crates/gateway-cli/src/oauth_control.rs",
+            "sha256": "7d5fc665259ed53e072c7a90b6c7c25ecc07b80057160b67ef5bdd2a0aff80e4"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/oauth_gateway.rs",
+            "sha256": "982405b4626943836f032b6d78caba5408b3b4cb2be7919a3d1e3b402e3a2760"
+          },
+          {
+            "path": "docs/oauth.md",
+            "sha256": "d98b26221d2f49f40c2c33e2e12d8633312aca7f81377fb6c21e7bc2a5f4ec06"
+          }
+        ]
+      }
+    },
+    "T5.4": {
+      "commitGroup": "remote-oauth",
+      "id": "T5.4",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4",
+        "T5.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "mergeCommit": null,
+      "verification": "Real PostgreSQL and actual isolated macOS27.0.1 arm64 Keychain journey passes encrypted central persistence, protected tool call, concurrent refresh single version winner, failed-save complete-response recovery, unknown committed response confirmation without repeated provider exchange/commit, restarted controller, pending-save disconnect and version1 reconnect. Final native six tests pass unchanged/sleep/token and partial-publication expiry. Eight real PostgreSQL suite tests passed; affected final OAuth journey rerun53.73s; external-key permissions test passed. All workspace quality/build passed.",
+      "approval": "Persisted policy-v2 Autonomous authority for approved mac-mvp spec/plan revision1 and execution2026-10-14T09-21-15-303Z; no human phase approval claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Central60s lease spans provider exchange and version CAS; known invalid_grant rejects only matching current credential; refresh/download never independently renew policy.",
+          "Complete issued responses are journaled only in Keychain before save. Recovery validates online scope/current version and preserves native token anchor, never repeats provider exchange/tool call.",
+          "Native receipt-bound disconnect markers retire local heads/pending saves before central request; central revision advances even with no record. New explicit consent may restart central record version1."
+        ],
+        "failedApproaches": [
+          "An empty-record disconnect did not fence pending initial consent; unconditional revision bump plus native receipt marker closes it.",
+          "Retaining old native version after central deletion rejected legitimate new version1; disconnect now retires the record.",
+          "Initial marker label exceeded existing100-byte bound; full MCP SHA plus compact receipt under od namespace fits exactly100 without weakening validation."
+        ],
+        "openQuestions": [],
+        "nextAction": "P7 must distinguish server connected/version from native readiness and server-confirmed enablement; no offline actions or token display.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/oauth_pending.rs",
+            "sha256": "87232302a37016e9f6e2ccc8f38c9f0bb742f952560853df1e80684cb8634757"
+          },
+          {
+            "path": "crates/gateway-cli/src/upstream_credentials.rs",
+            "sha256": "d632c2a825c3782bc9f3146c87d3da1aceb5c866f8194a386ae2ca4abb4172e8"
+          },
+          {
+            "path": "crates/gateway-server/src/vault.rs",
+            "sha256": "8f8fc8b9101415779d1c513d17c3aed8fef07f678e7625233bd6666a8c20ebdf"
+          },
+          {
+            "path": "crates/gateway-server/tests/remote_oauth.rs",
+            "sha256": "4bac9b30bad094ba10986951b8322b7ed7efcc1583bcee505b1c30f99c78662d"
+          }
+        ]
+      }
+    },
+    "T5.5": {
+      "commitGroup": "remote-oauth",
+      "id": "T5.5",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4",
+        "T5.4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "mergeCommit": null,
+      "verification": "Relevant CLI/core/fixtures suite76passed plus1 intentional cache-child helper marker; final affected six native credentials and actual four-MCP CLI42.20s passed. CLI-only standard2025 client discovers/calls local STDIO + none/bearer/OAuth remote, actual Keychain heads, cold cached offline restart, reconnect policy, pure stdout, shutdown/owned PID absence; files contain no access/refresh token. Frontend10tests/lint/typecheck/format/build and generated contracts passed. Final workspace Clippy/fmt/build/diff passed; no hostedCI, external provider or named commercial-agent claim.",
+      "approval": "Persisted policy-v2 Autonomous authority for approved mac-mvp spec/plan revision1 and execution2026-10-14T09-21-15-303Z; no human phase approval claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "One STDIO entry combines all supported auth modes; OAuth refresh is non-interactive and online-only, with per-dispatch protected native credential/version/time checks.",
+          "Scoped auth rejection never forwards central credentials or switches auth mode; independent healthy MCPs remain usable.",
+          "Operator setup, fixed/ephemeral callback constraints, strict provider profile and recovery boundaries recorded in docs/oauth.md."
+        ],
+        "failedApproaches": [
+          "Four authenticated/native MCPs exceeded the raw test's5s listing deadline; fixture uses35s, accommodating actual30s initial-list bound without changing product limits.",
+          "Failed owned CLI fixture was logged out through creating binary; metadata empty and exact PIDs76138/76139 absent before directory removal. Failed owned PostgreSQL databases were removed only by exact fixture UUID/name witnesses."
+        ],
+        "openQuestions": [],
+        "nextAction": "Record P5 verification, integrate/clean its phase, then implement local React UI and complete MVP acceptance/release checks.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/tests/gateway.rs",
+            "sha256": "f7d3cf4baf017994d92120d4e1212eda33d91eaf5ade3a7c9c87a0f16b14e84b"
+          },
+          {
+            "path": "crates/gateway-fixtures/tests/oauth_gateway.rs",
+            "sha256": "982405b4626943836f032b6d78caba5408b3b4cb2be7919a3d1e3b402e3a2760"
+          },
+          {
+            "path": "docs/oauth.md",
+            "sha256": "d98b26221d2f49f40c2c33e2e12d8633312aca7f81377fb6c21e7bc2a5f4ec06"
+          }
+        ]
+      }
+    },
+    "T5.6": {
+      "id": "T5.6",
+      "kind": "manual-verification",
+      "phaseId": "P5",
+      "dependencies": [
+        "P4",
+        "T5.1",
+        "T5.2",
+        "T5.3",
+        "T5.4",
+        "T5.5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "64a57dbd489202da80507c361152decd9bb1cae1",
+      "mergeCommit": null,
+      "verification": "P5 outcome verified on macOS27.0.1 arm64: none/bearer/OAuth protected tools through one actual CLI STDIO entry; default-deny/current-policy/native credential fences, cached offline use and exclusive expiry, encrypted central vault/real Keychain, PKCE/resource/issuer/callback negatives, online-only consent and exclusive refresh/version CAS, failed-save/unknown-commit recovery, in-flight cancellation, disconnect-before-record and same-generation reconnection. Relevant full76test suite+intentional helper, final affected credential/CLI/OAuth tests,8 real PostgreSQL tests+key permissions,10frontend tests and all formatting/Clippy/build/contracts checks passed. No human approval, external-provider/commercial-agent/older-Mac/hostedCI evidence is claimed.",
+      "approval": "Persisted policy-v2 Autonomous original execution2026-10-14T09-21-15-303Z under approved spec/plan revision1 authorizes actual automated phase verification; human verification not performed or fabricated.",
+      "blocker": null
+    },
+    "P6": {
+      "id": "P6",
+      "kind": "phase",
+      "phaseId": "P6",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P6",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p6",
+      "workerCommit": "ee84d90ead2431af8cee1483bccb48e52a3b9fe9",
+      "mergeCommit": "ee84d90ead2431af8cee1483bccb48e52a3b9fe9",
+      "verification": "Integrated P6 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous; phase barrier verified and direct-main product scope reviewed.",
+      "blocker": null
+    },
+    "T6.1": {
+      "commitGroup": "admin-ui-design",
+      "id": "T6.1",
+      "kind": "task",
+      "phaseId": "P6",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "59a60a018461b0506f183305aa9a9db8e459962c",
+      "mergeCommit": null,
+      "verification": "Generated and view_image-inspected catalog, tool-policy and group-membership references; documented native1586x992 geometry/tokens/copy/icon/component/responsive/accessibility states. Reviewed complete current Rust contracts, API helper, central router and API methods; corrected configuration route to actual /api/admin/configuration. Design maps required FR-022 journeys to revision checks and browser security. Prettier and diff check passed. Implementation/browser QA remains T6.2/3.",
+      "approval": "Persisted policy-v2 Autonomous; coordinator accepts reviewed design within approved FR-022 scope.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Use white canvas/cool gray rail/forest green primary with code-native Geist/Lucide/shadcn UI; coordinated three reference images.",
+          "Catalog, Access, Users, Groups only; forms/tool-policy/group sheets and required login/error states share same system.",
+          "Runtime decoders, 204 response support, in-memory CSRF and explicit409 reload; central controls never execute endpoint commands.",
+          "Revoked browser cookie requires fresh preauth challenge during central UI integration."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Implement admin-ui T6.2/3 against actual revision-checked APIs and production Rust asset serving; browser fidelity and real CRUD checks.",
+        "sources": [
+          {
+            "path": "docs/design/admin/README.md",
+            "sha256": "86ee8449302b6de2cd4e2ee02ef7ea70746f6793826a46712fc36ceb8ef9e1ef"
+          },
+          {
+            "path": "docs/design/admin/catalog.png",
+            "sha256": "3ba9f69499dfdf1296b550fa19866366affc1c578355c284cb72555f76bad052"
+          },
+          {
+            "path": "docs/design/admin/tool-policy.png",
+            "sha256": "79caa6105e075ca0c678a847df3f6c390250d3e7ecb88370d38d1ca05a15ba84"
+          },
+          {
+            "path": "docs/design/admin/group-membership.png",
+            "sha256": "9e05c577089a43b95e6ec2ca2dd90281799a32dcac89124cf121441b69a5b013"
+          }
+        ]
+      }
+    },
+    "T6.2": {
+      "commitGroup": "admin-ui",
+      "id": "T6.2",
+      "kind": "task",
+      "phaseId": "P6",
+      "dependencies": [
+        "P2",
+        "T6.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ee84d90ead2431af8cee1483bccb48e52a3b9fe9",
+      "mergeCommit": null,
+      "verification": "Administrator workflow behavior: 10 frontend behavioral tests, lint/typecheck/format/build passed; server fmt/Clippy-Dwarnings/build and six ignored realPostgres identity/config/vault tests explicitly run and passed; vaultkey permissions ordinary test passed. Embedded index/js/CSP/no-store/nosniff and unknown/traversal404 checks passed. Actual IAB compiled-Rust browser login/policymanual+observedsave/groups/commands/assignments/usercreate/logout/role denial/real409reload/requiredfield/longname/keyboardfocus verified at1586x992,1200x900,390x844. No relevant console errors. All3reference/latest pairs inspected with view_image; fidelityledger/copydiff in docs/admin-ui.md. QA fixture cleaned; final screenshots outside repository. Safari/Firefox/olderMac/hostedCI unclaimed.",
+      "approval": "Persisted policy-v2 Autonomous implementation authority; main exact scope/source review and actual verification, one cohesive shared product commit.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "React/strictTS/shadcn central login/catalog/access/users/groups with runtime decoders, in-memoryCSRF, fixed safe errors and frozen-revision conflict reload.",
+          "Default empty allowlist/unassigned catalog, structured command editor, manual and observed original tools; admin never executes endpoint commands.",
+          "Rust compiletime asset embedding with bounded exact lookup and same-origin CSP; revoked browser cookies mint fresh preauth without changing native401 behavior.",
+          "Native reference comparisons and desktop/laptop/mobile QA recorded in docs/admin-ui.md; preserve code-native typography/icons and accessible keyboard sheets."
+        ],
+        "failedApproaches": [
+          "Initial narrow action columns clipped control borders;1100px minimum table and labelled keyboard scroll preserve controls.",
+          "IAB ordinary screenshots clipped desktop panel; developer Page.captureScreenshot captured full1586x992 for reference comparisons.",
+          "jsdom lacked ResizeObserver; test-only stub permits Radix controls while behavior is verified in actual browser."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete P6 barrier/integration. Later local UI may reuse forms/decoders but requires its distinct protected endpoint API and auth states.",
+        "sources": [
+          {
+            "path": "apps/web/src/admin/app.tsx",
+            "sha256": "7ea30efa8de42ead070a9d7c3cb9f7f72df39e955617458fc3a383ab0d2c88f5"
+          },
+          {
+            "path": "apps/web/src/admin/catalog.tsx",
+            "sha256": "97c502b35664c369fcff4961b63b12907d040942d57aeabf6f5fd8fe153b3128"
+          },
+          {
+            "path": "apps/web/src/admin/identities.tsx",
+            "sha256": "73b89485c1caacd08d3e6e601335a7ca805824383bff4c75cab7618aa12c5ab1"
+          },
+          {
+            "path": "apps/web/src/admin/app.test.tsx",
+            "sha256": "e2a33f7e1299591ada8e4a0641853acbf798a66d9cf89873d489fe029f752030"
+          },
+          {
+            "path": "crates/gateway-server/src/assets.rs",
+            "sha256": "186c7b41a2c31b3134d96ced7b55210399aecb5ac9f0e00a218f54d6623dbe6c"
+          },
+          {
+            "path": "docs/admin-ui.md",
+            "sha256": "79fcb275595ace211343d84948ca119e0886c1fd20878d3208c834352110dcb3"
+          }
+        ]
+      }
+    },
+    "T6.3": {
+      "commitGroup": "admin-ui",
+      "id": "T6.3",
+      "kind": "task",
+      "phaseId": "P6",
+      "dependencies": [
+        "P2",
+        "T6.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ee84d90ead2431af8cee1483bccb48e52a3b9fe9",
+      "mergeCommit": null,
+      "verification": "Production assets and visual/accessibility verification: 10 frontend behavioral tests, lint/typecheck/format/build passed; server fmt/Clippy-Dwarnings/build and six ignored realPostgres identity/config/vault tests explicitly run and passed; vaultkey permissions ordinary test passed. Embedded index/js/CSP/no-store/nosniff and unknown/traversal404 checks passed. Actual IAB compiled-Rust browser login/policymanual+observedsave/groups/commands/assignments/usercreate/logout/role denial/real409reload/requiredfield/longname/keyboardfocus verified at1586x992,1200x900,390x844. No relevant console errors. All3reference/latest pairs inspected with view_image; fidelityledger/copydiff in docs/admin-ui.md. QA fixture cleaned; final screenshots outside repository. Safari/Firefox/olderMac/hostedCI unclaimed.",
+      "approval": "Persisted policy-v2 Autonomous implementation authority; main exact scope/source review and actual verification, one cohesive shared product commit.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "React/strictTS/shadcn central login/catalog/access/users/groups with runtime decoders, in-memoryCSRF, fixed safe errors and frozen-revision conflict reload.",
+          "Default empty allowlist/unassigned catalog, structured command editor, manual and observed original tools; admin never executes endpoint commands.",
+          "Rust compiletime asset embedding with bounded exact lookup and same-origin CSP; revoked browser cookies mint fresh preauth without changing native401 behavior.",
+          "Native reference comparisons and desktop/laptop/mobile QA recorded in docs/admin-ui.md; preserve code-native typography/icons and accessible keyboard sheets."
+        ],
+        "failedApproaches": [
+          "Initial narrow action columns clipped control borders;1100px minimum table and labelled keyboard scroll preserve controls.",
+          "IAB ordinary screenshots clipped desktop panel; developer Page.captureScreenshot captured full1586x992 for reference comparisons.",
+          "jsdom lacked ResizeObserver; test-only stub permits Radix controls while behavior is verified in actual browser."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete P6 barrier/integration. Later local UI may reuse forms/decoders but requires its distinct protected endpoint API and auth states.",
+        "sources": [
+          {
+            "path": "apps/web/src/admin/app.tsx",
+            "sha256": "7ea30efa8de42ead070a9d7c3cb9f7f72df39e955617458fc3a383ab0d2c88f5"
+          },
+          {
+            "path": "apps/web/src/admin/catalog.tsx",
+            "sha256": "97c502b35664c369fcff4961b63b12907d040942d57aeabf6f5fd8fe153b3128"
+          },
+          {
+            "path": "apps/web/src/admin/identities.tsx",
+            "sha256": "73b89485c1caacd08d3e6e601335a7ca805824383bff4c75cab7618aa12c5ab1"
+          },
+          {
+            "path": "apps/web/src/admin/app.test.tsx",
+            "sha256": "e2a33f7e1299591ada8e4a0641853acbf798a66d9cf89873d489fe029f752030"
+          },
+          {
+            "path": "crates/gateway-server/src/assets.rs",
+            "sha256": "186c7b41a2c31b3134d96ced7b55210399aecb5ac9f0e00a218f54d6623dbe6c"
+          },
+          {
+            "path": "docs/admin-ui.md",
+            "sha256": "79fcb275595ace211343d84948ca119e0886c1fd20878d3208c834352110dcb3"
+          }
+        ]
+      }
+    },
+    "T6.4": {
+      "id": "T6.4",
+      "kind": "manual-verification",
+      "phaseId": "P6",
+      "dependencies": [
+        "P2",
+        "T6.1",
+        "T6.2",
+        "T6.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "ee84d90ead2431af8cee1483bccb48e52a3b9fe9",
+      "mergeCommit": null,
+      "verification": "10 frontend behavioral tests, lint/typecheck/format/build passed; server fmt/Clippy-Dwarnings/build and six ignored realPostgres identity/config/vault tests explicitly run and passed; vaultkey permissions ordinary test passed. Embedded index/js/CSP/no-store/nosniff and unknown/traversal404 checks passed. Actual IAB compiled-Rust browser login/policymanual+observedsave/groups/commands/assignments/usercreate/logout/role denial/real409reload/requiredfield/longname/keyboardfocus verified at1586x992,1200x900,390x844. No relevant console errors. All3reference/latest pairs inspected with view_image; fidelityledger/copydiff in docs/admin-ui.md. QA fixture cleaned; final screenshots outside repository. Safari/Firefox/olderMac/hostedCI unclaimed.",
+      "approval": "Persisted policy-v2 Autonomous phase verification authority; automated/browser checks performed by main, human verification not claimed.",
+      "blocker": null
+    },
+    "P7": {
+      "id": "P7",
+      "kind": "phase",
+      "phaseId": "P7",
+      "dependencies": [
+        "P3",
+        "P5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P7",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p7",
+      "workerCommit": "828be9a37bd0fc518011e88774e2e82153a5b58f",
+      "mergeCommit": "828be9a37bd0fc518011e88774e2e82153a5b58f",
+      "verification": "Integrated P7 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous implementation/integration authorization.",
+      "blocker": null
+    },
+    "T7.1": {
+      "commitGroup": "local-ui-design",
+      "id": "T7.1",
+      "kind": "task",
+      "phaseId": "P7",
+      "dependencies": [
+        "P3",
+        "P5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "6a0d0e951ba5f59f7b8db685bf4dbe7ac0ddc558",
+      "mergeCommit": null,
+      "verification": "Inspected five generated concept references and actual protected native context/catalog/settings/install/vault/OAuth contracts; documented FR023 states, generation and online-only constraints, shared shadcn component/keyboard behavior, visual tokens/copy and deviations. git diff --check passed.",
+      "approval": "Persisted policy-v2 Autonomous implementation authorization for approved specification/plan revision1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Primary catalog controls shell geometry; secondary concepts specify forms/status while inconsistent generated logos/navigation are excluded.",
+          "Reuses existing SVG mark and shadcn primitives. Native HTML mode marker selects local UI; no credential/browser storage.",
+          "Confirmed enablement distinct from local install/auth; generation-pinned online actions and explicit conflict recovery."
+        ],
+        "failedApproaches": [
+          "Initial catalog concept added OS chrome and oversized navigation; refined before accepting."
+        ],
+        "openQuestions": [],
+        "nextAction": "Implement and verify local user screens in cohesive local-ui group.",
+        "sources": [
+          {
+            "path": "docs/design/local/design.md",
+            "sha256": "f8a9f5e889c8c0e36a8367924d2d911148a092b18f0d875f8a2dc7ed3b11d7db"
+          }
+        ]
+      }
+    },
+    "T7.2": {
+      "commitGroup": "local-ui",
+      "id": "T7.2",
+      "kind": "task",
+      "phaseId": "P7",
+      "dependencies": [
+        "P3",
+        "P5",
+        "T7.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "828be9a37bd0fc518011e88774e2e82153a5b58f",
+      "mergeCommit": null,
+      "verification": "20 frontend tests pass, including StrictMode, server-confirmed settings, revision conflict without replay, owned bearer-key selection, write-only secret clearing, install failure, offline/exclusive expiry, OAuth cancellation and late old-identity response. Native catalog zero-execution/missing-executable and protected mode/context/generation-refresh regression pass. Actual real central/local browser flows pass; see docs/local-ui.md.",
+      "approval": "Persisted policy-v2 Autonomous implementation authorization for approved spec/plan revision1.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Native embedded HTML mode selects separate local React app; no browser persistence of native credentials/config.",
+          "Generation-pinned reads/logout and actions; confirmed settings only, immutable editor revision, explicit reload, distinct central enablement/native availability.",
+          "Install confirmation/progress/reinstall; write-only per-user CRUD/bearer selector; explicit OAuth connect/reload/enable/disconnect/cancel; native freshness/offline read-only UI.",
+          "Pending OAuth status is ephemeral and does not refresh/recover during its callback. Complete issued-token journal uses current scope receipt and bounded local-publication retry, never provider replay."
+        ],
+        "failedApproaches": [
+          "Negative secret-action positioning overlapped the freshness band; replaced with a real header action.",
+          "Real browser polling exposed protected-receipt churn during OAuth persistence; fixed and added real provider/Keychain regression."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete P7 verification/integration; P8 performs cumulative acceptance, deployment/restore and arm64 packaging.",
+        "sources": [
+          {
+            "path": "apps/web/src/local/app.tsx",
+            "sha256": "0745a05c1bd108c85fb643465d75d881a4017cdbd4361dee315fe22dd1febdce"
+          },
+          {
+            "path": "apps/web/src/local/contracts.ts",
+            "sha256": "b5e2fcbaac6eccdf88ce00fa57ae44899ddca6e255451315c7a75b26efe41f3e"
+          },
+          {
+            "path": "crates/gateway-cli/src/management.rs",
+            "sha256": "9d9fc5eb0dce861463d6eaee80061d9b3b7361745482529bced57b1499d75bd7"
+          },
+          {
+            "path": "crates/gateway-cli/src/oauth_control.rs",
+            "sha256": "752673b98b888f523294e1681491431b1b6afc553b82b23c4f385c231f244bf7"
+          }
+        ]
+      }
+    },
+    "T7.3": {
+      "commitGroup": "local-ui",
+      "id": "T7.3",
+      "kind": "task",
+      "phaseId": "P7",
+      "dependencies": [
+        "P3",
+        "P5",
+        "T7.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "828be9a37bd0fc518011e88774e2e82153a5b58f",
+      "mergeCommit": null,
+      "verification": "Compiled Rust-embedded UI on actual macOS27.0.1 arm64/IAB: 1584x993,1200x900,390x844, login/install/enable, secrets CRUD/bound-delete refusal/bearer, actual OAuth callback/enable/disconnect, central outage/read-only/countdown/reconnect, Alice/Bob isolation/logout, keyboard trap/Escape return, page width=viewport, no relevant console errors. Concept/latest-render view_image comparison and fidelity/copy ledger in docs/local-ui.md. Endpoint/core full65 pass plus1 intentional cache-child marker; real PostgreSQL/SDK/MacKeychain OAuth regression56.19s passes. Workspace Clippy-Dwarnings/fmt/build/contracts/diff and frontend20/lint/typecheck/format/build pass. All three owned UI fixtures cleaned native journals/databases/children; viewport reset and QA tabs closed.",
+      "approval": "Persisted policy-v2 Autonomous verification authorization; no human verification claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Browser requests bound90s for multistep native operations; individual control-plane requests remain10s. Central UI retains10s browser deadline.",
+          "Design references retained under docs/design/local; QA screenshots outside repository. Primary shell governs inconsistent secondary generated backgrounds.",
+          "Actual Mac/IAB and controlled provider evidence only; no olderMac/Safari/Firefox/externalprovider/named commercial-agent/hostedCI claim."
+        ],
+        "failedApproaches": [
+          "JSDOM lacked scrollIntoView and one test used a fractional native epoch; corrected fixture setup without changing product bounds.",
+          "Browser viewport initially targeted the consent popup; closed the owned popup and verified actual390px document width."
+        ],
+        "openQuestions": [],
+        "nextAction": "Record P7 automated barrier, integrate/clean phase, preserve learning, then P8.",
+        "sources": [
+          {
+            "path": "apps/web/src/local/app.test.tsx",
+            "sha256": "b4226b8c1a7c4be8cc74181e6f8625b4badb739cc3fde33c9d571c163cdba17d"
+          },
+          {
+            "path": "docs/local-ui.md",
+            "sha256": "3cdc5be226d70c43dceae76ec9a4456675d7e6f8de9b613bc607198df272ca02"
+          },
+          {
+            "path": "scripts/local-browser-fixture.ts",
+            "sha256": "e28fed88ea8697a56fcffa39036e761e17a12143b44b516edd96ce873e320283"
+          }
+        ]
+      }
+    },
+    "T7.4": {
+      "id": "T7.4",
+      "kind": "manual-verification",
+      "phaseId": "P7",
+      "dependencies": [
+        "P3",
+        "P5",
+        "T7.1",
+        "T7.2",
+        "T7.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "828be9a37bd0fc518011e88774e2e82153a5b58f",
+      "mergeCommit": null,
+      "verification": "FR023 local UI and protected APIs verified against phase product head: full endpoint/core65 tests+1 intentional helper; frontend20; real controlled OAuth/PostgreSQL/MacKeychain regression56.19s; Rust and frontend quality/contracts/embedded builds. Actual compiled IAB journeys and native-size/laptop/mobile/keyboard/offline/identity checks pass; final source rebuild smoke and concept/latest screenshot comparison pass. Evidence/limits/fidelity ledger docs/local-ui.md. All owned browser fixture sessions, Keychain journals, PostgreSQL databases, children and temporary viewport overrides cleaned.",
+      "approval": "Persisted policy-v2 Autonomous phase verification; actual automated/browser evidence only, no human approval claimed.",
+      "blocker": null
+    },
+    "P8": {
+      "id": "P8",
+      "kind": "phase",
+      "phaseId": "P8",
+      "dependencies": [
+        "P4",
+        "P5",
+        "P6",
+        "P7"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/mac-mvp/2026-10-14T09-21-15-303Z/phases/P8",
+      "branch": "cadre/mac-mvp/2026-10-14T09-21-15-303Z/phase-p8",
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "verification": "Integrated P8 into its registered parent worktree.",
+      "approval": "Persisted policy-v2 Autonomous implementation authorization.",
+      "blocker": null
+    },
+    "T8.1": {
+      "commitGroup": "mvp-verification",
+      "id": "T8.1",
+      "kind": "task",
+      "phaseId": "P8",
+      "dependencies": [
+        "P4",
+        "P5",
+        "P6",
+        "P7"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "bb74928cfc0e96ee682b998d75da5a7195b691a9",
+      "mergeCommit": null,
+      "verification": "Workspace cargo test --locked:79 passed, one native helper invoked by its parent,8 explicit DB tests separately passed including actual Mac Keychain OAuth62.27s. Actual four-MCP CLI40.40s, management14 tests39.17s including concurrent-client regression. Frontend20 tests/typecheck/lint/format pass. WorkspaceClippy-Dwarnings/fmt/build/contracts/diff pass. Compiled admin/local browser evidence reused from unchanged UI P6/P7; release-specific AC012 package/deployment/restore evidence remains dependent T8.2/T8.3.",
+      "approval": "Persisted policy-v2 Autonomous authority from original implement invocation; actual automated evidence, no human verification claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Installer messages describe only this attempt, never current central enablement; concurrent second-client enable survives canceled/revoked local installer and durable receipt reload.",
+          "Cumulative AC001–012 mapping in docs/acceptance.md, with release-only AC012 explicitly carried to release group."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Execute mvp-release T8.2/T8.3: container/Compose/external keys/HTTPS guidance, actual dump/restore and embedded arm64 archive rehearsal.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/install.rs",
+            "sha256": "ae586a8f6abdb378f9fe18d232a5b8d1b6cc5246a1b5ec8b0468d0d02258e519"
+          },
+          {
+            "path": "crates/gateway-cli/tests/management.rs",
+            "sha256": "be6a8311721cc4571426ec4a7e4a47163e00533ad59aee6cc5daf05580b00cb3"
+          },
+          {
+            "path": "docs/acceptance.md",
+            "sha256": "5ab3bdde5d4830a3b9f216fea8688f1f23ef59a63d88d9c1539fb002e80959ce"
+          }
+        ]
+      }
+    },
+    "T8.2": {
+      "commitGroup": "mvp-release",
+      "id": "T8.2",
+      "kind": "task",
+      "phaseId": "P8",
+      "dependencies": [
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "T8.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": null,
+      "verification": "Fresh Linuxarm64 service image82303d77/Compose PG18.6 migration/bootstrap/health/assets/default-deny/roles/vault/restart passes. Real pg_dump/fresh pg_restore, copied-session invalidation, wrong-key503/matching-key recovery/log redaction passes. Final arm64 archive SHAafbda4e96c29cda7d3102d08bfb36d116cb725522ff7841ae2543dfe7fdf7bfe verifies, Mach-O27.0.1/system deps, embedded assets and official rmcp four-auth-mode actual Mac suite34.50s pass. Byte-identical native executable also passes container→packaged local API login/install/enable→Node socketpair STDIO exact-tool invocation→confirmed disable denial and Keychain cleanup.",
+      "approval": "Persisted policy-v2 Autonomous implementation authority; actual automated/native evidence, no human verification claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Ship nonroot/read-only Compose service, private external key/DB environment, private PG and configurable host HTTPS termination; no publication/signing.",
+          "Mac release keeps symbols to avoid verified Rust Mach-O strip bug; minimum validated/compiled target27.0.1.",
+          "Support both checked FIFO and connected AF_UNIX STREAM STDIO using safe nonblocking Tokio adapters; reject files/terminals/datagrams/TCP."
+        ],
+        "failedApproaches": [
+          "Actual Node-spawned STDIO uses Unix socket pairs, rejected by previous pipe-only adapter; reproduced via fd inspection, corrected and tested.",
+          "Pinned Rust stripping produced unloadable proc-macro dylibs; strip=false resolves upstream Rust157750 issue without changing toolchains."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate P8, perform canonical track verification and autonomous review.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/native_stdio.rs",
+            "sha256": "f36330787126cd9322532439a58cd11312f424e5f9a3a21741432f7b429ce4c4"
+          },
+          {
+            "path": "scripts/verify-deployment.ts",
+            "sha256": "e6c6132d89aecaf8a0dc55bd9aea01e484698938e0bee3eb07b13a07e9137c1e"
+          },
+          {
+            "path": "docs/release.md",
+            "sha256": "42973f350c027d24b69ddb9737bcd6902f6cc936de2de3219c9c2809c4b4111d"
+          },
+          {
+            "path": "docs/deployment.md",
+            "sha256": "f6ca1a5bb62c5fb0a9b2fb5ff271b5e6ff63b53e08d9fe986e525bc017523192"
+          }
+        ]
+      }
+    },
+    "T8.3": {
+      "commitGroup": "mvp-release",
+      "id": "T8.3",
+      "kind": "task",
+      "phaseId": "P8",
+      "dependencies": [
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "T8.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": null,
+      "verification": "Final workspace81 tests+8 explicit PostgreSQL tests+frontend20 tests pass; Clippy-Dwarnings/fmt/build/contracts/strictTS/lint/format/production assets pass. Two native socket adapter regressions pass; archive official-client34.50s and complete disposable Compose/Mac/Node/Keychain rehearsal pass. Document links and shell syntax pass. Recorded supported OS/browser/protocol/provider/agent limits and operator/Mac/agent/key recovery runbooks. No actual provider/signing/hostedCI claim. Six failed rehearsal dirs removed only after owned stack/volume absence and empty native journals; final stacks/native fixtures cleared.",
+      "approval": "Persisted policy-v2 Autonomous implementation authority; actual automated/native evidence, no human verification claimed.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Runbooks cover bootstrap/grants/policies, Mac install/login/secrets/OAuth, single STDIO entry, online60s refresh/exclusive3600s lease/no offline writes, backup/session invalidation/key rotation and explicit compatibility limits.",
+          "Release proof/docs/DoD and reproducible checks committed; final screenshots retained outside repo, first-pass captures removed."
+        ],
+        "failedApproaches": [
+          "Rehearsal corrected Node fetch Host rewriting, group memberIds, LocalAction expectedGeneration,202 install acceptance and Node keepalive sockets without weakening product boundaries."
+        ],
+        "openQuestions": [],
+        "nextAction": "P8 barrier/integration/cleanup, then final canonical P9 verification and autonomous review.",
+        "sources": [
+          {
+            "path": "crates/gateway-cli/src/native_stdio.rs",
+            "sha256": "f36330787126cd9322532439a58cd11312f424e5f9a3a21741432f7b429ce4c4"
+          },
+          {
+            "path": "scripts/verify-deployment.ts",
+            "sha256": "e6c6132d89aecaf8a0dc55bd9aea01e484698938e0bee3eb07b13a07e9137c1e"
+          },
+          {
+            "path": "docs/release.md",
+            "sha256": "42973f350c027d24b69ddb9737bcd6902f6cc936de2de3219c9c2809c4b4111d"
+          },
+          {
+            "path": "docs/deployment.md",
+            "sha256": "f6ca1a5bb62c5fb0a9b2fb5ff271b5e6ff63b53e08d9fe986e525bc017523192"
+          }
+        ]
+      }
+    },
+    "T8.4": {
+      "id": "T8.4",
+      "kind": "manual-verification",
+      "phaseId": "P8",
+      "dependencies": [
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "T8.1",
+        "T8.2",
+        "T8.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": null,
+      "verification": "P8 outcome checked against FR024/AC001–012: cumulative81workspace+8DB+20frontend checks, native cache/Keychain/process/four-auth-mode suites, actual compiled-browser P6/P7 evidence, full container→extracted Mac→Node STDIO journey, fresh backup/session/key recovery, archivecheck/vtool/systemdeps and final34.50s official-client package suite all pass. Native binary SHA identical between final archive and combined rehearsal. Explicit platform/provider/agent/CI/signing limits recorded. No missing human-only prerequisite for approved fixture-backed MVP.",
+      "approval": "Persisted policy-v2 Autonomous phase verification, no human approval fabricated.",
+      "blocker": null
+    },
+    "P9": {
+      "id": "P9",
+      "kind": "phase",
+      "phaseId": "P9",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "verification": "Fully integrated canonical4469f1a, sole main worktree and Cadre-only dirt verified; canonical source/committed bytes/archive checksum/runbook agreement/fixture absence and rustfmt pass. Reused unchanged final-product evidence:81workspace Rust+8explicit DB+20frontend tests, Clippy/fmt/strictTS/lint/format/build/contracts, actual Mac Keychain/time/process/pipe/socket/4auth STDIO suite, final extracted archive official client34.50s, full container→archive→Node MCP install/enable/call/disable journey, migration/restart/dump/fresh-restore/session401/wrong-key503/recovery/log redaction, compiled admin/local browser/accessibility/fidelity P6/P7. All AC001–012 covered in docs/acceptance and release; no missing required human-only/external prerequisite. Explicit olderOS/provider/agent/hostedCI/signing/SAML/SaaS limits retained.",
+      "approval": "Persisted policy-v2 Autonomous final phase verification; continue to autonomous review after implementation bookkeeping.",
+      "blocker": null
+    },
+    "T9.1": {
+      "id": "T9.1",
+      "kind": "manual-verification",
+      "phaseId": "P9",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "mergeCommit": null,
+      "verification": "Fully integrated canonical4469f1a, sole main worktree and Cadre-only dirt verified; canonical source/committed bytes/archive checksum/runbook agreement/fixture absence and rustfmt pass. Reused unchanged final-product evidence:81workspace Rust+8explicit DB+20frontend tests, Clippy/fmt/strictTS/lint/format/build/contracts, actual Mac Keychain/time/process/pipe/socket/4auth STDIO suite, final extracted archive official client34.50s, full container→archive→Node MCP install/enable/call/disable journey, migration/restart/dump/fresh-restore/session401/wrong-key503/recovery/log redaction, compiled admin/local browser/accessibility/fidelity P6/P7. All AC001–012 covered in docs/acceptance and release; no missing required human-only/external prerequisite. Explicit olderOS/provider/agent/hostedCI/signing/SAML/SaaS limits retained.",
+      "approval": "Persisted policy-v2 Autonomous permits automated track-level verification. Actual checks recorded, not a fabricated human approval; one final clean-review completion decision remains human.",
+      "blocker": null
+    }
+  }
+}
