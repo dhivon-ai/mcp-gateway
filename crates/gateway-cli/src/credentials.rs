@@ -32,6 +32,20 @@ impl MacKeychain {
     pub fn new(service: String) -> Self {
         Self { service }
     }
+    /// Explicit fixture state uses the real default Keychain with an isolated deterministic service.
+    pub fn fixture(root: &std::path::Path) -> Result<Self> {
+        use base64::Engine;
+        use sha2::{Digest, Sha256};
+        if !root.is_absolute() {
+            return Err(EndpointError::Storage);
+        }
+        crate::store::check_private(root, true)?;
+        let canonical = root.canonicalize().map_err(|_| EndpointError::Storage)?;
+        let canonical = canonical.to_str().ok_or(EndpointError::Storage)?;
+        let digest = base64::engine::general_purpose::URL_SAFE_NO_PAD
+            .encode(Sha256::digest(canonical.as_bytes()));
+        Ok(Self::new(format!("com.cadre.mcp-gateway.fixture.{digest}")))
+    }
     pub fn production() -> Self {
         Self::new("com.cadre.mcp-gateway.endpoint.v1".into())
     }

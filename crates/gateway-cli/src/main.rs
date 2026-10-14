@@ -36,22 +36,40 @@ enum Command {
         /// Print the local page address without opening the default browser.
         #[arg(long)]
         no_open: bool,
+        /// Isolated owner-only test state; requires the explicit fixture flag.
+        #[arg(long, requires = "allow_fixture_http")]
+        fixture_state_path: Option<std::path::PathBuf>,
     },
     /// Serve coding agents over STDIO using an authenticated configuration.
     Mcp,
     /// Print redacted local configuration status.
-    Status,
+    Status {
+        #[arg(long)]
+        allow_fixture_http: bool,
+        #[arg(long, requires = "allow_fixture_http")]
+        fixture_state_path: Option<std::path::PathBuf>,
+    },
     /// Remove local authentication and request online session revocation.
     Logout {
         #[arg(long)]
         allow_fixture_http: bool,
+        #[arg(long, requires = "allow_fixture_http")]
+        fixture_state_path: Option<std::path::PathBuf>,
     },
 }
-fn manager(allow_fixture_http: bool) -> gateway_cli::Result<SessionManager> {
-    Ok(SessionManager::new(
-        StateStore::production(Arc::new(MacKeychain::production()))?,
-        allow_fixture_http,
-    ))
+fn manager(
+    allow_fixture_http: bool,
+    fixture_state_path: Option<std::path::PathBuf>,
+) -> gateway_cli::Result<SessionManager> {
+    let store = match fixture_state_path {
+        Some(path) if allow_fixture_http => {
+            let keychain = MacKeychain::fixture(&path)?;
+            StateStore::new(path, Arc::new(keychain))?
+        }
+        Some(_) => return Err(gateway_cli::EndpointError::Invalid),
+        None => StateStore::production(Arc::new(MacKeychain::production()))?,
+    };
+    Ok(SessionManager::new(store, allow_fixture_http))
 }
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -59,8 +77,11 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
     match Args::parse().command {
-        Command::Status => {
-            let sessions = manager(false)?;
+        Command::Status {
+            allow_fixture_http,
+            fixture_state_path,
+        } => {
+            let sessions = manager(allow_fixture_http, fixture_state_path)?;
             let engine = SyncEngine::new(
                 SnapshotCache::new(sessions, Arc::new(NativeClock::new()?)),
                 Arc::new(NativeTransport),
@@ -73,17 +94,27 @@ async fn main() -> anyhow::Result<()> {
                 "No usable authenticated configuration. Run mcp-gateway ui --server <url> and synchronize."
             )
         }
-        Command::Logout { allow_fixture_http } => manager(allow_fixture_http)?.logout().await?,
+        Command::Logout {
+            allow_fixture_http,
+            fixture_state_path,
+        } => {
+            manager(allow_fixture_http, fixture_state_path)?
+                .logout()
+                .await?
+        }
         Command::Ui {
             server,
             allow_fixture_http,
             port,
             no_open,
+            fixture_state_path,
         } => {
             let central = CentralClient::new(&server, allow_fixture_http)?;
             let listener =
                 tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, port)).await?;
-            let sessions = manager(allow_fixture_http)?.select_server(&central).await?;
+            let sessions = manager(allow_fixture_http, fixture_state_path)?
+                .select_server(&central)
+                .await?;
             let engine = SyncEngine::new(
                 SnapshotCache::new(sessions.clone(), Arc::new(NativeClock::new()?)),
                 Arc::new(NativeTransport),
@@ -99,9 +130,13 @@ async fn main() -> anyhow::Result<()> {
             let sync_task = tokio::spawn(async move {
                 engine.run(stopped).await;
             });
+            let installs = state.installs.clone();
             let serving = axum::serve(listener, router(state))
-                .with_graceful_shutdown(async {
-                    let _ = tokio::signal::ctrl_c().await;
+                .with_graceful_shutdown(async move {
+                    let _ = shutdown_signal().await;
+                    if let Some(installs) = installs {
+                        installs.shutdown().await;
+                    }
                 })
                 .await;
             let _ = stop.send(true);
@@ -132,4 +167,14 @@ async fn open_browser(url: &str) -> anyhow::Result<()> {
         let _ = url;
         anyhow::bail!("Browser management requires macOS")
     }
+}
+
+async fn shutdown_signal() -> std::io::Result<()> {
+    #[cfg(unix)]
+    {
+        let mut term = tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())?;
+        tokio::select! { result = tokio::signal::ctrl_c() => result, _ = term.recv() => Ok(()) }
+    }
+    #[cfg(not(unix))]
+    tokio::signal::ctrl_c().await
 }

@@ -1,9 +1,13 @@
 //! Native endpoint identity and protected loopback management. Credentials never cross the browser boundary.
+pub mod bridge;
 pub mod cache;
 pub mod central;
 pub mod clock;
 pub mod credentials;
+pub mod install;
 pub mod management;
+#[cfg(target_os = "macos")]
+pub mod owned_process;
 pub mod session;
 pub mod store;
 pub mod sync;
@@ -38,6 +42,14 @@ pub enum EndpointError {
     ClockUncertain,
     #[error("Configuration revision or validation time regressed")]
     RevisionRegression,
+    #[error(
+        "The executable or working directory is missing; install the required program and check its location"
+    )]
+    MissingExecutable,
+    #[error("The local operation was cancelled")]
+    Cancelled,
+    #[error("The command cannot run; check executable and working-directory permissions")]
+    ExecutionDenied,
     #[error("This endpoint operation is unsupported on this platform")]
     Unsupported,
 }

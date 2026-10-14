@@ -242,7 +242,10 @@ impl StateStore {
     }
     /// Caller holds locked(); cache group may reuse this for protected ciphertext.
     pub fn atomic_write(&self, name: &str, bytes: &[u8]) -> Result<()> {
-        if !matches!(name, "identity.json" | "snapshot.enc") {
+        if !matches!(
+            name,
+            "identity.json" | "snapshot.enc" | "installations.json"
+        ) {
             return Err(EndpointError::Invalid);
         }
         let path = self.root.join(name);

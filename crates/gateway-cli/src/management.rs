@@ -7,7 +7,7 @@ use axum::{
     http::{HeaderMap, HeaderValue, StatusCode, header},
     middleware::{self, Next},
     response::{Html, IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
 };
 use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
 use gateway_core::LoginRequest;
@@ -35,6 +35,7 @@ pub struct ManagementState {
     pub sessions: SessionManager,
     pub central: CentralClient,
     pub sync: Option<crate::sync::SyncEngine>,
+    pub installs: Option<crate::install::InstallManager>,
     authority: String,
     cookie_name: String,
     origin: String,
@@ -60,6 +61,7 @@ impl ManagementState {
             sessions: sessions.for_server(&central),
             central,
             sync: None,
+            installs: None,
             origin: format!("http://{authority}"),
             authority,
             cookie_name: format!("gateway_local_{}", address.port()),
@@ -74,6 +76,9 @@ impl ManagementState {
         if !sync.cache.sessions.is_selected_for(&self.central) {
             return Err(EndpointError::ServerMismatch);
         }
+        self.installs = Some(crate::install::InstallManager::new(
+            crate::bridge::ControlBridge::new(sync.clone()),
+        ));
         self.sync = Some(sync);
         Ok(self)
     }
@@ -281,7 +286,24 @@ async fn login(State(state): State<ManagementState>, request: Request) -> Respon
     }
 }
 async fn logout(State(state): State<ManagementState>, headers: HeaderMap) -> Response {
-    match state.sessions.logout().await {
+    let Some(generation) = headers
+        .get("x-endpoint-generation")
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| uuid::Uuid::parse_str(v).ok())
+    else {
+        return error(EndpointError::Invalid);
+    };
+    if let Err(e) = state.sessions.guard_generation(generation) {
+        return error(e);
+    }
+    if let Some(installs) = &state.installs {
+        installs.shutdown_generation(&generation.to_string()).await;
+    }
+    // Check again after bounded child shutdown; never revoke a concurrent new login.
+    if let Err(e) = state.sessions.guard_generation(generation) {
+        return error(e);
+    }
+    match state.sessions.logout_generation(generation).await {
         Ok(()) => {
             if let Some(c) = cookie(&headers, &state.cookie_name) {
                 state.browser_sessions.lock().await.remove(c);
@@ -323,6 +345,212 @@ async fn asset(State(state): State<ManagementState>, Path(path): Path<String>) -
         .insert(header::CONTENT_TYPE, content_type);
     response
 }
+
+fn action_manager(
+    state: &ManagementState,
+) -> crate::bridge::BridgeResult<&crate::install::InstallManager> {
+    state
+        .installs
+        .as_ref()
+        .ok_or_else(|| EndpointError::SyncRequired.into())
+}
+fn bridge_response<T: serde::Serialize>(result: crate::bridge::BridgeResult<T>) -> Response {
+    match result {
+        Ok(value) => axum::Json(value).into_response(),
+        Err(e) => (e.status, axum::Json(e.body)).into_response(),
+    }
+}
+fn generation(headers: &HeaderMap) -> crate::bridge::BridgeResult<&str> {
+    headers
+        .get("x-endpoint-generation")
+        .and_then(|v| v.to_str().ok())
+        .ok_or_else(crate::bridge::BridgeError::invalid)
+}
+async fn input<T: serde::de::DeserializeOwned>(
+    request: Request,
+) -> crate::bridge::BridgeResult<gateway_core::LocalAction<T>> {
+    if request
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        != Some("application/json")
+    {
+        return Err(crate::bridge::BridgeError::invalid());
+    }
+    let bytes = axum::body::to_bytes(request.into_body(), 131072)
+        .await
+        .map_err(|_| crate::bridge::BridgeError::invalid())?;
+    serde_json::from_slice(&bytes).map_err(|_| crate::bridge::BridgeError::invalid())
+}
+async fn catalog(State(state): State<ManagementState>, headers: HeaderMap) -> Response {
+    bridge_response((|| action_manager(&state)?.catalog(generation(&headers)?))())
+}
+async fn secrets(State(state): State<ManagementState>, headers: HeaderMap) -> Response {
+    bridge_response(
+        async {
+            action_manager(&state)?
+                .bridge
+                .secrets(generation(&headers)?)
+                .await
+        }
+        .await,
+    )
+}
+async fn settings(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::SettingsUpdate>(request).await?;
+            action_manager(&state)?
+                .bridge
+                .settings(&action.expected_generation, &id, action.input)
+                .await
+        }
+        .await,
+    )
+}
+async fn secret_create(State(state): State<ManagementState>, request: Request) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::SecretWrite>(request).await?;
+            action_manager(&state)?
+                .bridge
+                .secret(
+                    &action.expected_generation,
+                    reqwest::Method::POST,
+                    None,
+                    false,
+                    action.input,
+                )
+                .await
+        }
+        .await,
+    )
+}
+async fn secret_replace(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::SecretWrite>(request).await?;
+            action_manager(&state)?
+                .bridge
+                .secret(
+                    &action.expected_generation,
+                    reqwest::Method::PUT,
+                    Some(&id),
+                    false,
+                    action.input,
+                )
+                .await
+        }
+        .await,
+    )
+}
+async fn secret_rename(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::SecretRename>(request).await?;
+            action_manager(&state)?
+                .bridge
+                .secret(
+                    &action.expected_generation,
+                    reqwest::Method::PUT,
+                    Some(&id),
+                    true,
+                    action.input,
+                )
+                .await
+        }
+        .await,
+    )
+}
+async fn secret_delete(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::VersionInput>(request).await?;
+            action_manager(&state)?
+                .bridge
+                .secret(
+                    &action.expected_generation,
+                    reqwest::Method::DELETE,
+                    Some(&id),
+                    false,
+                    action.input,
+                )
+                .await
+        }
+        .await,
+    )
+}
+async fn install_start(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    let result = async {
+        let action = input::<gateway_core::InstallRequest>(request).await?;
+        action_manager(&state)?
+            .start(&action.expected_generation, &id, action.input)
+            .await
+    }
+    .await;
+    match result {
+        Ok(progress) => (StatusCode::ACCEPTED, axum::Json(progress)).into_response(),
+        Err(e) => (e.status, axum::Json(e.body)).into_response(),
+    }
+}
+async fn install_progress(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> Response {
+    bridge_response((|| {
+        action_manager(&state)?.progress(generation(&headers)?, &id)
+    })())
+}
+async fn install_cancel(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<()>(request).await?;
+            action_manager(&state)?.cancel(&action.expected_generation, &id)?;
+            Ok(serde_json::json!({"cancellationRequested":true}))
+        }
+        .await,
+    )
+}
+async fn install_enable(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<gateway_core::SettingsUpdate>(request).await?;
+            action_manager(&state)?
+                .enable(&action.expected_generation, &id, action.input)
+                .await
+        }
+        .await,
+    )
+}
 pub fn router(state: ManagementState) -> Router {
     Router::new()
         .route("/", get(page))
@@ -331,9 +559,21 @@ pub fn router(state: ManagementState) -> Router {
         .route("/api/status", get(status))
         .route("/api/auth/login", post(login))
         .route("/api/auth/logout", post(logout))
+        .route("/api/catalog", get(catalog))
+        .route("/api/settings/{id}", put(settings))
+        .route("/api/secrets", get(secrets).post(secret_create))
+        .route(
+            "/api/secrets/{id}",
+            put(secret_replace).delete(secret_delete),
+        )
+        .route("/api/secrets/{id}/key", put(secret_rename))
+        .route("/api/mcps/{id}/install", post(install_start))
+        .route("/api/installations/{id}", get(install_progress))
+        .route("/api/installations/{id}/cancel", post(install_cancel))
+        .route("/api/installations/{id}/enable", post(install_enable))
         .route("/oauth/callback", get(oauth_callback))
         .fallback(|| async { (StatusCode::NOT_FOUND, Body::empty()) })
-        .layer(DefaultBodyLimit::max(4096))
+        .layer(DefaultBodyLimit::max(131072))
         .layer(middleware::from_fn_with_state(state.clone(), guard))
         .with_state(state)
 }

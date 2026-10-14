@@ -373,3 +373,85 @@ pub enum UpstreamCredential {
         installation_id: String,
     },
 }
+
+/// Local browser actions are pinned to the displayed login generation, not just the deployment revision.
+#[derive(Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalAction<T> {
+    pub expected_generation: String,
+    pub input: T,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InstallRequest {
+    pub expected_revision: u32,
+    pub enable_after_install: bool,
+    pub secret_id: Option<String>,
+    pub rerun: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+pub enum InstallState {
+    Running,
+    Failed,
+    Cancelled,
+    Expired,
+    Revoked,
+    InstalledDisabled,
+    Enabled,
+    Interrupted,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct InstallProgress {
+    pub id: String,
+    pub mcp_id: String,
+    pub generation: String,
+    pub state: InstallState,
+    pub started_at: i64,
+    pub completed_at: Option<i64>,
+    pub elapsed_seconds: u64,
+    pub exit_code: Option<i32>,
+    pub message: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalMcpMetadata {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub transport: String,
+    pub auth: String,
+    pub enabled: bool,
+    pub secret: Option<SecretRef>,
+    pub installation_available: bool,
+    pub installed: bool,
+    pub availability: String,
+    pub auth_required: bool,
+    pub tool_policy: ToolPolicy,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalCatalog {
+    pub generation: String,
+    pub revision: u32,
+    pub expires_at: i64,
+    pub mcps: Vec<LocalMcpMetadata>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct SecretMutationOutcome {
+    pub confirmed: bool,
+    pub synchronized: bool,
+    pub metadata: Option<SecretMetadata>,
+}
+
+/// Local errors never return native runtime commands or server-provided diagnostic text.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalApiError {
+    pub code: ErrorCode,
+    pub message: String,
+    pub revision: Option<u32>,
+    pub current: Option<LocalCatalog>,
+}

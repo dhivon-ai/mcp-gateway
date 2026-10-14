@@ -134,6 +134,7 @@ impl SyncEngine {
         if configuration.state == "server_mismatch" {
             identity.state = "server_mismatch";
             identity.identity = None;
+            identity.generation = None;
             identity.session_expires_at = None;
         }
         let state = self.state.lock().map_err(|_| EndpointError::Invalid)?;

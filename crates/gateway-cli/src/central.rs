@@ -70,6 +70,25 @@ impl CentralClient {
         path: &str,
         body: Option<&serde_json::Value>,
     ) -> Result<Response> {
+        self.request_inner(session, method, path, body, false).await
+    }
+    pub async fn control_request(
+        &self,
+        session: &EndpointSession,
+        method: Method,
+        path: &str,
+        body: Option<&serde_json::Value>,
+    ) -> Result<Response> {
+        self.request_inner(session, method, path, body, true).await
+    }
+    async fn request_inner(
+        &self,
+        session: &EndpointSession,
+        method: Method,
+        path: &str,
+        body: Option<&serde_json::Value>,
+        preserve_errors: bool,
+    ) -> Result<Response> {
         if !path.starts_with("/api/") || path.contains(['?', '#', '\\']) || path.contains("..") {
             return Err(EndpointError::Invalid);
         }
@@ -83,7 +102,14 @@ impl CentralClient {
         if let Some(body) = body {
             request = request.json(body);
         }
-        classify(request.send().await.map_err(|_| EndpointError::Offline)?)
+        let response = request.send().await.map_err(|_| EndpointError::Offline)?;
+        if preserve_errors
+            && response.status().is_client_error()
+            && response.status() != StatusCode::UNAUTHORIZED
+        {
+            return Ok(response);
+        }
+        classify(response)
     }
     pub async fn revoke(&self, session: &EndpointSession) -> Result<()> {
         self.request(session, Method::POST, "/api/auth/logout", None)

@@ -663,8 +663,17 @@ async fn management_host_origin_local_cookie_csrf_callback_and_redaction() {
         .0,
         StatusCode::FORBIDDEN
     );
+    let generation = f
+        .manager
+        .load()
+        .expect("logged in")
+        .metadata
+        .generation
+        .to_string();
+    let mut logout_headers = mutation.to_vec();
+    logout_headers.push(("x-endpoint-generation", &generation));
     assert_eq!(
-        local_request(&app, "POST", "/api/auth/logout", &mutation, "")
+        local_request(&app, "POST", "/api/auth/logout", &logout_headers, "")
             .await
             .0,
         StatusCode::NO_CONTENT
@@ -868,6 +877,11 @@ async fn real_cli_loopback_development_page_and_clean_stdio() {
         .expect("canonical temp")
         .join(format!("gateway-cli-home-owned-{}", Uuid::new_v4()));
     std::fs::create_dir(&fixture_home).expect("fixture home");
+    use std::os::unix::fs::DirBuilderExt;
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(fixture_home.join("state"))
+        .expect("private fixture state");
     let binary = env!("CARGO_BIN_EXE_mcp-gateway");
     let mut child = std::process::Command::new(binary)
         .args([
@@ -877,7 +891,8 @@ async fn real_cli_loopback_development_page_and_clean_stdio() {
             "--allow-fixture-http",
             "--no-open",
         ])
-        .env("HOME", &fixture_home)
+        .arg("--fixture-state-path")
+        .arg(fixture_home.join("state"))
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -933,7 +948,9 @@ async fn real_cli_loopback_development_page_and_clean_stdio() {
     assert!(output.stdout.is_empty());
     let status = std::process::Command::new(binary)
         .arg("status")
-        .env("HOME", &fixture_home)
+        .arg("--allow-fixture-http")
+        .arg("--fixture-state-path")
+        .arg(fixture_home.join("state"))
         .output()
         .expect("status");
     assert!(status.status.success());

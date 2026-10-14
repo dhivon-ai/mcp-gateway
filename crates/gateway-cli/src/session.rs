@@ -16,6 +16,7 @@ use zeroize::Zeroizing;
 pub struct RedactedStatus {
     pub state: &'static str,
     pub identity: Option<Identity>,
+    pub generation: Option<String>,
     pub session_expires_at: Option<i64>,
     pub configuration: &'static str,
 }
@@ -132,6 +133,7 @@ impl SessionManager {
         match self.load() {
             Ok(s) => Ok(RedactedStatus {
                 state: "authenticated",
+                generation: Some(s.metadata.generation.to_string()),
                 identity: s.metadata.active,
                 session_expires_at: Some(s.credentials.expires_at),
                 configuration: "sync_required",
@@ -139,12 +141,14 @@ impl SessionManager {
             Err(EndpointError::ServerMismatch) => Ok(RedactedStatus {
                 state: "server_mismatch",
                 identity: None,
+                generation: None,
                 session_expires_at: None,
                 configuration: "server_mismatch",
             }),
             Err(EndpointError::LoginRequired) => Ok(RedactedStatus {
                 state: "login_required",
                 identity: None,
+                generation: None,
                 session_expires_at: None,
                 configuration: "sync_required",
             }),
@@ -232,6 +236,35 @@ impl SessionManager {
             Err(e) => Err(e),
         }
     }
+    pub fn guard_generation(&self, generation: Uuid) -> Result<()> {
+        self.store.locked(|m| {
+            if !self.matches_selection(m) {
+                return Err(EndpointError::ServerMismatch);
+            }
+            if m.generation != generation || m.active.is_none() {
+                return Err(EndpointError::IdentityChanged);
+            }
+            Ok(())
+        })
+    }
+    /// Pin the original principal for a local action; never reload another user's token after a login race.
+    pub async fn control_request_for(
+        &self,
+        session: &NativeSession,
+        method: Method,
+        path: &str,
+        body: Option<&serde_json::Value>,
+    ) -> Result<Response> {
+        self.guard_generation(session.metadata.generation)?;
+        let result = self
+            .client(session)?
+            .control_request(&session.credentials, method, path, body)
+            .await;
+        if matches!(result, Err(EndpointError::Rejected)) {
+            self.invalidate(session.metadata.generation)?;
+        }
+        result
+    }
     pub fn client(&self, session: &NativeSession) -> Result<CentralClient> {
         CentralClient::new(
             &session
@@ -242,6 +275,27 @@ impl SessionManager {
                 .server_origin,
             self.allow_fixture_http,
         )
+    }
+    /// Browser logout compares and invalidates under one lock; revocation uses only that old principal.
+    pub async fn logout_generation(&self, generation: Uuid) -> Result<()> {
+        let session = self.store.locked(|m| {
+            if !self.matches_selection(m) {
+                return Err(EndpointError::ServerMismatch);
+            }
+            if m.generation != generation {
+                return Err(EndpointError::IdentityChanged);
+            }
+            let session = self.load_locked(m, false).ok();
+            self.store.clear_locked(m)?;
+            Ok(session)
+        })?;
+        if let Some(session) = session
+            && let Ok(client) = self.client(&session)
+        {
+            let _ = client.revoke(&session.credentials).await;
+        }
+        tracing::info!(event = "endpoint_logout");
+        Ok(())
     }
     pub async fn logout(&self) -> Result<()> {
         let session = self.load().ok();
