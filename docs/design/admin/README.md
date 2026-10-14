@@ -82,9 +82,10 @@ Required functional extensions in this same visual system:
   Password fields are never prefilled and clear after a completed request.
 - Connection tab: Name, Description, Active, Transport, Executable, Arguments,
   Environment, Working directory, Authentication, Endpoint URL, Public client ID,
-  Scopes, Installation command, Save MCP, Delete MCP. Arguments are one item per
-  line, environment is KEY=value per line, scopes one per line. These labels describe
-  structured API fields; they do not execute commands from the central website.
+  Scopes, Installation command, Save MCP, Delete MCP. Review remediation uses JSON
+  string arrays for runtime/installation arguments and JSON string maps for their
+  environment, preserving empty strings and embedded newlines. Scopes remain one
+  per line. These fields never execute commands from the central website.
 - Access table/tab: MCP, Assigned to, Add assignment, Remove assignment,
   All users, User, Group, Select user, Select group. Explain additive grants and
   that removing the last grant clears enablement. There is no central Enable button.
@@ -122,10 +123,11 @@ localStorage/sessionStorage. Never call native endpoint credential routes here.
 | Groups/membership                 | `/api/admin/groups`, `/api/admin/groups/{id}`; GroupInfo/GroupWrite/RevisionInput                                | Choose stable member IDs; deletion reconciles grants centrally                                                 |
 | Tool policy                       | CatalogWrite definition.toolPolicy plus inventory                                                                | Original names only; allowlist new names hidden; observations never grant access                               |
 
-Read identities/groups and configuration concurrently. Their separate responses
-are not one transactional snapshot: a conflicting subsequent mutation must reload
-the whole relevant read set before reconsideration. Never blindly retry an admin
-write with a newer revision. Forms use current domain IDs, not row indexes.
+Read identities/groups concurrently between two configuration reads and require
+the same global revision before opening editors. Review remediation applies this
+consistent read-set check to initial and post-save loading; a conflict requires
+explicit full reload. Never blindly retry an admin write with a newer revision.
+Forms use current domain IDs, not row indexes.
 API paths and exact methods are checked against central router source during
 implementation; all mutations remain enforced by the Rust service.
 

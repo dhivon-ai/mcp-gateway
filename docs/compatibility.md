@@ -28,3 +28,6 @@ Owned process-group cleanup does not supervise deliberately escaped descendants.
 Bounded MVP behavior: config TTL <=3600s, session <=12h, polling 60s/control10s,
 install300s/startup30s/call60s/16 calls/shutdown5s. Discovery limits and HTTP/frame
 bounds are specified in `docs/gateway-aggregation.md` in the source repository.
+Native credential metadata tracks at most 128 MCP identities per login generation,
+including retired assignments. Capacity rejection preserves existing credentials
+and shared identity; online logout/sign-in clears the retired generation state.

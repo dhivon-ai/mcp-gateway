@@ -32,3 +32,19 @@ older Mac, actual machine suspend/reboot, hosted CI or signed distribution is
 claimed. Controlled continuous-clock/boot simulations prove fail-closed behavior;
 the actual Mac helper proves same-boot process restart. Cancellation cannot undo
 an upstream side effect and privileged OS compromise is outside the trust model.
+
+## Review regressions
+
+The first cumulative review found four defects within the approved scope; the
+remediation keeps the original specification and completed phase history.
+
+| Finding | Regression evidence |
+| --- | --- |
+| Shared credential capacity | Native `sequential_mcp_capacity_keeps_identity_and_existing_credentials_usable` exercises 128 heads, rejects the 129th sequential MCP, preserves cache/session/old credential revalidation and permits complete logout cleanup. `invalid_metadata_write_preserves_the_last_readable_identity` checks rejected writes leave durable valid bytes intact. |
+| Catalog decoder bounds | Shared frontend decoder tests accept 200-byte ASCII/Unicode names and 129-byte environment keys within the catalog budget, reject invalid byte/type bounds, and both rendered websites load/manage the long-name entry. |
+| Mixed admin read revisions | Interaction tests interleave revoked group membership/account changes with initial and post-save reads. Mixed revisions require explicit reload; confirmed writes are never replayed. Actual PostgreSQL/browser concurrent removal remains removed after a stale 409 and reload. |
+| Structured command round trip | Behavioral tests and an actual backend witness verify runtime/install argument arrays and environment maps retain empty strings, embedded newlines and literal values on policy-only/unrelated saves. Invalid structured input does not send a write; explicit valid edits succeed. |
+
+Compiled browser remediation evidence and compatibility limits are recorded in
+[administrator UI verification](admin-ui.md). Artifact/rehearsal results for the
+same source revision are recorded in [release evidence](release.md).

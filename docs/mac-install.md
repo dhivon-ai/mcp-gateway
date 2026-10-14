@@ -83,3 +83,8 @@ local browser authorization cookie lasts one hour; reload the page to obtain a
 new local cookie. This does not extend the policy lease. Troubleshooting and
 operator/provider details are in the repository's deployment, local UI, OAuth and
 agent configuration guides.
+
+A login generation tracks up to 128 credential-bearing MCP identities, including
+formerly assigned ones. If a new MCP reports local credential capacity, log out
+and sign in again online to clear retired local credentials. Existing credentials,
+status, synchronization and logout remain available at this boundary.

@@ -6,10 +6,10 @@ The approved scope and acceptance mapping are in [acceptance](acceptance.md).
 ## Artifacts
 
 - Apple Silicon archive: `$GATEWAY_BUILD_CACHE/releases/mcp-gateway-0.1.0-macos-arm64.tar.gz`.
-- SHA-256: `afbda4e96c29cda7d3102d08bfb36d116cb725522ff7841ae2543dfe7fdf7bfe`.
+- SHA-256: `1f35a72c4438e283fe039e65c0b338af858a0fa8b8e87896a2119691030a7349`.
 - Check file: the archive name plus `.sha256`; `shasum -a 256 -c` passed.
 - Local service image: `mcp-gateway-server:0.1.0`, Linux arm64;
-  image ID `sha256:82303d778e91c982cbac86f0aaf9576e8b9e2fc83ec6709b570f919648cd2bd1`.
+  image ID `sha256:2bee0c4125c011e7a619c7aa29144a8f9c3c4b02360b84010bd1a9e433c0ba21`.
 
 The archive contains only the arm64 executable, installation README and
 compatibility document. Mach-O inspection reports deployment target 27.0.1 and
@@ -51,13 +51,24 @@ input and blocked output. Compiled local index/module delivery is asserted.
 The cumulative browser journeys, reference comparison, keyboard and responsive
 checks remain in [admin UI](admin-ui.md) and [local UI](local-ui.md).
 
-Final local quality results: 81 workspace Rust tests passed (the native child
+Final local quality results: 83 workspace Rust tests passed (the native child
 helper and eight database cases are intentionally separate), all eight explicit
-PostgreSQL tests passed, and 20 frontend behavioral tests passed. Formatting,
+PostgreSQL tests passed, and 34 frontend behavioral tests passed. Formatting,
 Clippy with warnings denied, generated contracts, strict TypeScript, lint and
 production builds passed. The final extracted archive's official-client suite
-passed in34.50s; its native executable is byte-identical to the successful
+passed in 38.48s; its native executable is byte-identical to the successful
 combined container/Node/Keychain rehearsal.
+
+## Review corrections
+
+This rebuild includes four confirmed review fixes: bounded credential allocation
+preserves shared identity and cleanup; browser catalog bounds match Rust UTF-8
+contracts; runtime/installation argument arrays and environment maps round-trip
+losslessly through JSON inputs; and revision-bracketed admin reads prevent stale
+membership/account values from inheriting a newer write revision. Regression tests
+and repeated compiled-browser checks cover each change. See [acceptance evidence](acceptance.md)
+and [administrator UI verification](admin-ui.md). The tested source includes the
+native and browser corrections in commits `798b0fb` and `829c6cd`.
 
 ## Verification commands
 
