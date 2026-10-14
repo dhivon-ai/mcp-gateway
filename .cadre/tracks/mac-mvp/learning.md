@@ -398,3 +398,33 @@ Complete approved scope/plan/project guidance, P1–P12 learning and current exe
 ### Decisions and phase completion
 
 - Record actual available verification under original persisted policy-v2 Autonomous, separately from final human completion approval. Preserve completed phase identities/history; never reopen P10/P11 to hide the newly found contract gap. Current product head remains b3ea6ab52ce58249946831d67cba30106cbd8f90.
+
+## Phase 14: Complete administrator collection contract
+
+### Inputs read
+
+Full current approved scope/plan/project guidance and P13 learning, BUG-002 recurrence, actual frontend/core/server/API/test callers. All inherited handoffs were verified identical to previously consumed source; scoped context completed with no stale memory. Direct main; no workers/worktrees.
+
+### Task observations
+
+- T14.1 c96f9c4 removes the arbitrary generic browser10k cap for server-unbounded users/groups/assignments and makes actual10k-member bound explicit. Every element still decodes.41frontendtests pass, including10000/10001/12000assignments, two coherent10001-row initial/follow-up readsets, malformedlateelements and explicitgroup/MCP/command/tool bounds. RealPG/API test returns10002users/10001groups/10001assignments in2.05s, cleans its exact DB. AlltargetClippy-Dwarnings/strictTS/lint/format/build/contracts/fmt/diff pass.
+- T14.2 52c288b rebuilds Mac archiveSHA95d8e6283e1e77609154ddd771c8f3d5d4f46ef4eda4d2c45b6293178e5f4ce4 and imageIDsha256:3aa9d38940e78888f28b600fc15e27041a4634906a1bec8be4273b704a63c075. Actual finalarchive officialrmcp4auth/sameMac/offline/reconnect/protocol/signal/descendants38.60s passes. FreshCompose→MacUI/install/enable→NodeSTDIOexactcall→disabledenial plus creatingbinaryKeychaincleanup, restart/dump/freshrestore/copiedsession401/wrongkey503/matchingkeyrecover/redactedlogs all pass. Package/checkfile/executable/currentdocs/runbook identities, minOS27.0.1 and exactfixture/stack/volumeabsence verified.
+
+### Decisions and corrections
+
+- Preserve actual bounded fields and complete runtime validation; no tightened backend data, new pagination or enterprise-scale performance claim. Only browser array contract changed, Rust runtime and previous security/native/DB testinputs/layouts unchanged. Reuse83workspace/8priorPG and compiledbrowser layout evidence with source identity; addedPGcase makes9total cases. Current41frontend plus finalpackaged/deployment proofs run afresh.
+- Current owned cache holds assets/archive/logs; original ownedCargo target reused. Initial contract-check invocation lacked owned build variable; rerun passed. Single-task complete_group requires task scope; initial phase-scope call rejected without mutation, correctedT14.1 completed atomically. No production scope touched.
+
+### Phase completion
+
+- Canonical product head52c288b; actual automated P14barrier authorized by original persisted policy-v2 Autonomous. Human approval not performed or claimed; canonicalP15 then cumulative review and finalexplicitapproval remain.
+
+## Phase 15: Track-level User Manual Verification
+
+### Inputs and observations
+
+Complete current approved scope/plan, P1–P14 learning and current handoffs consumed; contextReady/no stale memory. T15.1 verifies fully integrated52c288b70ad0d8839aea8b3f12952ecd3e0cb26d. Current41frontend/addedrealPG collection test, strictTS/lint/format/build/contracts/alltargetClippy/fmt pass. Source-unchanged83workspace/8priorPG/security/native/compiledbrowserlayout evidence reused. Finalextracted officialclient38.60s and freshcontainer/MacUI/NodeSTDIO/restart/dump/freshrestore/sessioninvalidation/wrong-matchingkey/redactedlogs/creatingbinaryKeychaincleanup allpass. Package/executable/docs/checkfile/runbookidentities confirmed, no productdirt/generatedfixtures/worktrees/stashes; solecanonicalmain.
+
+### Phase completion
+
+All implementation nodes complete under original persisted policy-v2 Autonomous. No human approval or clean-review result claimed; cumulative review now decides findings against originalbaseline through52c288b. Bookkeeping preserves producthead and all phase history. Final explicit human clean-completion approval remains.
