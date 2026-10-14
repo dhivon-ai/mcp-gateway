@@ -1,0 +1,755 @@
+use axum::{
+    Router,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Response},
+    routing::post,
+};
+use gateway_cli::{
+    aggregation::{AggregateError, Aggregator, alias},
+    cache::SnapshotCache,
+    clock::{Clock, ClockSample, NANOS_PER_SECOND},
+    credentials::CredentialStore,
+    epoch,
+    session::SessionManager,
+    store::{Identity, StateStore},
+};
+use gateway_core::*;
+use gateway_fixtures::{FixtureState, http_router};
+use rmcp::model::CallToolRequestParams;
+use serde_json::{Value, json};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::PathBuf,
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicU8, AtomicUsize, Ordering},
+    },
+    time::Duration,
+};
+use uuid::Uuid;
+use zeroize::Zeroizing;
+
+#[derive(Default)]
+struct Memory(Mutex<HashMap<String, Vec<u8>>>);
+impl CredentialStore for Memory {
+    fn get(&self, key: &str) -> gateway_cli::Result<Option<Zeroizing<Vec<u8>>>> {
+        Ok(self
+            .0
+            .lock()
+            .expect("fixture credentials")
+            .get(key)
+            .cloned()
+            .map(Zeroizing::new))
+    }
+    fn set(&self, key: &str, value: &[u8]) -> gateway_cli::Result<()> {
+        self.0
+            .lock()
+            .expect("fixture credentials")
+            .insert(key.into(), value.into());
+        Ok(())
+    }
+    fn delete(&self, key: &str) -> gateway_cli::Result<()> {
+        self.0.lock().expect("fixture credentials").remove(key);
+        Ok(())
+    }
+}
+struct Time(Mutex<ClockSample>);
+impl Clock for Time {
+    fn sample(&self) -> gateway_cli::Result<ClockSample> {
+        Ok(*self.0.lock().expect("fixture time"))
+    }
+}
+impl Time {
+    fn advance(&self, seconds: u64) {
+        let mut now = self.0.lock().expect("fixture time");
+        now.wall_ns += seconds * NANOS_PER_SECOND;
+        now.continuous_ns += seconds * NANOS_PER_SECOND;
+    }
+}
+struct Endpoint {
+    root: PathBuf,
+    cache: SnapshotCache,
+    time: Arc<Time>,
+    snapshot: ConfigSnapshot,
+    inventory: Arc<Mutex<Vec<InventoryReport>>>,
+    control: tokio::task::JoinHandle<()>,
+}
+impl Endpoint {
+    async fn new(mcps: Vec<EffectiveMcp>) -> Self {
+        let root = std::env::temp_dir()
+            .canonicalize()
+            .expect("fixture parent")
+            .join(format!("gateway-aggregation-owned-{}", Uuid::new_v4()));
+        let inventory = Arc::new(Mutex::new(Vec::new()));
+        let collected = inventory.clone();
+        let app = Router::new().route(
+            "/api/endpoint/inventory",
+            post(
+                move |headers: HeaderMap, axum::Json(input): axum::Json<InventoryReport>| {
+                    let collected = collected.clone();
+                    async move {
+                        assert_eq!(headers["authorization"], "Bearer private-central-fixture");
+                        collected.lock().expect("inventory fixture").push(input);
+                        StatusCode::NO_CONTENT
+                    }
+                },
+            ),
+        );
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("control listener");
+        let origin = format!("http://{}", listener.local_addr().expect("control address"));
+        let control = tokio::spawn(async move {
+            axum::serve(listener, app)
+                .await
+                .expect("owned control fixture");
+        });
+        let store =
+            StateStore::new(root.clone(), Arc::new(Memory::default())).expect("fixture state");
+        let now = epoch().expect("fixture epoch");
+        let user = UserInfo {
+            id: Uuid::new_v4().to_string(),
+            username: "fixture".into(),
+            active: true,
+            role: Role::User,
+        };
+        let session = EndpointSession {
+            token: "private-central-fixture".into(),
+            user: user.clone(),
+            deployment_id: Uuid::new_v4().to_string(),
+            expires_at: now + 43200,
+        };
+        store
+            .locked(|m| {
+                m.selected_server_origin = Some(origin.clone());
+                m.active = Some(Identity {
+                    server_origin: origin,
+                    deployment_id: session.deployment_id.clone(),
+                    user_id: user.id.clone(),
+                });
+                let account = StateStore::account(
+                    m.active.as_ref().expect("fixture identity"),
+                    m.generation,
+                    "session",
+                )?;
+                m.credential_accounts.push(account.clone());
+                store.write(m)?;
+                store.credentials().set(
+                    &account,
+                    &serde_json::to_vec(&session).expect("fixture token encoding"),
+                )
+            })
+            .expect("fixture session");
+        let time = Arc::new(Time(Mutex::new(ClockSample {
+            boot_id: Uuid::new_v4(),
+            continuous_ns: 100 * NANOS_PER_SECOND,
+            wall_ns: now as u64 * NANOS_PER_SECOND,
+        })));
+        let cache = SnapshotCache::new(SessionManager::new(store, true), time.clone());
+        let snapshot = ConfigSnapshot {
+            schema_version: 1,
+            deployment_id: session.deployment_id,
+            user,
+            revision: 1,
+            validated_at: now,
+            expires_at: now + 3600,
+            session_expires_at: session.expires_at,
+            mcps,
+        };
+        cache
+            .install(
+                &cache.sessions.load().expect("fixture native session"),
+                snapshot.clone(),
+                time.sample().expect("fixture clock"),
+            )
+            .expect("fixture cache");
+        Self {
+            root,
+            cache,
+            time,
+            snapshot,
+            inventory,
+            control,
+        }
+    }
+    fn change(&mut self, update: impl FnOnce(&mut ConfigSnapshot)) {
+        update(&mut self.snapshot);
+        self.snapshot.revision += 1;
+        let now = self.time.sample().expect("fixture clock");
+        self.snapshot.validated_at = now.wall_seconds().expect("wall time");
+        self.snapshot.expires_at = self.snapshot.validated_at + 3600;
+        self.cache
+            .install(
+                &self.cache.sessions.load().expect("fixture session"),
+                self.snapshot.clone(),
+                now,
+            )
+            .expect("new fixture policy");
+    }
+}
+impl Drop for Endpoint {
+    fn drop(&mut self) {
+        self.control.abort();
+        let _ = self
+            .cache
+            .sessions
+            .store
+            .locked(|m| self.cache.sessions.store.clear_locked(m));
+        let _ = std::fs::remove_dir_all(&self.root);
+    }
+}
+fn mcp(transport: Transport, policy: ToolPolicy) -> EffectiveMcp {
+    EffectiveMcp {
+        definition: McpDefinition {
+            id: Uuid::new_v4().to_string(),
+            name: "Fixture".into(),
+            description: "Fixture metadata".into(),
+            active: true,
+            transport,
+            auth: AuthMode::None {},
+            install: None,
+            tool_policy: policy,
+        },
+        enabled: true,
+        secret: None,
+    }
+}
+fn params(name: String) -> CallToolRequestParams {
+    CallToolRequestParams::new(name).with_arguments(
+        json!({"message":"hello"})
+            .as_object()
+            .cloned()
+            .expect("literal arguments"),
+    )
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn real_sdk_stdio_and_http_preserve_schemas_results_namespaces_policy_and_inventory() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("HTTP fixture");
+    let address = listener.local_addr().expect("address");
+    let upstream = tokio::spawn(async move {
+        axum::serve(
+            listener,
+            http_router(
+                FixtureState::new(format!("http://{address}"), "none".into()),
+                address.to_string(),
+            ),
+        )
+        .await
+        .expect("owned HTTP MCP");
+    });
+    let command = CommandSpec {
+        program: env!("CARGO_BIN_EXE_gateway-fixture").into(),
+        args: vec!["--tag".into(), "local".into()],
+        env: BTreeMap::new(),
+        cwd: None,
+    };
+    let mut endpoint = Endpoint::new(vec![
+        mcp(
+            Transport::Stdio { command },
+            ToolPolicy::Allowlist(vec!["echo".into()]),
+        ),
+        mcp(
+            Transport::Http {
+                url: format!("http://{address}/mcp"),
+            },
+            ToolPolicy::Denylist(vec!["fail".into()]),
+        ),
+    ])
+    .await;
+    let local = endpoint.snapshot.mcps[0].definition.id.clone();
+    let remote = endpoint.snapshot.mcps[1].definition.id.clone();
+    let log = endpoint.root.join("local-calls");
+    let install_marker = endpoint.root.join("never-install");
+    endpoint.change(|snapshot| {
+        if let Transport::Stdio { command } = &mut snapshot.mcps[0].definition.transport {
+            command.args.extend([
+                "--call-log".into(),
+                log.to_str().expect("fixture path").into(),
+            ]);
+        }
+        snapshot.mcps[0].definition.install = Some(CommandSpec {
+            program: "/usr/bin/touch".into(),
+            args: vec![install_marker.to_str().expect("fixture marker").into()],
+            env: BTreeMap::new(),
+            cwd: None,
+        });
+    });
+    let gateway = Aggregator::new(endpoint.cache.clone(), true).expect("aggregator");
+    gateway.reconcile().await.expect("discovery");
+    let tools = gateway.list().expect("permitted tools");
+    assert_eq!(tools.len(), 2);
+    assert_ne!(alias(&local, "echo"), alias(&remote, "echo"));
+    for tool in &tools {
+        assert!(tool.name.len() <= 128);
+        assert!(tool.output_schema.is_some());
+        assert_eq!(tool.input_schema["properties"]["message"]["type"], "string");
+    }
+    for (id, expected) in [(&local, "local:hello"), (&remote, "hello")] {
+        let result = gateway
+            .call(params(alias(id, "echo")))
+            .await
+            .expect("routed fixture call");
+        assert_eq!(result.content[0].as_text().expect("text").text, expected);
+        assert_eq!(result.structured_content, Some(json!({"message":expected})));
+    }
+    for name in [
+        "echo".into(),
+        alias(&local, "fail"),
+        alias(&remote, "fail"),
+        alias(&Uuid::new_v4().to_string(), "echo"),
+    ] {
+        assert!(matches!(
+            gateway.call(params(name)).await,
+            Err(AggregateError::Denied)
+        ));
+    }
+    assert_eq!(
+        std::fs::read_to_string(&log).expect("local call witness"),
+        "echo\n"
+    );
+    assert!(!install_marker.exists());
+    for _ in 0..100 {
+        if endpoint.inventory.lock().expect("inventory").len() >= 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    let reports = endpoint.inventory.lock().expect("inventory").clone();
+    assert_eq!(reports.len(), 2);
+    for report in reports {
+        assert_eq!(report.names, ["echo", "fail"]);
+        let public = serde_json::to_value(report).expect("inventory JSON");
+        assert_eq!(public.as_object().expect("metadata").len(), 2);
+        assert!(!public.to_string().contains("hello"));
+    }
+    let local_alias = alias(&local, "echo");
+    endpoint.change(|snapshot| {
+        snapshot.mcps[0].definition.tool_policy = ToolPolicy::Denylist(vec![]);
+        snapshot.mcps[1].enabled = false;
+    });
+    assert!(matches!(
+        gateway.call(params(alias(&remote, "echo"))).await,
+        Err(AggregateError::Denied)
+    ));
+    assert_eq!(gateway.list().expect("latest policy").len(), 2);
+    gateway.reconcile().await.expect("policy rediscovery");
+    assert!(
+        gateway
+            .list()
+            .expect("stable route")
+            .iter()
+            .any(|tool| tool.name == local_alias)
+    );
+    let failure = gateway
+        .call(CallToolRequestParams::new(alias(&local, "fail")))
+        .await
+        .expect("tool error result");
+    assert_eq!(failure.is_error, Some(true));
+    assert_eq!(
+        failure.content[0].as_text().expect("failure text").text,
+        "fixture failure"
+    );
+    endpoint.time.advance(3600);
+    assert!(gateway.list().is_err());
+    assert!(matches!(
+        gateway.call(params(local_alias)).await,
+        Err(AggregateError::Denied)
+    ));
+    gateway.close().await;
+    upstream.abort();
+}
+
+#[derive(Clone)]
+struct WireState {
+    mode: Arc<AtomicU8>,
+    calls: Arc<AtomicUsize>,
+    capabilities: Arc<Mutex<Option<Value>>>,
+    entered: Arc<tokio::sync::Notify>,
+}
+async fn wire(
+    State(state): State<WireState>,
+    headers: HeaderMap,
+    axum::Json(request): axum::Json<Value>,
+) -> Response {
+    assert!(
+        headers.get("authorization").is_none(),
+        "central token must never reach upstream"
+    );
+    let method = request["method"].as_str().unwrap_or("");
+    let result = match method {
+        "initialize" => {
+            *state.capabilities.lock().expect("capabilities") =
+                Some(request["params"]["capabilities"].clone());
+            json!({"protocolVersion":"2025-11-25","capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"controlled-wire-fixture","version":"1"}})
+        }
+        "notifications/initialized" | "notifications/cancelled" => {
+            return StatusCode::ACCEPTED.into_response();
+        }
+        "tools/list" => {
+            let mode = state.mode.load(Ordering::Relaxed);
+            if mode == 6 {
+                state.entered.notify_one();
+                return std::future::pending().await;
+            }
+            if mode == 2 {
+                return (
+                    [("content-type", "application/json")],
+                    "private-malformed-fixture{",
+                )
+                    .into_response();
+            }
+            if mode == 4 {
+                return (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "private-upstream-diagnostic",
+                )
+                    .into_response();
+            }
+            let mut tool = json!({"name":"echo","description":"controlled fixture","inputSchema":{"type":"object","properties":{"message":{"type":"string"}}},"outputSchema":{"type":"object","properties":{"message":{"type":"string"}}}});
+            if mode == 5 {
+                tool["inputSchema"]["properties"]["extra"] = json!({"type":"boolean"});
+            }
+            if mode == 1 {
+                tool["name"] = if request["params"]["cursor"].is_string() {
+                    json!("second")
+                } else {
+                    json!("first")
+                };
+                json!({"tools":[tool],"nextCursor":"loop"})
+            } else if mode == 7 {
+                json!({"tools":[tool.clone(),tool]})
+            } else if mode == 3 {
+                let mut required = tool.clone();
+                required["name"] = json!("task-only");
+                required["execution"] = json!({"taskSupport":"required"});
+                json!({"tools":[tool,required]})
+            } else {
+                json!({"tools":[tool]})
+            }
+        }
+        "tools/call" => {
+            state.calls.fetch_add(1, Ordering::Relaxed);
+            json!({"content":[{"type":"text","text":"wire:hello"}],"structuredContent":{"message":"wire:hello"}})
+        }
+        _ => json!({}),
+    };
+    axum::Json(json!({"jsonrpc":"2.0","id":request["id"],"result":result})).into_response()
+}
+#[tokio::test]
+async fn required_tasks_looping_pages_invalid_responses_and_schema_changes_are_isolated() {
+    let healthy_listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("healthy fixture");
+    let healthy_address = healthy_listener.local_addr().expect("healthy address");
+    let healthy = tokio::spawn(async move {
+        axum::serve(
+            healthy_listener,
+            http_router(
+                FixtureState::new(format!("http://{healthy_address}"), "none".into()),
+                healthy_address.to_string(),
+            ),
+        )
+        .await
+        .expect("healthy MCP");
+    });
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("wire fixture");
+    let address = listener.local_addr().expect("address");
+    let state = WireState {
+        mode: Arc::new(AtomicU8::new(3)),
+        calls: Arc::new(AtomicUsize::new(0)),
+        capabilities: Arc::new(Mutex::new(None)),
+        entered: Arc::new(tokio::sync::Notify::new()),
+    };
+    let app = Router::new()
+        .route("/mcp", post(wire))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .await
+            .expect("owned wire fixture");
+    });
+    let endpoint = Endpoint::new(vec![
+        mcp(
+            Transport::Http {
+                url: format!("http://{address}/mcp"),
+            },
+            ToolPolicy::Denylist(vec![]),
+        ),
+        mcp(
+            Transport::Http {
+                url: format!("http://{healthy_address}/mcp"),
+            },
+            ToolPolicy::Allowlist(vec!["echo".into()]),
+        ),
+    ])
+    .await;
+    let id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let healthy_id = endpoint.snapshot.mcps[1].definition.id.clone();
+    let gateway = Aggregator::new(endpoint.cache.clone(), true)
+        .expect("aggregator")
+        .with_startup_timeout(Duration::from_secs(5))
+        .expect("bounded fixture");
+    gateway.reconcile().await.expect("task profile discovery");
+    assert_eq!(
+        gateway.list().expect("ordinary tools").len(),
+        2,
+        "statuses: {:?}",
+        gateway.statuses().expect("diagnostics")
+    );
+    assert!(matches!(
+        gateway.call(params(alias(&id, "task-only"))).await,
+        Err(AggregateError::Denied)
+    ));
+    assert_eq!(state.calls.load(Ordering::Relaxed), 0);
+    assert_eq!(
+        state
+            .capabilities
+            .lock()
+            .expect("client capabilities")
+            .as_ref(),
+        Some(&json!({}))
+    );
+    let original = gateway
+        .list()
+        .expect("old schema")
+        .into_iter()
+        .find(|tool| tool.name == alias(&id, "echo"))
+        .expect("wire route");
+    state.mode.store(5, Ordering::Relaxed);
+    gateway.reconcile().await.expect("changed schema");
+    let changed = gateway
+        .list()
+        .expect("changed tools")
+        .into_iter()
+        .find(|tool| tool.name == original.name)
+        .expect("wire route");
+    assert_eq!(changed.name, original.name);
+    assert_eq!(
+        changed.input_schema["properties"]["extra"]["type"],
+        "boolean"
+    );
+    let result = gateway
+        .call(params(changed.name.into_owned()))
+        .await
+        .expect("wire tool call");
+    assert_eq!(
+        result.structured_content,
+        Some(json!({"message":"wire:hello"}))
+    );
+    for mode in [1, 2, 4, 7] {
+        state.mode.store(mode, Ordering::Relaxed);
+        gateway.reconcile().await.expect("isolated failure");
+        assert_eq!(gateway.list().expect("failed upstream hidden").len(), 1);
+        assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+        assert_eq!(
+            gateway
+                .call(params(alias(&healthy_id, "echo")))
+                .await
+                .expect("healthy upstream remains usable")
+                .structured_content,
+            Some(json!({"message":"hello"}))
+        );
+    }
+    assert_eq!(
+        state.calls.load(Ordering::Relaxed),
+        1,
+        "failed or hidden calls never reach the fixture"
+    );
+    gateway.close().await;
+    server.abort();
+    healthy.abort();
+}
+
+#[tokio::test]
+async fn startup_uses_sleep_aware_native_time_without_extending_the_policy_lease() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("pending fixture");
+    let address = listener.local_addr().expect("address");
+    let state = WireState {
+        mode: Arc::new(AtomicU8::new(6)),
+        calls: Arc::new(AtomicUsize::new(0)),
+        capabilities: Arc::new(Mutex::new(None)),
+        entered: Arc::new(tokio::sync::Notify::new()),
+    };
+    let app = Router::new()
+        .route("/mcp", post(wire))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .await
+            .expect("pending MCP fixture");
+    });
+    let endpoint = Endpoint::new(vec![mcp(
+        Transport::Http {
+            url: format!("http://{address}/mcp"),
+        },
+        ToolPolicy::Denylist(vec![]),
+    )])
+    .await;
+    let id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let gateway = Aggregator::new(endpoint.cache.clone(), true).expect("aggregator");
+    let pending = gateway.reconcile();
+    tokio::pin!(pending);
+    tokio::select! { _ = state.entered.notified() => (), _ = &mut pending => panic!("startup completed before pending discovery") }
+    endpoint.time.advance(30);
+    tokio::time::timeout(Duration::from_secs(1), &mut pending)
+        .await
+        .expect("native startup deadline observed")
+        .expect("isolated startup failure");
+    assert_eq!(gateway.statuses().expect("metadata")[&id], "unavailable");
+    assert!(gateway.list().expect("no tools").is_empty());
+    assert!(
+        endpoint.cache.latest().is_ok(),
+        "startup timeout cannot renew or invalidate a still-valid policy lease"
+    );
+    assert_eq!(state.calls.load(Ordering::Relaxed), 0);
+    gateway.close().await;
+    server.abort();
+}
+
+#[tokio::test]
+async fn disable_during_pending_discovery_cancels_startup_before_publication() {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("pending fixture");
+    let address = listener.local_addr().expect("address");
+    let state = WireState {
+        mode: Arc::new(AtomicU8::new(6)),
+        calls: Arc::new(AtomicUsize::new(0)),
+        capabilities: Arc::new(Mutex::new(None)),
+        entered: Arc::new(tokio::sync::Notify::new()),
+    };
+    let app = Router::new()
+        .route("/mcp", post(wire))
+        .with_state(state.clone());
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.expect("owned pending MCP");
+    });
+    let mut endpoint = Endpoint::new(vec![mcp(
+        Transport::Http {
+            url: format!("http://{address}/mcp"),
+        },
+        ToolPolicy::Denylist(vec![]),
+    )])
+    .await;
+    let id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let gateway = Aggregator::new(endpoint.cache.clone(), true).expect("aggregator");
+    let pending = gateway.reconcile();
+    tokio::pin!(pending);
+    tokio::select! { _ = state.entered.notified() => (), _ = &mut pending => panic!("expected pending discovery") }
+    endpoint.change(|snapshot| snapshot.mcps[0].enabled = false);
+    tokio::time::timeout(Duration::from_secs(1), &mut pending)
+        .await
+        .expect("learned disable cancels startup")
+        .expect("isolated disabled upstream");
+    assert!(gateway.list().expect("current policy").is_empty());
+    assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+    assert_eq!(state.calls.load(Ordering::Relaxed), 0);
+    gateway.close().await;
+    server.abort();
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn disabled_missing_executable_and_empty_allowlist_never_install_or_dispatch() {
+    let fixture_command = CommandSpec {
+        program: env!("CARGO_BIN_EXE_gateway-fixture").into(),
+        args: vec![],
+        env: BTreeMap::new(),
+        cwd: None,
+    };
+    let mut endpoint = Endpoint::new(vec![mcp(
+        Transport::Stdio {
+            command: fixture_command,
+        },
+        ToolPolicy::Allowlist(vec![]),
+    )])
+    .await;
+    let permitted_id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let log = endpoint.root.join("no-calls");
+    let marker = endpoint.root.join("no-spawn");
+    let mut disabled = mcp(
+        Transport::Stdio {
+            command: CommandSpec {
+                program: "/usr/bin/touch".into(),
+                args: vec![marker.to_str().expect("marker").into()],
+                env: BTreeMap::new(),
+                cwd: None,
+            },
+        },
+        ToolPolicy::Denylist(vec![]),
+    );
+    disabled.enabled = false;
+    let missing = mcp(
+        Transport::Stdio {
+            command: CommandSpec {
+                program: endpoint
+                    .root
+                    .join("private-missing-program")
+                    .to_str()
+                    .expect("missing program")
+                    .into(),
+                args: vec![],
+                env: BTreeMap::new(),
+                cwd: None,
+            },
+        },
+        ToolPolicy::Denylist(vec![]),
+    );
+    let missing_id = missing.definition.id.clone();
+    let mut bearer = mcp(
+        Transport::Http {
+            url: "http://127.0.0.1:1/mcp".into(),
+        },
+        ToolPolicy::Denylist(vec![]),
+    );
+    bearer.definition.auth = AuthMode::Bearer {};
+    bearer.secret = Some(SecretRef {
+        id: Uuid::new_v4().to_string(),
+        key: "OWNED_KEY".into(),
+        version: 1,
+    });
+    let bearer_id = bearer.definition.id.clone();
+    endpoint.change(|snapshot| {
+        if let Transport::Stdio { command } = &mut snapshot.mcps[0].definition.transport {
+            command
+                .args
+                .extend(["--call-log".into(), log.to_str().expect("log").into()]);
+        }
+        snapshot.mcps.extend([disabled, missing, bearer]);
+    });
+    let gateway = Aggregator::new(endpoint.cache.clone(), true).expect("aggregator");
+    gateway.reconcile().await.expect("isolated discovery");
+    assert!(gateway.list().expect("empty allowlist").is_empty());
+    for mcp in &endpoint.snapshot.mcps {
+        assert!(matches!(
+            gateway
+                .call(params(alias(&mcp.definition.id, "echo")))
+                .await,
+            Err(AggregateError::Denied)
+        ));
+    }
+    assert!(!log.exists() && !marker.exists());
+    assert_eq!(
+        gateway.statuses().expect("metadata")[&missing_id],
+        "missing_executable"
+    );
+    assert_eq!(
+        gateway.statuses().expect("metadata")[&bearer_id],
+        "auth_required"
+    );
+    assert_eq!(
+        gateway.statuses().expect("metadata")[&permitted_id],
+        "available",
+        "discovery never grants a tool"
+    );
+    gateway.close().await;
+}

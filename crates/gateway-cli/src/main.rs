@@ -73,9 +73,8 @@ fn manager(
 }
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_writer(std::io::stderr)
-        .init();
+    use tracing_subscriber::util::SubscriberInitExt;
+    gateway_cli::logging::subscriber(std::io::stderr).init();
     match Args::parse().command {
         Command::Status {
             allow_fixture_http,

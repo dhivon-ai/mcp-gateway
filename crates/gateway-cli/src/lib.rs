@@ -1,16 +1,20 @@
 //! Native endpoint identity and protected loopback management. Credentials never cross the browser boundary.
+pub mod aggregation;
 pub mod bridge;
 pub mod cache;
 pub mod central;
 pub mod clock;
 pub mod credentials;
 pub mod install;
+pub mod logging;
 pub mod management;
 #[cfg(target_os = "macos")]
 pub mod owned_process;
 pub mod session;
 pub mod store;
 pub mod sync;
+pub mod upstream_http;
+pub mod wire;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EndpointError {

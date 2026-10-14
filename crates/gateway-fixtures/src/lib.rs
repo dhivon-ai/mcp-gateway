@@ -34,12 +34,14 @@ pub struct EchoServer;
 impl EchoServer {
     fn tools() -> Vec<Tool> {
         let schema = json!({"type":"object","properties":{"message":{"type":"string","maxLength":4096},"delayMs":{"type":"integer","minimum":0,"maximum":120000}},"required":["message"],"additionalProperties":false});
+        let mut echo = Tool::new(
+            "echo",
+            "Echo a fixture message",
+            schema.as_object().cloned().unwrap_or_default(),
+        );
+        echo.output_schema = Some(Arc::new(json!({"type":"object","properties":{"message":{"type":"string"}},"required":["message"]}).as_object().cloned().unwrap_or_default()));
         vec![
-            Tool::new(
-                "echo",
-                "Echo a fixture message",
-                schema.as_object().cloned().unwrap_or_default(),
-            ),
+            echo,
             Tool::new(
                 "fail",
                 "Return a fixture tool error",
@@ -98,11 +100,70 @@ impl ServerHandler for EchoServer {
                     ));
                 }
                 tokio::time::sleep(Duration::from_millis(args.delay_ms.unwrap_or_default())).await;
-                Ok(CallToolResult::success(vec![ContentBlock::text(args.message)]).into())
+                let mut result =
+                    CallToolResult::success(vec![ContentBlock::text(args.message.clone())]);
+                result.structured_content = Some(json!({"message":args.message}));
+                Ok(result.into())
             }
             "fail" => Ok(CallToolResult::error(vec![ContentBlock::text("fixture failure")]).into()),
             _ => Err(ErrorData::invalid_params("unknown fixture tool", None)),
         }
+    }
+}
+
+/// A controlled marker and tool-name-only call log prove routing without recording payloads.
+#[derive(Clone)]
+pub struct RecordedServer {
+    pub tag: String,
+    pub call_log: Option<std::path::PathBuf>,
+}
+impl ServerHandler for RecordedServer {
+    fn get_info(&self) -> ServerConfig {
+        EchoServer.get_info()
+    }
+    fn supported_protocol_versions(&self) -> Cow<'static, [ProtocolVersion]> {
+        EchoServer.supported_protocol_versions()
+    }
+    fn get_tool(&self, name: &str) -> Option<Tool> {
+        EchoServer.get_tool(name)
+    }
+    async fn list_tools(
+        &self,
+        params: Option<PaginatedRequestParams>,
+        context: RequestContext<RoleServer>,
+    ) -> Result<ListToolsResult, ErrorData> {
+        EchoServer.list_tools(params, context).await
+    }
+    async fn call_tool(
+        &self,
+        mut params: CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResponse, ErrorData> {
+        if let Some(path) = &self.call_log {
+            use std::io::Write;
+            let mut options = std::fs::OpenOptions::new();
+            options.create(true).append(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                options.mode(0o600);
+            }
+            let mut file = options
+                .open(path)
+                .map_err(|_| ErrorData::internal_error("Fixture call log unavailable", None))?;
+            writeln!(file, "{}", params.name)
+                .map_err(|_| ErrorData::internal_error("Fixture call log unavailable", None))?;
+        }
+        if params.name == "echo"
+            && let Some(message) = params
+                .arguments
+                .as_mut()
+                .and_then(|args| args.get_mut("message"))
+            && let Some(text) = message.as_str()
+        {
+            *message = json!(format!("{}:{text}", self.tag));
+        }
+        EchoServer.call_tool(params, context).await
     }
 }
 

@@ -1,5 +1,5 @@
 use clap::Parser;
-use gateway_fixtures::{EchoServer, FixtureState, http_router};
+use gateway_fixtures::{EchoServer, FixtureState, RecordedServer, http_router};
 use rmcp::{ServiceExt, transport::stdio};
 use std::net::SocketAddr;
 
@@ -11,6 +11,10 @@ struct Args {
     bind: SocketAddr,
     #[arg(long, default_value="none", value_parser=["none","bearer","oauth"])]
     auth: String,
+    #[arg(long)]
+    tag: Option<String>,
+    #[arg(long)]
+    call_log: Option<std::path::PathBuf>,
 }
 
 #[tokio::main]
@@ -20,7 +24,22 @@ async fn main() -> anyhow::Result<()> {
         if args.auth != "none" {
             anyhow::bail!("STDIO fixture does not use HTTP authentication");
         }
-        EchoServer.serve(stdio()).await?.waiting().await?;
+        if args.tag.is_some() || args.call_log.is_some() {
+            let tag = args.tag.unwrap_or_else(|| "fixture".into());
+            if tag.len() > 64 || !tag.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-') {
+                anyhow::bail!("Invalid fixture tag");
+            }
+            RecordedServer {
+                tag,
+                call_log: args.call_log,
+            }
+            .serve(stdio())
+            .await?
+            .waiting()
+            .await?;
+        } else {
+            EchoServer.serve(stdio()).await?.waiting().await?;
+        }
     } else {
         if !args.bind.ip().is_loopback() {
             anyhow::bail!("Fixtures must bind to loopback");

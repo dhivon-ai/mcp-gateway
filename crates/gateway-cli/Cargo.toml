@@ -26,6 +26,12 @@ anyhow.workspace = true
 serde_json.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+rmcp.workspace = true
+futures.workspace = true
+tokio-util.workspace = true
+sse-stream.workspace = true
+bytes.workspace = true
+http.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "=3.7.0"

@@ -10,7 +10,7 @@ use std::{
     process::{ExitStatus, Stdio},
     time::Duration,
 };
-use tokio::process::{Child, Command};
+use tokio::process::{Child, ChildStdin, ChildStdout, Command};
 
 pub struct OwnedProcess {
     child: Child,
@@ -21,6 +21,18 @@ pub struct OwnedProcess {
 impl OwnedProcess {
     /// No shell interpolation, inherited credentials, or captured payload output.
     pub fn spawn(spec: &CommandSpec) -> Result<Self> {
+        Self::spawn_with_stdio(spec, false)
+    }
+    /// Protocol pipes are detached without exposing/reaping the owned leader.
+    pub fn spawn_protocol(spec: &CommandSpec) -> Result<Self> {
+        Self::spawn_with_stdio(spec, true)
+    }
+    pub fn take_protocol(&mut self) -> Result<(ChildStdout, ChildStdin)> {
+        let read = self.child.stdout.take().ok_or(EndpointError::Invalid)?;
+        let write = self.child.stdin.take().ok_or(EndpointError::Invalid)?;
+        Ok((read, write))
+    }
+    fn spawn_with_stdio(spec: &CommandSpec, protocol: bool) -> Result<Self> {
         spec.validate().map_err(|_| EndpointError::Invalid)?;
         let mut command = Command::new(&spec.program);
         command
@@ -32,8 +44,16 @@ impl OwnedProcess {
         }
         command
             .envs(&spec.env)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
+            .stdin(if protocol {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            })
+            .stdout(if protocol {
+                Stdio::piped()
+            } else {
+                Stdio::null()
+            })
             .stderr(Stdio::null())
             .kill_on_drop(true)
             .process_group(0);

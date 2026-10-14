@@ -210,20 +210,31 @@ impl ConfigSnapshot {
             .iter()
             .find(|m| m.definition.id == mcp_id)
             .ok_or(PolicyError::Unassigned)?;
-        if !mcp.definition.active {
-            return Err(PolicyError::Unassigned);
-        }
-        if !mcp.enabled {
-            return Err(PolicyError::NotEnabled);
-        }
-        if !auth_ready {
-            return Err(PolicyError::AuthRequired);
-        }
-        if !mcp.definition.tool_policy.allows(original_tool_name) {
-            return Err(PolicyError::ToolDenied);
-        }
+        authorize_effective_tool(mcp, original_tool_name, auth_ready)?;
         Ok(mcp)
     }
+}
+
+/// Use only after the complete snapshot's identity/integrity/time validation.
+/// Sharing this target predicate avoids revalidating an entire catalog for every listed tool.
+pub fn authorize_effective_tool(
+    mcp: &EffectiveMcp,
+    original_tool_name: &str,
+    auth_ready: bool,
+) -> Result<(), PolicyError> {
+    if !mcp.definition.active {
+        return Err(PolicyError::Unassigned);
+    }
+    if !mcp.enabled {
+        return Err(PolicyError::NotEnabled);
+    }
+    if !auth_ready {
+        return Err(PolicyError::AuthRequired);
+    }
+    if !mcp.definition.tool_policy.allows(original_tool_name) {
+        return Err(PolicyError::ToolDenied);
+    }
+    Ok(())
 }
 
 /// HTTP is permitted only for explicitly enabled, isolated loopback fixtures.

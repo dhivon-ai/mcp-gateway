@@ -23,6 +23,9 @@ base64.workspace = true
 
 [dev-dependencies]
 reqwest.workspace = true
+gateway-cli = { path = "../gateway-cli" }
+gateway-core.workspace = true
+zeroize.workspace = true
 
 [lints]
 workspace = true
