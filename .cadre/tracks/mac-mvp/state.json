@@ -3,14 +3,14 @@
   "trackId": "mac-mvp",
   "title": "macOS enterprise MCP Gateway MVP",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "in_progress",
+  "checkpoint": "ready",
   "revision": 1,
   "dependencies": [],
   "commits": {
     "spec": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
-    "plan": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
-    "dependencyContext": "op:track-88e828e35e83e8c2bd2b5965b4eadaee"
+    "plan": "op:review-a9175dc706eca37cf035e283db13168a",
+    "dependencyContext": "op:review-a9175dc706eca37cf035e283db13168a"
   },
   "artifactProgress": [],
   "operation": null,
@@ -24,7 +24,31 @@
     "headCommit": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
     "completedAt": "2026-10-14T22:41:29.630Z"
   },
-  "reviewCycles": [],
+  "reviewCycles": [
+    {
+      "cycle": 1,
+      "outcome": "changes_requested",
+      "executionId": "2026-10-14T09-21-15-303Z",
+      "planRevision": 1,
+      "graphDigest": "fbabfc847709292a08b29d56cdeb31dc479303e5328bb1fa78778c3e18a4dc71",
+      "reviewedHead": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "commitRange": "4991f838b32bce062fc9cdae6e1df9dd779831c3..4469f1aaba87f2f1d447900da28afc2a78bfe860",
+      "bugs": [
+        "tracks/mac-mvp/bugs/review-1.md"
+      ],
+      "attemptedFindingIds": [
+        "endpoint-metadata-capacity-corruption",
+        "catalog-decoder-contract-bounds",
+        "admin-read-set-revision-race",
+        "catalog-command-round-trip"
+      ],
+      "authorization": {
+        "kind": "persisted-mode",
+        "originExecutionId": "2026-10-14T09-21-15-303Z",
+        "operation": "op:review-a9175dc706eca37cf035e283db13168a"
+      }
+    }
+  ],
   "history": [
     {
       "action": "track",
@@ -33,6 +57,10 @@
     {
       "action": "implement",
       "commit": "op:implement-d4f643804fcdea1b5cb4f1e7ba61d590"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-a9175dc706eca37cf035e283db13168a"
     }
   ],
   "autonomousReview": {
@@ -41,7 +69,34 @@
     "authorizedAt": "2026-10-14T09:21:15.303Z",
     "initialBaseCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
     "specCommit": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
-    "checkpoint": "reviewing",
-    "findings": []
+    "checkpoint": "remediating",
+    "reviewedExecutionId": "2026-10-14T09-21-15-303Z",
+    "reviewedHead": "4469f1aaba87f2f1d447900da28afc2a78bfe860",
+    "findings": [
+      {
+        "id": "endpoint-metadata-capacity-corruption",
+        "summary": "Sequential credential-head allocation writes metadata rejected by its reader, blocking shared identity/status/sync/logout (NFR-008, FR-016).",
+        "status": "open",
+        "attemptExecutionIds": []
+      },
+      {
+        "id": "catalog-decoder-contract-bounds",
+        "summary": "Browser decoders reject backend-valid MCP names/environment keys and fail entire catalogs (FR-003/022/023, AC-011).",
+        "status": "open",
+        "attemptExecutionIds": []
+      },
+      {
+        "id": "admin-read-set-revision-race",
+        "summary": "Independent admin reads pair stale membership/account data with newer configuration revision, allowing silent revocation resurrection (NFR-004).",
+        "status": "open",
+        "attemptExecutionIds": []
+      },
+      {
+        "id": "catalog-command-round-trip",
+        "summary": "Line-based argument/environment drafts silently change valid structured commands or prevent unrelated saves (FR-003/022, AC-011).",
+        "status": "open",
+        "attemptExecutionIds": []
+      }
+    ]
   }
 }

@@ -2,7 +2,7 @@
 
 - Track: `mac-mvp`
 - Spec revision: 1
-- Plan revision: 1
+- Plan revision: 2
 - Status: proposed
 
 ## Phase 1: Workspace and policy contracts
@@ -322,6 +322,79 @@ The human verifies the complete track against the approved specification and acc
 - [x] T9.1 User Manual Verification <!-- commit: 4469f1aaba87f2f1d447900da28afc2a78bfe860 -->
 
 - Phase completion commit: `4469f1aaba87f2f1d447900da28afc2a78bfe860`
+
+## Phase 10: Bounded endpoint credential metadata
+
+- Phase dependencies: P9
+
+### Outcome
+
+Credential capacity failures remain local to the affected MCP and cannot make the shared identity unreadable or prevent cleanup (BUG-001).
+
+- [ ] T10.1 Prevent metadata publication beyond readable invariants
+  - Task dependencies: none
+  - Commit group: endpoint-metadata-remediation
+  - Scope: Apply one consistent validation contract before durable metadata writes and reads. Preflight bounded credential-head/publication allocation; reject capacity safely or retire obsolete scope with protected cleanup. Preserve existing rollback/publication fences, token anchors, journal recoverability, and bounded file/account limits. No partial capacity failure may corrupt the identity shared by unrelated MCPs.
+  - Verification: Reproduce the 128/129 sequential MCP boundary with one active MCP at a time; failed allocation leaves status, cache/sync, existing credentials and logout usable. Test bounded write/read parity and failed-publication cleanup with native credential/cache/session regressions.
+  - Handoff: Capacity behavior, protected account/cleanup invariants, actual regression evidence and operator recovery guidance.
+- [ ] T10.2 User Manual Verification
+  - Verification: Verify BUG-001 acceptance criteria and original identity, lease, isolation and cleanup requirements under persisted Autonomous authority; record actual checks separately from authorization.
+
+- Phase completion commit: pending
+
+## Phase 11: Consistent administrator state and lossless catalog editing
+
+- Phase dependencies: P9
+
+### Outcome
+
+Both websites accept valid bounded catalog data, administrator edits preserve structured commands, and revision-checked saves use a consistent read set (BUG-002, BUG-003, BUG-004).
+
+- [ ] T11.1 Align catalog runtime decoders and preserve structured command values
+  - Task dependencies: none
+  - Commit group: browser-contract-remediation
+  - Scope: Align runtime decoder and form limits with the current valid server contract without tightening existing server data or weakening strict TypeScript. Support valid 200-byte MCP names and environment keys within the bounded catalog budget. Make argument/environment editing lossless for empty strings, embedded newlines and literal characters in runtime and installation commands, including tool-policy-only or unrelated saves. Use clearly described structured input where needed; do not silently reinterpret values.
+  - Verification: Actual Rust-valid boundary fixtures decode in both websites; invalid over-limit input still fails. Behavioral tests load/manage long names and environment keys, and assert unchanged and explicit edited command arrays/maps survive save exactly. Frontend tests, format/lint/typecheck/build and targeted compiled-browser keyboard/responsive checks pass.
+  - Handoff: Shared contract bounds, command editing semantics and compatibility/validation evidence.
+- [ ] T11.2 Bind all admin editor data to a consistent revision
+  - Task dependencies: T11.1
+  - Commit group: browser-contract-remediation
+  - Scope: Replace independently combined admin configuration/users/groups reads with an atomic or revision-verified read set for initial loading and post-write reload. A concurrent write must yield a coherent view or explicit conflict/reload; never attach a newer revision to stale role/active/member data. Preserve frozen editor revisions and no automatic mutation replay.
+  - Verification: Deterministically interleave membership removal/account changes with initial and follow-up reads; no stale roster or role can be saved under a newer revision. Verify conflict feedback/reload, one confirmed mutation/no replay and failed follow-up read handling through user-visible tests and real service/browser smoke.
+  - Handoff: Read consistency and failure behavior, controlled race proof, resulting API/UI contract and evidence.
+- [ ] T11.3 User Manual Verification
+  - Verification: Verify BUG-002 through BUG-004, NFR-004/005 and AC-011 using actual tests/browser evidence under persisted Autonomous authority.
+
+- Phase completion commit: pending
+
+## Phase 12: Rebuilt and verified MVP artifacts
+
+- Phase dependencies: P10, P11
+
+### Outcome
+
+Current container and Apple Silicon archive include all reviewed fixes, and runbooks identify the actual verified artifacts.
+
+- [ ] T12.1 Rebuild release artifacts and run cumulative acceptance checks
+  - Task dependencies: none
+  - Commit group: reviewed-mvp-release
+  - Scope: Rebuild embedded websites, self-hosted image and arm64 archive/checksum from the fixed source. Update release/acceptance and affected UI/native documentation. Re-run applicable workspace/frontend/contract/real-Postgres checks, packaged Mac/Keychain/STDIO and disposable deployment-to-agent/restart/backup/restore/key recovery journey. Reuse unchanged earlier evidence only with source/input/policy identity verified. Clean owned test resources and retain honest compatibility limits.
+  - Verification: Full relevant quality checks and all four regression witnesses pass; final archive checksum/source identity, compiled browser flow, actual Mac one-entry client, Node socketpair launch, Compose health/restart/fresh restore and encrypted-secret key recovery pass. No production credentials/publication/signing or existing agent configuration mutation.
+  - Handoff: Exact commits/artifact checksums, acceptance evidence, remaining documented compatibility limits and cleanup witness.
+- [ ] T12.2 User Manual Verification
+  - Verification: Verify all original AC-001 through AC-012 and four finding criteria against current integrated source/artifacts; record automated verification without claiming human approval.
+
+- Phase completion commit: pending
+
+## Phase 13: Track-level User Manual Verification
+
+### Outcome
+
+Verify the complete integrated MVP and remediation against the unchanged approved specification before cumulative autonomous review and the final explicit human completion decision.
+
+- [ ] T13.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 

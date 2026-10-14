@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-a9175dc706eca37cf035e283db13168a",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "da1b0cd3e8bc714faf78af378b2256d90f32476f986458f82a5d1c0ff7a0ff2f",
+  "baseCommit": "ca6cc6357b05b5b977e9d317a128bc7f4df8930a",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "bb86442086adba3447fe662cafc56873bdf1aa48f3b8c98fa7676bb578be2371"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/bugs/review-1.md",
+      "sha256": "cbc8c808447657fdae246b3718c9e9b80660772761d66d23307a6c7674b89b23"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/dependency-context.json",
+      "sha256": "2ef8aed07fe925298a056ccb43bdd3ecce35e80fded285fd27994411bfa333dc"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/learning.md",
+      "sha256": "8974174a9664726915fbb546dd58b40fd81e6179d0b36998d4ffe05133473e60"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/plan.md",
+      "sha256": "1a0ab2e6911ec7540e1f6de96ee4363dc75d9ed549def3348683596c02f56790"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/reviews/loop-1.json",
+      "sha256": "3ebe7524eed61c96b337d168aa1f93ae9c9b2febfb6daa9685abd82e40928b4f"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/state.json",
+      "sha256": "c1d53989082a17f41524d4eea31ffc36b930624f5275b0c1a4fc3bcd6a09e7c7"
+    }
+  ]
+}

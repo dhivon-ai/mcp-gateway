@@ -1,0 +1,36 @@
+{
+  "policyVersion": 2,
+  "originExecutionId": "2026-10-14T09-21-15-303Z",
+  "authorizedAt": "2026-10-14T09:21:15.303Z",
+  "initialBaseCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
+  "specCommit": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
+  "checkpoint": "remediating",
+  "findings": [
+    {
+      "id": "endpoint-metadata-capacity-corruption",
+      "summary": "Sequential credential-head allocation writes metadata rejected by its reader, blocking shared identity/status/sync/logout (NFR-008, FR-016).",
+      "status": "open",
+      "attemptExecutionIds": []
+    },
+    {
+      "id": "catalog-decoder-contract-bounds",
+      "summary": "Browser decoders reject backend-valid MCP names/environment keys and fail entire catalogs (FR-003/022/023, AC-011).",
+      "status": "open",
+      "attemptExecutionIds": []
+    },
+    {
+      "id": "admin-read-set-revision-race",
+      "summary": "Independent admin reads pair stale membership/account data with newer configuration revision, allowing silent revocation resurrection (NFR-004).",
+      "status": "open",
+      "attemptExecutionIds": []
+    },
+    {
+      "id": "catalog-command-round-trip",
+      "summary": "Line-based argument/environment drafts silently change valid structured commands or prevent unrelated saves (FR-003/022, AC-011).",
+      "status": "open",
+      "attemptExecutionIds": []
+    }
+  ],
+  "reviewedExecutionId": "2026-10-14T09-21-15-303Z",
+  "reviewedHead": "4469f1aaba87f2f1d447900da28afc2a78bfe860"
+}
