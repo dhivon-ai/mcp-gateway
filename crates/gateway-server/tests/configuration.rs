@@ -458,3 +458,51 @@ async fn concurrent_settings_conflict_and_restart_durability() {
     assert_eq!(remaining, 0);
     h.cleanup().await;
 }
+
+#[tokio::test]
+#[ignore = "requires isolated TEST_DATABASE_URL"]
+async fn administrator_collections_exceed_ten_thousand_rows() {
+    let h = Harness::new().await;
+    let admin = h.bootstrap().await;
+    let def = mcp();
+    let mcp_id = Uuid::parse_str(def["id"].as_str().expect("MCP id")).expect("UUID");
+    assert_eq!(
+        h.request(
+            "POST",
+            "/api/admin/mcps",
+            Some(&admin.token),
+            Some(json!({"expectedRevision":revision(&h,&admin.token).await,"definition":def}))
+        )
+        .await
+        .0,
+        200
+    );
+    // Bulk fixture rows obey normal schema constraints; avoid hashing10,001 passwords.
+    sqlx::query("INSERT INTO users(id,username,password_hash,role) SELECT gen_random_uuid(),'fixture-user-'||n, password_hash,'user' FROM users CROSS JOIN generate_series(1,10001) n WHERE username='admin'")
+        .execute(&h.state.pool).await.expect("fixture users");
+    sqlx::query("INSERT INTO groups(id,name) SELECT gen_random_uuid(),'Fixture group '||n FROM generate_series(1,10001) n")
+        .execute(&h.state.pool).await.expect("fixture groups");
+    sqlx::query("INSERT INTO assignments(id,mcp_id,target_kind,target_group) SELECT gen_random_uuid(),$1,'group',id FROM groups")
+        .bind(mcp_id).execute(&h.state.pool).await.expect("fixture assignments");
+    let (status, _, users) = h
+        .request("GET", "/api/admin/users", Some(&admin.token), None)
+        .await;
+    assert_eq!(status, 200);
+    let users: Vec<gateway_core::UserInfo> = serde_json::from_value(users).expect("users contract");
+    assert_eq!(users.len(), 10002);
+    let (status, _, groups) = h
+        .request("GET", "/api/admin/groups", Some(&admin.token), None)
+        .await;
+    assert_eq!(status, 200);
+    let groups: Vec<gateway_core::GroupInfo> =
+        serde_json::from_value(groups).expect("groups contract");
+    assert_eq!(groups.len(), 10001);
+    let (status, _, config) = h
+        .request("GET", "/api/admin/configuration", Some(&admin.token), None)
+        .await;
+    assert_eq!(status, 200);
+    let config: gateway_core::AdminConfiguration =
+        serde_json::from_value(config).expect("configuration contract");
+    assert_eq!(config.assignments.len(), 10001);
+    h.cleanup().await;
+}

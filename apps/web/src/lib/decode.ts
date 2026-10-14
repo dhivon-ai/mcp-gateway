@@ -49,7 +49,9 @@ export function nullable<T>(
 export function array<T>(
   value: unknown,
   decode: (value: unknown) => T,
-  max = 10000,
+  // Admin users/groups/assignments have no server row limit. Bounded wire fields
+  // supply their own limit; every element is still decoded in either case.
+  max = Number.MAX_SAFE_INTEGER,
 ): T[] {
   return Array.isArray(value) && value.length <= max
     ? value.map(decode)
@@ -70,7 +72,7 @@ export function group(value: unknown): GroupInfo {
   return {
     id: string(v.id, 64),
     name: string(v.name, 128),
-    memberIds: array(v.memberIds, (v) => string(v, 64)),
+    memberIds: array(v.memberIds, (v) => string(v, 64), 10000),
   };
 }
 export function command(value: unknown): CommandSpec {

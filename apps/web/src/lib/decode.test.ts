@@ -79,3 +79,63 @@ describe("Rust catalog wire bounds", () => {
     ).toThrow();
   });
 });
+
+describe("Administrator collection contracts", () => {
+  it.each([10000, 10001, 12000])("accepts %i valid assignments", (length) => {
+    const assignments = Array.from({ length }, (_, i) => ({
+      id: `grant-${i}`,
+      mcpId: "mcp",
+      target: { kind: "group", id: `group-${i}` },
+    }));
+    expect(
+      decode.configuration({
+        revision: 1,
+        mcps: [],
+        inventory: [],
+        assignments,
+      }).assignments,
+    ).toEqual(assignments);
+    expect(() =>
+      decode.configuration({
+        revision: 1,
+        mcps: [],
+        inventory: [],
+        assignments: [...assignments, { ...assignments[0], mcpId: 4 }],
+      }),
+    ).toThrow();
+  });
+  it("retains explicit group, catalog, command and tool limits", () => {
+    const group = {
+      id: "group",
+      name: "Group",
+      memberIds: Array(10000).fill("user"),
+    };
+    expect(decode.group(group).memberIds).toHaveLength(10000);
+    expect(() =>
+      decode.group({ ...group, memberIds: [...group.memberIds, "user"] }),
+    ).toThrow();
+    expect(() => decode.array({}, decode.user)).toThrow();
+    expect(() =>
+      decode.configuration({
+        revision: 1,
+        mcps: Array(513).fill(definition("valid")),
+        assignments: [],
+        inventory: [],
+      }),
+    ).toThrow();
+    expect(() =>
+      decode.command({
+        program: "fixture",
+        args: Array(129).fill(""),
+        env: {},
+        cwd: null,
+      }),
+    ).toThrow();
+    expect(() =>
+      decode.mcp({
+        ...definition("valid"),
+        toolPolicy: { mode: "allowlist", tools: Array(2049).fill("tool") },
+      }),
+    ).toThrow();
+  });
+});

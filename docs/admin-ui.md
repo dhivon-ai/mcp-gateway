@@ -141,3 +141,10 @@ logout passed. Both consoles were free of relevant errors/overlays. Final screen
 remain outside the repository. All 34 frontend tests, strict TypeScript, lint,
 formatting and embedded production builds pass. This controlled fixture evidence
 does not extend the previously declared browser/provider/platform compatibility.
+
+Administrator user, group and assignment responses have no server row-count cap.
+Their decoders validate every record without imposing a smaller browser-only cap;
+large valid collections remain loadable. Explicit wire bounds still apply to
+individual group membership (10,000), MCP definitions (512), command arguments
+(128), and tool names (2,048). Regression tests cover 10,001-record coherent reads,
+malformed late rows and real PostgreSQL/API responses above the former limit.
