@@ -28,5 +28,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     InventoryReport::export_all(&config)?;
     UiContext::export_all(&config)?;
     ApiError::export_all(&config)?;
+    LocalAction::<SettingsUpdate>::export_all(&config)?;
+    InstallRequest::export_all(&config)?;
+    InstallProgress::export_all(&config)?;
+    LocalCatalog::export_all(&config)?;
+    SecretMutationOutcome::export_all(&config)?;
+    LocalApiError::export_all(&config)?;
     Ok(())
 }
