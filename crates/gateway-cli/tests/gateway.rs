@@ -3,6 +3,7 @@ use axum::{
     Router,
     extract::State,
     http::StatusCode,
+    response::IntoResponse,
     routing::{get, post, put},
 };
 use gateway_cli::{
@@ -353,10 +354,34 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         Arc::new(LocalSessionManager::default()),
         StreamableHttpServerConfig::default().with_allowed_hosts(vec![remote_address.to_string()]),
     );
+    let secure_calls = remote_calls.clone();
+    let secured = StreamableHttpService::new(
+        move || Ok(Remote(secure_calls.clone())),
+        Arc::new(LocalSessionManager::default()),
+        StreamableHttpServerConfig::default().with_allowed_hosts(vec![remote_address.to_string()]),
+    );
+    let secured = Router::new()
+        .nest_service("/secure", secured)
+        .layer(axum::middleware::from_fn(
+            |request: axum::extract::Request, next: axum::middleware::Next| async move {
+                if request
+                    .headers()
+                    .get("authorization")
+                    .and_then(|value| value.to_str().ok())
+                    != Some("Bearer private-cli-bearer-fixture")
+                {
+                    return StatusCode::UNAUTHORIZED.into_response();
+                }
+                next.run(request).await
+            },
+        ));
     let remote_task = tokio::spawn(async move {
-        axum::serve(remote, Router::new().nest_service("/mcp", service))
-            .await
-            .expect("owned real SDK remote");
+        axum::serve(
+            remote,
+            Router::new().nest_service("/mcp", service).merge(secured),
+        )
+        .await
+        .expect("owned real SDK remote");
     });
     let now = epoch().expect("epoch");
     let control = Control {
@@ -396,6 +421,24 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             ],
         })),
     };
+    let secret_id = Uuid::new_v4().to_string();
+    {
+        let mut snapshot = control.snapshot.lock().expect("bearer fixture");
+        let mut bearer = definition(
+            "bearer-fixture",
+            Transport::Http {
+                url: format!("http://{remote_address}/secure"),
+            },
+            None,
+        );
+        bearer.definition.auth = AuthMode::Bearer {};
+        bearer.secret = Some(SecretRef {
+            id: secret_id.clone(),
+            key: "CLI_KEY".into(),
+            version: 1,
+        });
+        snapshot.mcps.push(bearer);
+    }
     let app = Router::new()
         .route("/api/config", get(config))
         .route(
@@ -415,6 +458,27 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             post(|| async { StatusCode::NO_CONTENT }),
         )
         .route("/api/settings/local-fixture", put(settings))
+        .route(
+            "/api/endpoint/credentials/bearer-fixture",
+            post(
+                move |headers: axum::http::HeaderMap,
+                      axum::Json(input): axum::Json<CredentialRequest>| {
+                    let secret_id = secret_id.clone();
+                    async move {
+                        assert_eq!(
+                            headers["authorization"],
+                            "Bearer private-native-central-fixture"
+                        );
+                        assert!(Uuid::parse_str(&input.installation_id).is_ok());
+                        axum::Json(UpstreamCredential::Bearer {
+                            token: "private-cli-bearer-fixture".into(),
+                            secret_id,
+                            version: 1,
+                        })
+                    }
+                },
+            ),
+        )
         .route(
             "/api/endpoint/inventory",
             post(|| async { StatusCode::NO_CONTENT }),
@@ -477,11 +541,12 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         .list_all_tools()
         .await
         .expect("CLI aggregate discovery");
-    assert_eq!(tools.len(), 2);
+    assert_eq!(tools.len(), 3);
     let owned = pids(&local_pids).await;
     for (id, expected) in [
         ("local-fixture", "local:hello"),
         ("remote-fixture", "remote:hello"),
+        ("bearer-fixture", "remote:hello"),
     ] {
         let result = agent
             .call_tool(CallToolRequestParams::new(gateway_cli::aggregation::alias(
@@ -501,7 +566,22 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .is_err()
     );
-    assert_eq!(remote_calls.load(Ordering::Relaxed), 1);
+    assert_eq!(remote_calls.load(Ordering::Relaxed), 2);
+    let metadata: Value = serde_json::from_slice(
+        &std::fs::read(files.state().join("identity.json")).expect("native metadata"),
+    )
+    .expect("metadata JSON");
+    assert!(
+        metadata["upstreamHeads"]["bearer-fixture"].is_string(),
+        "creating CLI stored a real Keychain credential head"
+    );
+    for file in std::fs::read_dir(files.state()).expect("native files") {
+        let path = file.expect("native file").path();
+        if path.is_file() {
+            let bytes = std::fs::read(path).expect("native bytes");
+            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-bearer-fixture"));
+        }
+    }
     let revision = control.snapshot.lock().expect("revision").revision;
     let response = client
         .put(format!("{base}/api/settings/local-fixture"))
@@ -577,7 +657,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
                 .expect("raw discovery");
             let frame: Value = serde_json::from_str(&line).expect("stdout protocol only");
             if frame["id"] == 2 {
-                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 1);
+                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 2);
                 break;
             }
         }
@@ -644,7 +724,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .expect("offline cached tools")
             .len(),
-        1
+        2
     );
     assert!(
         agent
@@ -659,6 +739,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
     {
         let mut snapshot = control.snapshot.lock().expect("server policy");
         snapshot.mcps[1].enabled = false;
+        snapshot.mcps[2].enabled = false;
         snapshot.revision += 1;
     }
     control.code.store(200, Ordering::Relaxed);

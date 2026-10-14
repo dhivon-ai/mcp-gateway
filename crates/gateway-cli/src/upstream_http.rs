@@ -33,6 +33,7 @@ pub struct BoundedHttpClient {
     client: reqwest::Client,
     uri: Arc<str>,
     access: Option<Arc<Zeroizing<String>>>,
+    rejected: Option<Arc<dyn Fn() + Send + Sync>>,
 }
 impl BoundedHttpClient {
     pub fn new(uri: &str, allow_fixture_http: bool) -> Result<Self, RemoteFailure> {
@@ -49,6 +50,7 @@ impl BoundedHttpClient {
             client,
             uri: uri.into(),
             access: None,
+            rejected: None,
         })
     }
     /// Only native scoped credential resolution may supply this value; no central session token.
@@ -61,6 +63,10 @@ impl BoundedHttpClient {
     }
     pub fn uri(&self) -> Arc<str> {
         self.uri.clone()
+    }
+    pub fn with_rejection_handler(mut self, rejected: Arc<dyn Fn() + Send + Sync>) -> Self {
+        self.rejected = Some(rejected);
+        self
     }
     fn request(
         &self,
@@ -110,10 +116,13 @@ impl BoundedHttpClient {
             .map_err(|_| failure(RemoteFailure::Unavailable))?
             .map_err(|_| failure(RemoteFailure::Unavailable))
     }
-    fn status(response: &reqwest::Response) -> HttpResult<()> {
+    fn status(&self, response: &reqwest::Response) -> HttpResult<()> {
         if response.status() == reqwest::StatusCode::UNAUTHORIZED
             || response.status() == reqwest::StatusCode::FORBIDDEN
         {
+            if let Some(rejected) = &self.rejected {
+                rejected();
+            }
             return Err(failure(RemoteFailure::Unauthorized));
         }
         if !response.status().is_success() {
@@ -216,7 +225,7 @@ impl StreamableHttpClient for BoundedHttpClient {
         if response.status() == reqwest::StatusCode::NOT_FOUND && session_id.is_some() {
             return Err(StreamableHttpError::SessionExpired);
         }
-        Self::status(&response)?;
+        self.status(&response)?;
         if matches!(
             response.status(),
             reqwest::StatusCode::ACCEPTED | reqwest::StatusCode::NO_CONTENT
@@ -287,7 +296,7 @@ impl StreamableHttpClient for BoundedHttpClient {
         if response.status() == reqwest::StatusCode::METHOD_NOT_ALLOWED {
             return Err(StreamableHttpError::ServerDoesNotSupportSse);
         }
-        Self::status(&response)?;
+        self.status(&response)?;
         if content_type(&response) != Some("text/event-stream") {
             return Err(failure(RemoteFailure::Protocol));
         }
@@ -316,7 +325,7 @@ impl StreamableHttpClient for BoundedHttpClient {
         ) {
             return Ok(());
         }
-        Self::status(&response)
+        self.status(&response)
     }
 }
 

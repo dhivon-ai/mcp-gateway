@@ -133,7 +133,8 @@ async fn main() -> anyhow::Result<()> {
                     engine.cache.clone(),
                     allow_fixture_http,
                 )?
-                .with_startup_timeout(std::time::Duration::from_secs(startup_timeout_seconds))?,
+                .with_startup_timeout(std::time::Duration::from_secs(startup_timeout_seconds))?
+                .with_credentials(gateway_cli::remote_credentials::resolver(engine.clone())),
             );
             let (sync_stop, sync_stopped) = tokio::sync::watch::channel(false);
             let sync_engine = engine.clone();

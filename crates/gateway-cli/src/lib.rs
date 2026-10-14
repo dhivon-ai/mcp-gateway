@@ -12,10 +12,12 @@ pub mod management;
 pub mod native_stdio;
 #[cfg(target_os = "macos")]
 pub mod owned_process;
+pub mod remote_credentials;
 pub mod runtime;
 pub mod session;
 pub mod store;
 pub mod sync;
+pub mod upstream_credentials;
 pub mod upstream_http;
 pub mod wire;
 
@@ -59,6 +61,12 @@ pub enum EndpointError {
     ExecutionDenied,
     #[error("This endpoint operation is unsupported on this platform")]
     Unsupported,
+    #[error("Connect or select a credential for this MCP while online")]
+    UpstreamRequired,
+    #[error("The upstream credential was rejected; replace it or reconnect while online")]
+    UpstreamRejected,
+    #[error("The upstream access token expired; reconnect while online")]
+    UpstreamExpired,
 }
 pub type Result<T> = std::result::Result<T, EndpointError>;
 

@@ -57,6 +57,8 @@ pub struct SnapshotCache {
 pub struct ValidatedSnapshot {
     pub snapshot: ConfigSnapshot,
     pub generation: Uuid,
+    pub receipt: Uuid,
+    pub sampled_at: ClockSample,
     pub now: i64,
     pub remaining_ns: u64,
 }
@@ -343,6 +345,8 @@ impl SnapshotCache {
                     Ok(ValidatedSnapshot {
                         snapshot: payload.snapshot,
                         generation: m.generation,
+                        receipt: payload.receipt,
+                        sampled_at: after_publication,
                         now: after_publication.wall_seconds()?,
                         remaining_ns,
                     })
@@ -356,6 +360,22 @@ impl SnapshotCache {
                 }
             }
         })
+    }
+    /// Native credential publication compares the protected snapshot receipt, not rotating read watermarks.
+    pub(crate) fn matches_receipt_locked(
+        &self,
+        metadata: &Metadata,
+        receipt: Uuid,
+    ) -> Result<bool> {
+        Ok(!metadata.cache_publication_pending
+            && self
+                .head(metadata)?
+                .is_some_and(|head| head.committed && head.receipt == Some(receipt)))
+    }
+    pub(crate) fn proof_usable(&self, proof: &ValidatedSnapshot) -> Result<bool> {
+        let now = self.sample()?;
+        Ok(now.elapsed_since(proof.sampled_at)? < proof.remaining_ns
+            && now.wall_ns < epoch_ns(proof.snapshot.expires_at)?)
     }
     /// Complete validated online response only. Request-start anchor charges response/persistence time against the lease.
     pub fn install(

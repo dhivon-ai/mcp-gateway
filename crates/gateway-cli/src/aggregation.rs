@@ -40,6 +40,10 @@ pub enum AggregateError {
     Denied,
     #[error("Upstream MCP authentication is required")]
     Authentication,
+    #[error("Upstream authentication was rejected; replace the key or reconnect while online")]
+    AuthenticationRejected,
+    #[error("Upstream access token expired; reconnect while online")]
+    TokenExpired,
     #[error("Upstream MCP is unavailable")]
     Unavailable,
     #[error("Upstream MCP returned invalid or unsupported protocol data")]
@@ -69,6 +73,10 @@ pub trait CredentialResolver: Send + Sync {
         snapshot: &'a ValidatedSnapshot,
         mcp: &'a EffectiveMcp,
     ) -> BoxFuture<'a, AggregateResult<AuthLease>>;
+    fn cached_ready(&self, _: &ValidatedSnapshot, mcp: &EffectiveMcp, binding: &str) -> bool {
+        matches!(mcp.definition.auth, AuthMode::None {}) && binding == "none"
+    }
+    fn rejected(&self, _: Uuid, _: &str, _: &str) {}
 }
 pub struct NoCredentials;
 impl CredentialResolver for NoCredentials {
@@ -116,6 +124,8 @@ pub struct Connection {
     fingerprint: String,
     definition_hash: String,
     auth_expiry: Option<i64>,
+    auth_binding: String,
+    auth_rejected: Arc<std::sync::atomic::AtomicBool>,
 }
 impl Connection {
     async fn close(&self) {
@@ -470,11 +480,26 @@ impl Aggregator {
             })
             .collect::<AggregateResult<BTreeMap<_, _>>>()?;
         let state = self.state.lock().map_err(|_| AggregateError::Unavailable)?;
-        Ok(state
+        let ready: BTreeMap<_, _> = state
+            .connections
+            .iter()
+            .map(|(id, connection)| {
+                let ready = !connection
+                    .auth_rejected
+                    .load(std::sync::atomic::Ordering::Acquire)
+                    && definitions.get(id.as_str()).is_some_and(|(mcp, _)| {
+                        self.credentials
+                            .cached_ready(&latest, mcp, &connection.auth_binding)
+                    });
+                (id, ready)
+            })
+            .collect();
+        let tools = state
             .routes
             .values()
             .filter(|route| {
-                !route.connection.stop.is_cancelled()
+                ready.get(&route.mcp_id) == Some(&true)
+                    && !route.connection.stop.is_cancelled()
                     && !route.connection.peer.is_transport_closed()
                     && route
                         .connection
@@ -493,7 +518,15 @@ impl Aggregator {
                         })
             })
             .map(|route| route.tool.clone())
-            .collect())
+            .collect();
+        if !self
+            .cache
+            .proof_usable(&latest)
+            .map_err(|_| AggregateError::Denied)?
+        {
+            return Err(AggregateError::Denied);
+        }
+        Ok(tools)
     }
     pub(crate) fn route(&self, name: &str) -> AggregateResult<(String, Arc<Connection>)> {
         let latest = self.current()?;
@@ -501,8 +534,15 @@ impl Aggregator {
         let route = state
             .routes
             .get(name)
-            .filter(|route| permitted(&latest, route))
+            .filter(|route| permitted(&latest, route, self.credentials.as_ref()))
             .ok_or(AggregateError::Denied)?;
+        if !self
+            .cache
+            .proof_usable(&latest)
+            .map_err(|_| AggregateError::Denied)?
+        {
+            return Err(AggregateError::Denied);
+        }
         Ok((route.original.clone(), route.connection.clone()))
     }
     pub(crate) fn audit_target(&self, name: &str) -> Option<(String, String, String)> {
@@ -610,7 +650,10 @@ impl Aggregator {
                 .iter()
                 .filter(|(id, connection)| {
                     latest.as_ref().is_none_or(|latest| {
-                        connection.stop.is_cancelled()
+                        connection
+                            .auth_rejected
+                            .load(std::sync::atomic::Ordering::Acquire)
+                            || connection.stop.is_cancelled()
                             || connection.peer.is_transport_closed()
                             || connection
                                 .auth_expiry
@@ -627,6 +670,11 @@ impl Aggregator {
                                 .is_none_or(|mcp| {
                                     !definition_hash(latest.generation, mcp)
                                         .is_ok_and(|hash| hash == connection.definition_hash)
+                                        || !self.credentials.cached_ready(
+                                            latest,
+                                            mcp,
+                                            &connection.auth_binding,
+                                        )
                                 })
                     })
                 })
@@ -695,6 +743,7 @@ impl Aggregator {
         definition_hash: String,
     ) -> AggregateResult<Arc<Connection>> {
         self.guard_mcp(&mcp.definition.id, &definition_hash)?;
+        let rejected = Arc::new(std::sync::atomic::AtomicBool::new(false));
         let handler = UpstreamEvents {
             changed: self.changed.clone(),
         };
@@ -704,6 +753,17 @@ impl Aggregator {
             Transport::Http { url } => {
                 let mut client = BoundedHttpClient::new(url, self.allow_fixture_http)
                     .map_err(|_| AggregateError::Unavailable)?;
+                let signal = rejected.clone();
+                let credentials = self.credentials.clone();
+                let changed = self.changed.clone();
+                let generation = self.generation;
+                let id = mcp.definition.id.clone();
+                let binding = auth.binding.clone();
+                client = client.with_rejection_handler(Arc::new(move || {
+                    signal.store(true, std::sync::atomic::Ordering::Release);
+                    credentials.rejected(generation, &id, &binding);
+                    changed.notify_one();
+                }));
                 if let Some(access) = auth.access {
                     client = client
                         .with_access(access)
@@ -715,7 +775,13 @@ impl Aggregator {
                 handler
                     .serve(StreamableHttpClientTransport::with_client(client, config))
                     .await
-                    .map_err(|_| AggregateError::Unavailable)?
+                    .map_err(|_| {
+                        if rejected.load(std::sync::atomic::Ordering::Acquire) {
+                            AggregateError::AuthenticationRejected
+                        } else {
+                            AggregateError::Unavailable
+                        }
+                    })?
             }
             Transport::Stdio { command } => {
                 #[cfg(target_os = "macos")]
@@ -764,11 +830,21 @@ impl Aggregator {
             fingerprint,
             definition_hash,
             auth_expiry: auth.expires_at,
+            auth_binding: auth.binding,
+            auth_rejected: rejected,
         }))
     }
 }
-fn permitted(latest: &ValidatedSnapshot, route: &Route) -> bool {
-    if route.connection.stop.is_cancelled()
+fn permitted(
+    latest: &ValidatedSnapshot,
+    route: &Route,
+    credentials: &dyn CredentialResolver,
+) -> bool {
+    if route
+        .connection
+        .auth_rejected
+        .load(std::sync::atomic::Ordering::Acquire)
+        || route.connection.stop.is_cancelled()
         || route.connection.peer.is_transport_closed()
         || route
             .connection
@@ -791,6 +867,7 @@ fn permitted(latest: &ValidatedSnapshot, route: &Route) -> bool {
         .is_some_and(|mcp| {
             definition_hash(latest.generation, mcp)
                 .is_ok_and(|hash| hash == route.connection.definition_hash)
+                && credentials.cached_ready(latest, mcp, &route.connection.auth_binding)
         })
 }
 fn definition_hash(generation: Uuid, mcp: &EffectiveMcp) -> AggregateResult<String> {
@@ -855,6 +932,8 @@ impl Drop for CancelRequest {
 fn category(error: AggregateError) -> &'static str {
     match error {
         AggregateError::Authentication => "auth_required",
+        AggregateError::AuthenticationRejected => "auth_rejected",
+        AggregateError::TokenExpired => "token_expired",
         AggregateError::Protocol => "invalid_upstream",
         AggregateError::Limit => "resource_limit",
         AggregateError::MissingExecutable => "missing_executable",

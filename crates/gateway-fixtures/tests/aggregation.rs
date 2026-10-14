@@ -23,7 +23,7 @@ use std::{
     path::PathBuf,
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU8, AtomicUsize, Ordering},
+        atomic::{AtomicU8, AtomicU16, AtomicU32, AtomicUsize, Ordering},
     },
     time::Duration,
 };
@@ -74,6 +74,9 @@ struct Endpoint {
     snapshot: ConfigSnapshot,
     inventory: Arc<Mutex<Vec<InventoryReport>>>,
     control: tokio::task::JoinHandle<()>,
+    credential: Arc<Mutex<Option<UpstreamCredential>>>,
+    credential_code: Arc<AtomicU16>,
+    credential_revision: Arc<AtomicU32>,
 }
 impl Endpoint {
     async fn new(mcps: Vec<EffectiveMcp>) -> Self {
@@ -83,19 +86,52 @@ impl Endpoint {
             .join(format!("gateway-aggregation-owned-{}", Uuid::new_v4()));
         let inventory = Arc::new(Mutex::new(Vec::new()));
         let collected = inventory.clone();
-        let app = Router::new().route(
-            "/api/endpoint/inventory",
-            post(
-                move |headers: HeaderMap, axum::Json(input): axum::Json<InventoryReport>| {
-                    let collected = collected.clone();
-                    async move {
-                        assert_eq!(headers["authorization"], "Bearer private-central-fixture");
-                        collected.lock().expect("inventory fixture").push(input);
-                        StatusCode::NO_CONTENT
-                    }
-                },
-            ),
-        );
+        let credential = Arc::new(Mutex::new(None::<UpstreamCredential>));
+        let credential_code = Arc::new(AtomicU16::new(200));
+        let credential_revision = Arc::new(AtomicU32::new(1));
+        let served_credential = credential.clone();
+        let served_code = credential_code.clone();
+        let served_revision = credential_revision.clone();
+        let app = Router::new()
+            .route(
+                "/api/endpoint/inventory",
+                post(
+                    move |headers: HeaderMap, axum::Json(input): axum::Json<InventoryReport>| {
+                        let collected = collected.clone();
+                        async move {
+                            assert_eq!(headers["authorization"], "Bearer private-central-fixture");
+                            collected.lock().expect("inventory fixture").push(input);
+                            StatusCode::NO_CONTENT
+                        }
+                    },
+                ),
+            )
+            .route(
+                "/api/endpoint/credentials/{id}",
+                post(
+                    move |headers: HeaderMap, axum::Json(input): axum::Json<CredentialRequest>| {
+                        let credential = served_credential.clone();
+                        let code = served_code.clone();
+                        let revision = served_revision.clone();
+                        async move {
+                            assert_eq!(headers["authorization"], "Bearer private-central-fixture");
+                            assert!(Uuid::parse_str(&input.installation_id).is_ok());
+                            let code = StatusCode::from_u16(code.load(Ordering::Relaxed))
+                                .expect("fixture code");
+                            if code != StatusCode::OK {
+                                return code.into_response();
+                            }
+                            if input.expected_revision != revision.load(Ordering::Relaxed) {
+                                return StatusCode::CONFLICT.into_response();
+                            }
+                            match credential.lock().expect("fixture credential").as_ref() {
+                                Some(credential) => axum::Json(credential.clone()).into_response(),
+                                None => StatusCode::PRECONDITION_REQUIRED.into_response(),
+                            }
+                        }
+                    },
+                ),
+            );
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("control listener");
@@ -171,11 +207,16 @@ impl Endpoint {
             snapshot,
             inventory,
             control,
+            credential,
+            credential_code,
+            credential_revision,
         }
     }
     fn change(&mut self, update: impl FnOnce(&mut ConfigSnapshot)) {
         update(&mut self.snapshot);
         self.snapshot.revision += 1;
+        self.credential_revision
+            .store(self.snapshot.revision, Ordering::Relaxed);
         let now = self.time.sample().expect("fixture clock");
         self.snapshot.validated_at = now.wall_seconds().expect("wall time");
         self.snapshot.expires_at = self.snapshot.validated_at + 3600;
@@ -768,6 +809,224 @@ async fn disabled_missing_executable_and_empty_allowlist_never_install_or_dispat
 
 #[derive(Clone)]
 struct AgentObserver(Arc<AtomicUsize>);
+
+#[tokio::test]
+async fn bearer_resolution_replacement_rejection_and_offline_lease_are_scoped() {
+    use axum::middleware;
+    use gateway_cli::{
+        remote_credentials::RemoteCredentials,
+        sync::{NativeTransport, SyncEngine},
+    };
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("protected fixture");
+    let address = listener.local_addr().expect("address");
+    let state = WireState {
+        mode: Arc::new(AtomicU8::new(0)),
+        calls: Arc::new(AtomicUsize::new(0)),
+        capabilities: Arc::new(Mutex::new(None)),
+        entered: Arc::new(tokio::sync::Notify::new()),
+        cancellations: Arc::new(AtomicUsize::new(0)),
+    };
+    let expected = Arc::new(Mutex::new("private-upstream-key-1".to_owned()));
+    let seen = Arc::new(Mutex::new(Vec::<String>::new()));
+    let check = expected.clone();
+    let recorded = seen.clone();
+    let app = Router::new()
+        .route("/mcp", post(wire))
+        .with_state(state.clone())
+        .layer(middleware::from_fn(
+            move |mut request: axum::extract::Request, next: middleware::Next| {
+                let expected = check.clone();
+                let seen = recorded.clone();
+                async move {
+                    let header = request
+                        .headers()
+                        .get("authorization")
+                        .and_then(|value| value.to_str().ok())
+                        .unwrap_or("")
+                        .to_owned();
+                    assert!(!header.contains("private-central"));
+                    seen.lock().expect("header witness").push(header.clone());
+                    if header
+                        != format!(
+                            "Bearer {}",
+                            expected.lock().expect("expected credential").as_str()
+                        )
+                    {
+                        return StatusCode::UNAUTHORIZED.into_response();
+                    }
+                    request.headers_mut().remove("authorization");
+                    next.run(request).await
+                }
+            },
+        ));
+    let protected = tokio::spawn(async move {
+        axum::serve(listener, app)
+            .await
+            .expect("owned protected MCP");
+    });
+    let healthy_listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("healthy fixture");
+    let healthy_address = healthy_listener.local_addr().expect("healthy address");
+    let healthy = tokio::spawn(async move {
+        axum::serve(
+            healthy_listener,
+            http_router(
+                FixtureState::new(format!("http://{healthy_address}"), "none".into()),
+                healthy_address.to_string(),
+            ),
+        )
+        .await
+        .expect("healthy MCP");
+    });
+    let secret = SecretRef {
+        id: Uuid::new_v4().to_string(),
+        key: "OWNED_KEY".into(),
+        version: 1,
+    };
+    let mut secured = mcp(
+        Transport::Http {
+            url: format!("http://{address}/mcp"),
+        },
+        ToolPolicy::Allowlist(vec!["echo".into()]),
+    );
+    secured.definition.auth = AuthMode::Bearer {};
+    secured.secret = Some(secret.clone());
+    let mut endpoint = Endpoint::new(vec![
+        secured,
+        mcp(
+            Transport::Http {
+                url: format!("http://{healthy_address}/mcp"),
+            },
+            ToolPolicy::Allowlist(vec!["echo".into()]),
+        ),
+    ])
+    .await;
+    let id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let healthy_id = endpoint.snapshot.mcps[1].definition.id.clone();
+    *endpoint.credential.lock().expect("central credential") = Some(UpstreamCredential::Bearer {
+        token: "private-upstream-key-1".into(),
+        secret_id: secret.id.clone(),
+        version: 1,
+    });
+    let resolver = Arc::new(RemoteCredentials::new(SyncEngine::new(
+        endpoint.cache.clone(),
+        Arc::new(NativeTransport),
+    )));
+    let gateway = Aggregator::new(endpoint.cache.clone(), true)
+        .expect("gateway")
+        .with_credentials(resolver.clone());
+    gateway.reconcile().await.expect("authenticated discovery");
+    assert_eq!(gateway.list().expect("tools").len(), 2);
+    gateway
+        .call(params(alias(&id, "echo")))
+        .await
+        .expect("protected call");
+    assert_eq!(state.calls.load(Ordering::Relaxed), 1);
+    // A newly confirmed secret version immediately blocks dispatch through the old connection.
+    endpoint.change(|snapshot| snapshot.mcps[0].secret.as_mut().expect("key").version = 2);
+    *endpoint.credential.lock().expect("central credential") = Some(UpstreamCredential::Bearer {
+        token: "private-upstream-key-2".into(),
+        secret_id: secret.id.clone(),
+        version: 2,
+    });
+    *expected.lock().expect("expected key") = "private-upstream-key-2".into();
+    assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+    assert_eq!(state.calls.load(Ordering::Relaxed), 1);
+    gateway.reconcile().await.expect("replacement discovery");
+    gateway
+        .call(params(alias(&id, "echo")))
+        .await
+        .expect("replacement token call");
+    // A remote401 is recorded for exactly this credential; healthy tools remain available.
+    *expected.lock().expect("remote revocation") = "revoked-fixture".into();
+    assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+    assert!(
+        gateway
+            .list()
+            .expect("scoped rejection")
+            .iter()
+            .all(|tool| tool.name != alias(&id, "echo"))
+    );
+    gateway
+        .call(params(alias(&healthy_id, "echo")))
+        .await
+        .expect("healthy tool after401");
+    gateway
+        .reconcile()
+        .await
+        .expect("rejected credential isolated");
+    assert_eq!(gateway.statuses().expect("status")[&id], "auth_rejected");
+    // A changed owned value can recover, while an unrelated key returned by the API cannot.
+    endpoint.change(|snapshot| snapshot.mcps[0].secret.as_mut().expect("key").version = 3);
+    *endpoint.credential.lock().expect("foreign response") = Some(UpstreamCredential::Bearer {
+        token: "private-foreign-fixture".into(),
+        secret_id: Uuid::new_v4().to_string(),
+        version: 3,
+    });
+    gateway
+        .reconcile()
+        .await
+        .expect("foreign credential isolated");
+    assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+    *endpoint.credential.lock().expect("correct key") = Some(UpstreamCredential::Bearer {
+        token: "private-upstream-key-3".into(),
+        secret_id: secret.id,
+        version: 3,
+    });
+    *expected.lock().expect("remote key") = "private-upstream-key-3".into();
+    gateway
+        .reconcile()
+        .await
+        .expect("correct credential recovery");
+    gateway
+        .call(params(alias(&id, "echo")))
+        .await
+        .expect("recovered call");
+    let expiry = endpoint
+        .cache
+        .latest()
+        .expect("existing lease")
+        .snapshot
+        .expires_at;
+    endpoint.credential_code.store(503, Ordering::Relaxed);
+    gateway
+        .reconcile()
+        .await
+        .expect("offline cached credentials");
+    assert_eq!(
+        endpoint
+            .cache
+            .latest()
+            .expect("unchanged lease")
+            .snapshot
+            .expires_at,
+        expiry
+    );
+    endpoint.time.advance(3599);
+    gateway
+        .call(params(alias(&id, "echo")))
+        .await
+        .expect("valid cached bearer before expiry");
+    endpoint.time.advance(1);
+    let calls = state.calls.load(Ordering::Relaxed);
+    assert!(gateway.list().is_err());
+    assert!(gateway.call(params(alias(&id, "echo"))).await.is_err());
+    assert_eq!(state.calls.load(Ordering::Relaxed), calls);
+    {
+        let headers = seen.lock().expect("scoped headers");
+        assert!(
+            headers
+                .iter()
+                .all(|value| value.starts_with("Bearer private-upstream-key-"))
+        );
+    }
+    gateway.close().await;
+    protected.abort();
+    healthy.abort();
+}
 impl rmcp::ClientHandler for AgentObserver {
     fn get_info(&self) -> rmcp::model::ClientConfig {
         rmcp::model::ClientConfig::new(

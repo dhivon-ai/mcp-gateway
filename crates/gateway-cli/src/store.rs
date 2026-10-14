@@ -3,6 +3,7 @@ use crate::{EndpointError, Result, credentials::CredentialStore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::{BTreeMap, BTreeSet},
     fs::{self, File, OpenOptions},
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -58,6 +59,10 @@ pub struct Metadata {
     pub cache_head_account: Option<String>,
     #[serde(default)]
     pub cache_publication_pending: bool,
+    #[serde(default)]
+    pub upstream_heads: BTreeMap<String, String>,
+    #[serde(default)]
+    pub upstream_publication_pending: BTreeSet<String>,
     pub pending_cleanup: Vec<Cleanup>,
 }
 impl Default for Metadata {
@@ -71,6 +76,8 @@ impl Default for Metadata {
             credential_accounts: Vec::new(),
             cache_head_account: None,
             cache_publication_pending: false,
+            upstream_heads: BTreeMap::new(),
+            upstream_publication_pending: BTreeSet::new(),
             pending_cleanup: Vec::new(),
         }
     }
@@ -171,6 +178,19 @@ impl StateStore {
         if metadata.schema_version != 1 || metadata.credential_accounts.len() > 2048 {
             return Err(EndpointError::Invalid);
         }
+        if metadata.upstream_heads.len() > 128 || metadata.upstream_publication_pending.len() > 128
+        {
+            return Err(EndpointError::Invalid);
+        }
+        for id in metadata
+            .upstream_heads
+            .keys()
+            .chain(&metadata.upstream_publication_pending)
+        {
+            if id.is_empty() || id.len() > 128 || id.contains(['\0', '\r', '\n']) {
+                return Err(EndpointError::Invalid);
+            }
+        }
         if let Some(origin) = &metadata.selected_server_origin {
             let url = url::Url::parse(origin).map_err(|_| EndpointError::Invalid)?;
             if !matches!(url.scheme(), "https" | "http")
@@ -212,6 +232,23 @@ impl StateStore {
             {
                 return Err(EndpointError::Invalid);
             }
+        }
+        for head in metadata.upstream_heads.values() {
+            let identity = metadata.active.as_ref().ok_or(EndpointError::Invalid)?;
+            let prefix = format!(
+                "{}upstream-head:",
+                Self::account_prefix(identity, metadata.generation)
+            );
+            if head
+                .strip_prefix(&prefix)
+                .is_none_or(|suffix| Uuid::parse_str(suffix).is_err())
+                || !metadata.credential_accounts.contains(head)
+            {
+                return Err(EndpointError::Invalid);
+            }
+        }
+        if metadata.active.is_none() && !metadata.upstream_publication_pending.is_empty() {
+            return Err(EndpointError::Invalid);
         }
         if metadata.pending_cleanup.len() > 16 {
             return Err(EndpointError::Invalid);
@@ -303,6 +340,8 @@ impl StateStore {
         }
         metadata.cache_head_account = None;
         metadata.cache_publication_pending = false;
+        metadata.upstream_heads.clear();
+        metadata.upstream_publication_pending.clear();
         metadata.generation = Uuid::new_v4();
         self.write(metadata)?;
         let cache = self.root.join("snapshot.enc");
