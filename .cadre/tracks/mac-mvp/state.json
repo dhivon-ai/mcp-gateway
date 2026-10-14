@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "trackId": "mac-mvp",
+  "title": "macOS enterprise MCP Gateway MVP",
+  "type": "feature",
+  "status": "planned",
+  "checkpoint": "ready",
+  "revision": 1,
+  "dependencies": [],
+  "commits": {
+    "spec": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
+    "plan": "op:track-88e828e35e83e8c2bd2b5965b4eadaee",
+    "dependencyContext": "op:track-88e828e35e83e8c2bd2b5965b4eadaee"
+  },
+  "artifactProgress": [],
+  "operation": null,
+  "lastExecution": null,
+  "reviewCycles": [],
+  "history": [
+    {
+      "action": "track",
+      "commit": "op:track-88e828e35e83e8c2bd2b5965b4eadaee"
+    }
+  ]
+}
