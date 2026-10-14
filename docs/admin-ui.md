@@ -148,3 +148,7 @@ large valid collections remain loadable. Explicit wire bounds still apply to
 individual group membership (10,000), MCP definitions (512), command arguments
 (128), and tool names (2,048). Regression tests cover 10,001-record coherent reads,
 malformed late rows and real PostgreSQL/API responses above the former limit.
+
+The final collection correction passes all 41 frontend tests and the added real
+PostgreSQL/API regression. Strict TypeScript, lint, formatting and embedded builds
+pass; previously verified layout/keyboard interactions are unchanged.

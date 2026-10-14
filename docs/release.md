@@ -6,10 +6,10 @@ The approved scope and acceptance mapping are in [acceptance](acceptance.md).
 ## Artifacts
 
 - Apple Silicon archive: `$GATEWAY_BUILD_CACHE/releases/mcp-gateway-0.1.0-macos-arm64.tar.gz`.
-- SHA-256: `1f35a72c4438e283fe039e65c0b338af858a0fa8b8e87896a2119691030a7349`.
+- SHA-256: `95d8e6283e1e77609154ddd771c8f3d5d4f46ef4eda4d2c45b6293178e5f4ce4`.
 - Check file: the archive name plus `.sha256`; `shasum -a 256 -c` passed.
 - Local service image: `mcp-gateway-server:0.1.0`, Linux arm64;
-  image ID `sha256:2bee0c4125c011e7a619c7aa29144a8f9c3c4b02360b84010bd1a9e433c0ba21`.
+  image ID `sha256:3aa9d38940e78888f28b600fc15e27041a4634906a1bec8be4273b704a63c075`.
 
 The archive contains only the arm64 executable, installation README and
 compatibility document. Mach-O inspection reports deployment target 27.0.1 and
@@ -51,13 +51,16 @@ input and blocked output. Compiled local index/module delivery is asserted.
 The cumulative browser journeys, reference comparison, keyboard and responsive
 checks remain in [admin UI](admin-ui.md) and [local UI](local-ui.md).
 
-Final local quality results: 83 workspace Rust tests passed (the native child
-helper and eight database cases are intentionally separate), all eight explicit
-PostgreSQL tests passed, and 34 frontend behavioral tests passed. Formatting,
-Clippy with warnings denied, generated contracts, strict TypeScript, lint and
-production builds passed. The final extracted archive's official-client suite
-passed in 38.48s; its native executable is byte-identical to the successful
-combined container/Node/Keychain rehearsal.
+Current local quality results: 41 frontend behavioral tests, strict TypeScript,
+lint, formatting, generated contracts, all-target Clippy and embedded builds pass.
+The unchanged Rust runtime/security/test inputs retain the previous full 83
+workspace tests and eight PostgreSQL tests; an additional real PostgreSQL/API
+regression passes with 10,002 users, 10,001 groups and 10,001 assignments. Together
+these provide nine database cases. The final extracted archive's official-client
+suite passes in 38.60s; its native executable is byte-identical to the successful
+combined container/Node/Keychain rehearsal. Fresh deployment, restart, backup,
+fresh restore and independent wrong/matching-key recovery were repeated with
+this image and archive.
 
 ## Review corrections
 
@@ -68,7 +71,12 @@ losslessly through JSON inputs; and revision-bracketed admin reads prevent stale
 membership/account values from inheriting a newer write revision. Regression tests
 and repeated compiled-browser checks cover each change. See [acceptance evidence](acceptance.md)
 and [administrator UI verification](admin-ui.md). The tested source includes the
-native and browser corrections in commits `798b0fb` and `829c6cd`.
+native and browser corrections in commits `798b0fb`, `829c6cd` and `c96f9c4`.
+The collection follow-up removes an arbitrary browser-only 10,000-record cap from
+server-unbounded admin users, groups and assignments. Every element is decoded;
+actual bounded group memberships, catalogs, commands and tools retain their limits.
+Initial/follow-up large-read and malformed-late-record regressions pass. This is a
+contract correction, with no new enterprise-scale performance guarantee.
 
 ## Verification commands
 
