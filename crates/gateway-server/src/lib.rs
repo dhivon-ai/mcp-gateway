@@ -17,6 +17,7 @@ use std::{
 use tokio::sync::{Mutex, Semaphore};
 use uuid::Uuid;
 
+pub mod configuration;
 pub mod identity;
 #[derive(Clone)]
 pub struct Options {
@@ -119,6 +120,7 @@ pub struct AppError {
     pub code: ErrorCode,
     pub message: &'static str,
     pub revision: Option<u32>,
+    pub snapshot: Option<Box<gateway_core::ConfigSnapshot>>,
 }
 impl AppError {
     pub fn new(status: StatusCode, code: ErrorCode, message: &'static str) -> Self {
@@ -127,6 +129,7 @@ impl AppError {
             code,
             message,
             revision: None,
+            snapshot: None,
         }
     }
     pub fn internal() -> Self {
@@ -188,6 +191,7 @@ impl IntoResponse for AppError {
                 code: self.code,
                 message: self.message.into(),
                 revision: self.revision,
+                snapshot: self.snapshot.map(|s| *s),
             }),
         )
             .into_response()
@@ -243,6 +247,29 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/admin/groups/{id}",
             put(identity::edit_group).delete(identity::delete_group),
+        )
+        .route(
+            "/api/admin/configuration",
+            get(configuration::admin_configuration),
+        )
+        .route("/api/admin/mcps", post(configuration::create_mcp))
+        .route(
+            "/api/admin/mcps/{id}",
+            put(configuration::edit_mcp).delete(configuration::delete_mcp),
+        )
+        .route(
+            "/api/admin/assignments",
+            post(configuration::create_assignment),
+        )
+        .route(
+            "/api/admin/assignments/{id}",
+            axum::routing::delete(configuration::delete_assignment),
+        )
+        .route("/api/config", get(configuration::get_snapshot))
+        .route("/api/settings/{id}", put(configuration::update_settings))
+        .route(
+            "/api/endpoint/inventory",
+            post(configuration::report_inventory),
         )
         .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
         .layer(middleware::from_fn_with_state(state.clone(), origin_guard))

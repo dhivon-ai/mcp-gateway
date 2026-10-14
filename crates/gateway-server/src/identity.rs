@@ -207,6 +207,22 @@ pub(crate) async fn begin_admin<'a>(
     }
     Ok(tx)
 }
+
+pub(crate) async fn begin_user<'a>(
+    state: &'a AppState,
+    p: &Principal,
+) -> Result<(Transaction<'a, Postgres>, Principal, u32), AppError> {
+    let mut tx = state.pool.begin().await?;
+    let revision = crate::configuration::revision(lock_revision(&mut tx).await?)?;
+    let row = sqlx::query_as::<_, SessionRow>(SESSION_QUERY)
+        .bind(&p.token_hash)
+        .bind(epoch()?)
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(AppError::unauthorized)?;
+    let p = principal(row, p.token_hash.clone(), p.endpoint);
+    Ok((tx, p, revision))
+}
 fn ui_context(state: &AppState, p: Principal) -> UiContext {
     let mut ctx = empty_context(state);
     ctx.user = Some(p.user);
@@ -503,6 +519,7 @@ pub async fn edit_user(
         .bind(input.active)
         .execute(&mut *tx)
         .await?;
+    crate::configuration::reconcile(&mut tx).await?;
     sqlx::query("DELETE FROM sessions WHERE user_id=$1")
         .bind(id)
         .execute(&mut *tx)
@@ -661,6 +678,7 @@ pub async fn edit_group(
         return Err(AppError::bad("Unknown group."));
     }
     write_members(&mut tx, id, &input).await?;
+    crate::configuration::reconcile(&mut tx).await?;
     let info = group_info(&mut tx, id, name).await?;
     bump_revision(&mut tx).await?;
     tx.commit().await?;
@@ -682,6 +700,7 @@ pub async fn delete_group(
     if result.rows_affected() != 1 {
         return Err(AppError::bad("Unknown group."));
     }
+    crate::configuration::reconcile(&mut tx).await?;
     bump_revision(&mut tx).await?;
     tx.commit().await?;
     tracing::info!(event="group_deleted",actor=%p.user.id,group_id=%id);

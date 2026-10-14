@@ -13,6 +13,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     PasswordReset::export_all(&config)?;
     GroupWrite::export_all(&config)?;
     Assignment::export_all(&config)?;
+    CatalogWrite::export_all(&config)?;
+    AssignmentWrite::export_all(&config)?;
+    RevisionInput::export_all(&config)?;
+    RevisionInfo::export_all(&config)?;
+    AdminConfiguration::export_all(&config)?;
     SecretMetadata::export_all(&config)?;
     LoginRequest::export_all(&config)?;
     SettingsUpdate::export_all(&config)?;

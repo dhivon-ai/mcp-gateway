@@ -126,6 +126,45 @@ pub struct Assignment {
     pub target: GrantTarget,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CatalogWrite {
+    pub expected_revision: u32,
+    pub definition: McpDefinition,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AssignmentWrite {
+    pub expected_revision: u32,
+    pub mcp_id: String,
+    pub target: GrantTarget,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RevisionInput {
+    pub expected_revision: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct RevisionInfo {
+    pub revision: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ToolInventory {
+    pub mcp_id: String,
+    pub names: Vec<String>,
+    pub observed_at: i64,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AdminConfiguration {
+    pub revision: u32,
+    pub mcps: Vec<McpDefinition>,
+    pub assignments: Vec<Assignment>,
+    pub inventory: Vec<ToolInventory>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct SecretRef {
@@ -224,6 +263,7 @@ pub struct ApiError {
     pub code: ErrorCode,
     pub message: String,
     pub revision: Option<u32>,
+    pub snapshot: Option<ConfigSnapshot>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]

@@ -17,8 +17,9 @@ seconds represented as JSON numbers, restricted to the year-9999 boundary; publi
 revisions are u32. No JSON bigint encoding is used.
 
 Central snapshots contain only effectively assigned MCP definitions, plus their
-server-authoritative enablement and credential references. Disabled MCPs remain
-visible to assigned users but are never dispatchable. Last-grant removal clears
+server-authoritative enablement and credential references. User-disabled MCPs
+remain visible but are never dispatchable; administrator-inactive entries are
+omitted. Last-grant removal clears
 enablement centrally; re-granting does not opt the user back in. Tool policy checks
 use original upstream names; agent-facing namespace routing is a transport concern.
 
