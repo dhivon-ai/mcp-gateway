@@ -24,7 +24,7 @@ Resource bounds are explicit:
 | Aggregate tool catalog | 2,048 tools and 16 MiB |
 | Owned aggregate shutdown | 5 seconds, concurrent across upstreams |
 
-Partial STDIO lines, JSON bodies, and retained SSE event data are bounded before typed SDK decoding. Oversized outgoing STDIO messages are rejected before any bytes are written. Malformed catalogs, looping cursors, unsupported negotiation, and individual unavailable servers have isolated status outcomes; healthy servers remain usable. Tool-list notifications coalesce into a rediscovery signal. The agent runtime adds bounded downstream pagination, call cancellation/concurrency, refresh, and notification delivery in the next group.
+Partial STDIO lines, JSON bodies, and retained SSE event data are bounded before typed SDK decoding. Oversized outgoing STDIO messages are rejected before any bytes are written. Malformed catalogs, looping cursors, unsupported negotiation, and individual unavailable servers have isolated status outcomes; healthy servers remain usable. Tool-list notifications coalesce into a rediscovery signal. The [agent runtime](agent-configuration.md) adds bounded downstream pagination, call cancellation/concurrency, refresh, and notification delivery.
 
 After successful discovery, the endpoint may asynchronously report only the assigned MCP ID and original tool names through the native inventory API. The server rechecks assignment and treats this as untrusted metadata; it does not change grants, policies, revisions, or the cache lease. Reports never include schemas, arguments, results, commands, or credentials.
 

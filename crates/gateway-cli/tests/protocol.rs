@@ -148,6 +148,33 @@ fn ping() -> ClientJsonRpcMessage {
     )
 }
 
+#[test]
+fn downstream_pages_fit_frames_and_changed_catalogs_reject_old_cursors() {
+    let tools: Vec<_> = (0..12)
+        .map(|index| {
+            Tool::new(
+                format!("tool-{index:02}"),
+                "d".repeat(120_000),
+                serde_json::Map::new(),
+            )
+        })
+        .collect();
+    let first = gateway_cli::runtime::paginate(tools.clone(), None).expect("first page");
+    assert!(first.tools.len() < tools.len());
+    assert!(serde_json::to_vec(&first).expect("page bytes").len() < MAX_MESSAGE_BYTES);
+    let cursor = first.next_cursor.clone().expect("bounded cursor");
+    let next =
+        gateway_cli::runtime::paginate(tools.clone(), Some(cursor.clone())).expect("second page");
+    assert!(next.next_cursor.is_none());
+    assert_eq!(first.tools.len() + next.tools.len(), tools.len());
+    let mut changed = tools;
+    changed[0].description = Some("new schema description".into());
+    assert!(gateway_cli::runtime::paginate(changed, Some(cursor)).is_err());
+    for cursor in ["x".repeat(100), "bogus:1".into(), ":0".into()] {
+        assert!(gateway_cli::runtime::paginate(Vec::new(), Some(cursor)).is_err());
+    }
+}
+
 #[tokio::test]
 async fn sse_limits_cover_fragmented_events_and_respect_smaller_sdk_bounds() {
     use futures::StreamExt;

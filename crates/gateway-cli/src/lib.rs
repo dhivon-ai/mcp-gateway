@@ -9,7 +9,10 @@ pub mod install;
 pub mod logging;
 pub mod management;
 #[cfg(target_os = "macos")]
+pub mod native_stdio;
+#[cfg(target_os = "macos")]
 pub mod owned_process;
+pub mod runtime;
 pub mod session;
 pub mod store;
 pub mod sync;

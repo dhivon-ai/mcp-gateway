@@ -48,6 +48,8 @@ pub enum AggregateError {
     Limit,
     #[error("The MCP operation was cancelled")]
     Cancelled,
+    #[error("The MCP tool call reached its deadline")]
+    Timeout,
     #[error("The upstream executable or working directory is missing")]
     MissingExecutable,
     #[error("The upstream executable cannot run with current permissions")]
@@ -503,20 +505,149 @@ impl Aggregator {
             .ok_or(AggregateError::Denied)?;
         Ok((route.original.clone(), route.connection.clone()))
     }
-    pub async fn call(&self, mut params: CallToolRequestParams) -> AggregateResult<CallToolResult> {
+    pub(crate) fn audit_target(&self, name: &str) -> Option<(String, String, String)> {
+        let latest = self.current().ok()?;
+        let state = self.state.lock().ok()?;
+        let route = state.routes.get(name)?;
+        Some((
+            latest.snapshot.user.id,
+            route.mcp_id.clone(),
+            route.original.clone(),
+        ))
+    }
+    pub async fn call(&self, params: CallToolRequestParams) -> AggregateResult<CallToolResult> {
+        self.call_bounded(params, CancellationToken::new(), Duration::from_secs(60))
+            .await
+    }
+    /// Caller cancellation is independent of the current native policy and sleep-aware deadline.
+    pub async fn call_bounded(
+        &self,
+        mut params: CallToolRequestParams,
+        cancelled: CancellationToken,
+        timeout: Duration,
+    ) -> AggregateResult<CallToolResult> {
+        if timeout.is_zero() || timeout > Duration::from_secs(60) {
+            return Err(AggregateError::Limit);
+        }
+        if cancelled.is_cancelled() {
+            return Err(AggregateError::Cancelled);
+        }
+        let start = self.cache.sample().map_err(|_| AggregateError::Denied)?;
+        let awake_deadline = tokio::time::Instant::now() + timeout;
+        let budget = u64::try_from(timeout.as_nanos()).map_err(|_| AggregateError::Limit)?;
         let name = params.name.to_string();
         let (original, connection) = self.route(&name)?;
-        // Recheck after choosing a route; runtime cancellation adds an independent in-flight deadline.
         let (checked_original, checked_connection) = self.route(&name)?;
         if original != checked_original || !Arc::ptr_eq(&connection, &checked_connection) {
             return Err(AggregateError::Denied);
         }
         params.name = original.into();
-        connection
-            .peer
-            .call_tool(params)
-            .await
-            .map_err(|_| AggregateError::Unavailable)
+        let guard = || -> AggregateResult<()> {
+            if cancelled.is_cancelled() || connection.stop.is_cancelled() {
+                return Err(AggregateError::Cancelled);
+            }
+            let (_, current) = self.route(&name)?;
+            if !Arc::ptr_eq(&connection, &current) {
+                return Err(AggregateError::Denied);
+            }
+            if !self
+                .cache
+                .sample()
+                .and_then(|now| now.elapsed_since(start))
+                .is_ok_and(|elapsed| elapsed < budget)
+                || tokio::time::Instant::now() >= awake_deadline
+            {
+                return Err(AggregateError::Timeout);
+            }
+            Ok(())
+        };
+        guard()?;
+        let sending = connection.peer.send_cancellable_request(
+            ClientRequest::CallToolRequest(CallToolRequest::new(params)),
+            rmcp::service::PeerRequestOptions::no_options(),
+        );
+        tokio::pin!(sending);
+        let handle = loop {
+            guard()?;
+            tokio::select! {
+                biased;
+                _ = cancelled.cancelled() => return Err(AggregateError::Cancelled),
+                _ = connection.stop.cancelled() => return Err(AggregateError::Cancelled),
+                _ = tokio::time::sleep_until(awake_deadline) => return Err(AggregateError::Timeout),
+                result = &mut sending => break result.map_err(|_| AggregateError::Unavailable)?,
+                _ = tokio::time::sleep(Duration::from_millis(50)) => (),
+            }
+        };
+        let mut cancellation = CancelRequest {
+            peer: connection.peer.clone(),
+            id: Some(handle.id.clone()),
+        };
+        let response = handle.await_response();
+        tokio::pin!(response);
+        loop {
+            guard()?;
+            tokio::select! {
+                biased;
+                _ = cancelled.cancelled() => return Err(AggregateError::Cancelled),
+                _ = connection.stop.cancelled() => return Err(AggregateError::Cancelled),
+                _ = tokio::time::sleep_until(awake_deadline) => return Err(AggregateError::Timeout),
+                result = &mut response => {
+                    // A completed response cannot cross a learned revocation or expired deadline.
+                    guard()?;
+                    cancellation.id = None;
+                    return match result { Ok(ServerResult::CallToolResult(result)) => Ok(result), _ => Err(AggregateError::Unavailable) };
+                },
+                _ = tokio::time::sleep(Duration::from_millis(50)) => (),
+            }
+        }
+    }
+    /// Remove routes and signal calls immediately, then close only retired owned upstreams.
+    pub async fn retire_unusable(&self) {
+        let latest = self.current().ok();
+        let retired = if let Ok(mut state) = self.state.lock() {
+            let ids: Vec<_> = state
+                .connections
+                .iter()
+                .filter(|(id, connection)| {
+                    latest.as_ref().is_none_or(|latest| {
+                        connection.stop.is_cancelled()
+                            || connection.peer.is_transport_closed()
+                            || connection
+                                .auth_expiry
+                                .is_some_and(|expiry| latest.now >= expiry)
+                            || latest
+                                .snapshot
+                                .mcps
+                                .iter()
+                                .find(|mcp| {
+                                    mcp.definition.id == **id
+                                        && mcp.enabled
+                                        && mcp.definition.active
+                                })
+                                .is_none_or(|mcp| {
+                                    !definition_hash(latest.generation, mcp)
+                                        .is_ok_and(|hash| hash == connection.definition_hash)
+                                })
+                    })
+                })
+                .map(|(id, _)| id.clone())
+                .collect();
+            let mut retired = Vec::new();
+            for id in ids {
+                if let Some(connection) = state.connections.remove(&id) {
+                    connection.stop.cancel();
+                    retired.push(connection);
+                }
+                state.statuses.insert(id, "unavailable");
+            }
+            state
+                .routes
+                .retain(|_, route| !route.connection.stop.is_cancelled());
+            retired
+        } else {
+            Vec::new()
+        };
+        close_connections(retired).await;
     }
     pub async fn close(&self) {
         let connections = match self.state.lock() {
@@ -693,6 +824,33 @@ async fn close_connections(connections: Vec<Arc<Connection>>) {
             connection.close().await;
         });
     let _ = tokio::time::timeout(Duration::from_secs(5), work).await;
+}
+
+/// Dropping a handler future still sends best-effort cancellation for its exact upstream request.
+struct CancelRequest {
+    peer: Peer<RoleClient>,
+    id: Option<RequestId>,
+}
+impl Drop for CancelRequest {
+    fn drop(&mut self) {
+        let Some(id) = self.id.take() else {
+            return;
+        };
+        let peer = self.peer.clone();
+        if let Ok(runtime) = tokio::runtime::Handle::try_current() {
+            runtime.spawn(async move {
+                let notification = CancelledNotificationParam::new(
+                    Some(id),
+                    Some("Gateway authorization, deadline, or caller cancellation".into()),
+                );
+                let _ = tokio::time::timeout(
+                    Duration::from_millis(250),
+                    peer.notify_cancelled(notification),
+                )
+                .await;
+            });
+        }
+    }
 }
 fn category(error: AggregateError) -> &'static str {
     match error {

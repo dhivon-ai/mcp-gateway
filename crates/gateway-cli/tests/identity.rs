@@ -783,10 +783,26 @@ async fn in_flight_login_cannot_resurrect_logout() {
 }
 
 #[test]
+#[cfg(target_os = "macos")]
 fn mcp_stdout_and_command_contract() {
     let binary = env!("CARGO_BIN_EXE_mcp-gateway");
+    let root = std::env::temp_dir()
+        .canonicalize()
+        .expect("fixture parent")
+        .join(format!("gateway-cold-mcp-owned-{}", Uuid::new_v4()));
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::DirBuilderExt;
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .expect("private fixture");
+    }
+    #[cfg(not(unix))]
+    std::fs::create_dir(&root).expect("fixture");
     let output = std::process::Command::new(binary)
-        .arg("mcp")
+        .args(["mcp", "--allow-fixture-http", "--fixture-state-path"])
+        .arg(&root)
         .output()
         .expect("MCP command");
     assert!(!output.status.success());
@@ -802,6 +818,20 @@ fn mcp_stdout_and_command_contract() {
     for command in ["ui", "mcp", "status", "logout"] {
         assert!(help.contains(command));
     }
+    for args in [
+        ["--concurrency", "17"],
+        ["--startup-timeout-seconds", "31"],
+        ["--call-timeout-seconds", "61"],
+    ] {
+        let output = std::process::Command::new(binary)
+            .arg("mcp")
+            .args(args)
+            .output()
+            .expect("invalid bound request");
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+    }
+    std::fs::remove_dir_all(root).expect("owned cold fixture cleanup");
 }
 
 struct FailingDeletion {

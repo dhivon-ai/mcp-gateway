@@ -101,8 +101,11 @@ impl BoundedHttpClient {
         }
         Ok(request)
     }
-    async fn send(request: reqwest::RequestBuilder) -> HttpResult<reqwest::Response> {
-        tokio::time::timeout(Duration::from_secs(10), request.send())
+    async fn send(
+        request: reqwest::RequestBuilder,
+        deadline: Duration,
+    ) -> HttpResult<reqwest::Response> {
+        tokio::time::timeout(deadline, request.send())
             .await
             .map_err(|_| failure(RemoteFailure::Unavailable))?
             .map_err(|_| failure(RemoteFailure::Unavailable))
@@ -208,7 +211,8 @@ impl StreamableHttpClient for BoundedHttpClient {
             )?
             .header("content-type", "application/json")
             .body(encoded);
-        let response = Self::send(request).await?;
+        let call = matches!(&message, JsonRpcMessage::Request(request) if matches!(&request.request, rmcp::model::ClientRequest::CallToolRequest(_)));
+        let response = Self::send(request, Duration::from_secs(if call { 60 } else { 10 })).await?;
         if response.status() == reqwest::StatusCode::NOT_FOUND && session_id.is_some() {
             return Err(StreamableHttpError::SessionExpired);
         }
@@ -279,7 +283,7 @@ impl StreamableHttpClient for BoundedHttpClient {
             }
             request = request.header("last-event-id", id);
         }
-        let response = Self::send(request).await?;
+        let response = Self::send(request, Duration::from_secs(10)).await?;
         if response.status() == reqwest::StatusCode::METHOD_NOT_ALLOWED {
             return Err(StreamableHttpError::ServerDoesNotSupportSse);
         }
@@ -305,7 +309,7 @@ impl StreamableHttpClient for BoundedHttpClient {
                 headers,
             )?
             .timeout(Duration::from_secs(1));
-        let response = Self::send(request).await?;
+        let response = Self::send(request, Duration::from_secs(10)).await?;
         if matches!(
             response.status(),
             reqwest::StatusCode::METHOD_NOT_ALLOWED | reqwest::StatusCode::NOT_FOUND

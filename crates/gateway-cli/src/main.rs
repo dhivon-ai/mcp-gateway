@@ -41,7 +41,19 @@ enum Command {
         fixture_state_path: Option<std::path::PathBuf>,
     },
     /// Serve coding agents over STDIO using an authenticated configuration.
-    Mcp,
+    Mcp {
+        #[arg(long)]
+        allow_fixture_http: bool,
+        #[arg(long, requires = "allow_fixture_http")]
+        fixture_state_path: Option<std::path::PathBuf>,
+        /// Upper bounds may be reduced, never increased beyond the approved limits.
+        #[arg(long, default_value_t = 60, value_parser = clap::value_parser!(u64).range(1..=60))]
+        call_timeout_seconds: u64,
+        #[arg(long, default_value_t = 30, value_parser = clap::value_parser!(u64).range(1..=30))]
+        startup_timeout_seconds: u64,
+        #[arg(long, default_value_t = 16, value_parser = clap::value_parser!(u16).range(1..=16))]
+        concurrency: u16,
+    },
     /// Print redacted local configuration status.
     Status {
         #[arg(long)]
@@ -87,11 +99,64 @@ async fn main() -> anyhow::Result<()> {
             );
             println!("{}", serde_json::to_string(&engine.status()?)?);
         }
-        Command::Mcp => {
-            // P4 provides aggregation. No stdin interaction or browser opening, including cold startup.
-            anyhow::bail!(
-                "No usable authenticated configuration. Run mcp-gateway ui --server <url> and synchronize."
+        Command::Mcp {
+            allow_fixture_http,
+            fixture_state_path,
+            call_timeout_seconds,
+            startup_timeout_seconds,
+            concurrency,
+        } => {
+            let sessions = manager(allow_fixture_http, fixture_state_path)?;
+            let engine = SyncEngine::new(
+                SnapshotCache::new(sessions, Arc::new(NativeClock::new()?)),
+                Arc::new(NativeTransport),
+            );
+            let stop = tokio_util::sync::CancellationToken::new();
+            let signal = stop.clone();
+            let signal_task = tokio::spawn(async move {
+                let _ = shutdown_signal().await;
+                signal.cancel();
+            });
+            let startup = tokio::select! { _ = stop.cancelled() => None, result = engine.refresh() => Some(result) };
+            if startup.is_none() {
+                signal_task.abort();
+                return Ok(());
+            }
+            if engine.cache.latest().is_err() {
+                signal_task.abort();
+                anyhow::bail!(
+                    "No usable authenticated configuration. Run mcp-gateway ui --server <url> and synchronize."
+                );
+            }
+            let gateway = Arc::new(
+                gateway_cli::aggregation::Aggregator::new(
+                    engine.cache.clone(),
+                    allow_fixture_http,
+                )?
+                .with_startup_timeout(std::time::Duration::from_secs(startup_timeout_seconds))?,
+            );
+            let (sync_stop, sync_stopped) = tokio::sync::watch::channel(false);
+            let sync_engine = engine.clone();
+            let sync_task = tokio::spawn(async move {
+                sync_engine.run_scheduled(sync_stopped).await;
+            });
+            let result = gateway_cli::runtime::serve_stdio(
+                engine,
+                gateway.clone(),
+                stop.clone(),
+                std::time::Duration::from_secs(call_timeout_seconds),
+                usize::from(concurrency),
             )
+            .await;
+            stop.cancel();
+            let _ = sync_stop.send(true);
+            sync_task.abort();
+            let _ = sync_task.await;
+            gateway.close().await;
+            signal_task.abort();
+            if result.is_err() {
+                anyhow::bail!("Gateway protocol connection closed or initialization failed");
+            }
         }
         Command::Logout {
             allow_fixture_http,

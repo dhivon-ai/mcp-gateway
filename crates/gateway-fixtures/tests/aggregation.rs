@@ -370,6 +370,7 @@ struct WireState {
     calls: Arc<AtomicUsize>,
     capabilities: Arc<Mutex<Option<Value>>>,
     entered: Arc<tokio::sync::Notify>,
+    cancellations: Arc<AtomicUsize>,
 }
 async fn wire(
     State(state): State<WireState>,
@@ -387,7 +388,11 @@ async fn wire(
                 Some(request["params"]["capabilities"].clone());
             json!({"protocolVersion":"2025-11-25","capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"controlled-wire-fixture","version":"1"}})
         }
-        "notifications/initialized" | "notifications/cancelled" => {
+        "notifications/cancelled" => {
+            state.cancellations.fetch_add(1, Ordering::Relaxed);
+            return StatusCode::ACCEPTED.into_response();
+        }
+        "notifications/initialized" => {
             return StatusCode::ACCEPTED.into_response();
         }
         "tools/list" => {
@@ -434,6 +439,10 @@ async fn wire(
         }
         "tools/call" => {
             state.calls.fetch_add(1, Ordering::Relaxed);
+            if state.mode.load(Ordering::Relaxed) == 8 {
+                state.entered.notify_one();
+                return std::future::pending().await;
+            }
             json!({"content":[{"type":"text","text":"wire:hello"}],"structuredContent":{"message":"wire:hello"}})
         }
         _ => json!({}),
@@ -466,6 +475,7 @@ async fn required_tasks_looping_pages_invalid_responses_and_schema_changes_are_i
         calls: Arc::new(AtomicUsize::new(0)),
         capabilities: Arc::new(Mutex::new(None)),
         entered: Arc::new(tokio::sync::Notify::new()),
+        cancellations: Arc::new(AtomicUsize::new(0)),
     };
     let app = Router::new()
         .route("/mcp", post(wire))
@@ -578,6 +588,7 @@ async fn startup_uses_sleep_aware_native_time_without_extending_the_policy_lease
         calls: Arc::new(AtomicUsize::new(0)),
         capabilities: Arc::new(Mutex::new(None)),
         entered: Arc::new(tokio::sync::Notify::new()),
+        cancellations: Arc::new(AtomicUsize::new(0)),
     };
     let app = Router::new()
         .route("/mcp", post(wire))
@@ -626,6 +637,7 @@ async fn disable_during_pending_discovery_cancels_startup_before_publication() {
         calls: Arc::new(AtomicUsize::new(0)),
         capabilities: Arc::new(Mutex::new(None)),
         entered: Arc::new(tokio::sync::Notify::new()),
+        cancellations: Arc::new(AtomicUsize::new(0)),
     };
     let app = Router::new()
         .route("/mcp", post(wire))
@@ -752,4 +764,215 @@ async fn disabled_missing_executable_and_empty_allowlist_never_install_or_dispat
         "discovery never grants a tool"
     );
     gateway.close().await;
+}
+
+#[derive(Clone)]
+struct AgentObserver(Arc<AtomicUsize>);
+impl rmcp::ClientHandler for AgentObserver {
+    fn get_info(&self) -> rmcp::model::ClientConfig {
+        rmcp::model::ClientConfig::new(
+            rmcp::model::ClientCapabilities::default(),
+            rmcp::model::Implementation::new("standard-agent-fixture", "1"),
+        )
+        .with_protocol_version(rmcp::model::ProtocolVersion::V_2025_11_25)
+    }
+    async fn on_tool_list_changed(&self, _: rmcp::service::NotificationContext<rmcp::RoleClient>) {
+        self.0.fetch_add(1, Ordering::Relaxed);
+    }
+}
+
+#[tokio::test]
+async fn standard_client_runtime_enforces_cancellation_concurrency_expiry_and_notifications() {
+    use gateway_cli::{
+        runtime::{GatewayService, coordinate},
+        sync::{NativeTransport, SyncEngine},
+    };
+    use rmcp::{ServiceExt, model::*, transport::async_rw::AsyncRwTransport};
+    use tokio_util::sync::CancellationToken;
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("runtime fixture");
+    let address = listener.local_addr().expect("address");
+    let state = WireState {
+        mode: Arc::new(AtomicU8::new(0)),
+        calls: Arc::new(AtomicUsize::new(0)),
+        capabilities: Arc::new(Mutex::new(None)),
+        entered: Arc::new(tokio::sync::Notify::new()),
+        cancellations: Arc::new(AtomicUsize::new(0)),
+    };
+    let app = Router::new()
+        .route("/mcp", post(wire))
+        .with_state(state.clone());
+    let upstream = tokio::spawn(async move {
+        axum::serve(listener, app).await.expect("owned runtime MCP");
+    });
+    let mut endpoint = Endpoint::new(vec![mcp(
+        Transport::Http {
+            url: format!("http://{address}/mcp"),
+        },
+        ToolPolicy::Denylist(vec![]),
+    )])
+    .await;
+    let id = endpoint.snapshot.mcps[0].definition.id.clone();
+    let gateway = Arc::new(Aggregator::new(endpoint.cache.clone(), true).expect("gateway"));
+    gateway.reconcile().await.expect("discovery");
+    let stop = CancellationToken::new();
+    let (ready, initialized) = tokio::sync::watch::channel(true);
+    let handler = GatewayService::new(
+        gateway.clone(),
+        stop.clone(),
+        initialized,
+        Duration::from_secs(60),
+        16,
+    )
+    .expect("runtime limits");
+    let (server_wire, client_wire) = tokio::io::duplex(64 * 1024);
+    let (server_read, server_write) = tokio::io::split(server_wire);
+    let (client_read, client_write) = tokio::io::split(client_wire);
+    let serving =
+        tokio::spawn(handler.serve(AsyncRwTransport::new_server(server_read, server_write)));
+    let changes = Arc::new(AtomicUsize::new(0));
+    let agent = AgentObserver(changes.clone())
+        .serve(AsyncRwTransport::new_client(client_read, client_write))
+        .await
+        .expect("standard MCP client");
+    let server = serving
+        .await
+        .expect("server task")
+        .expect("agent handshake");
+    let info = serde_json::to_value(agent.peer_info().expect("gateway capabilities"))
+        .expect("public info");
+    assert_eq!(info["protocolVersion"], "2025-11-25");
+    assert_eq!(info["capabilities"], json!({"tools":{"listChanged":true}}));
+    let coordinator = tokio::spawn(coordinate(
+        gateway.clone(),
+        SyncEngine::new(endpoint.cache.clone(), Arc::new(NativeTransport)),
+        server.peer().clone(),
+        stop.clone(),
+        ready,
+    ));
+    assert_eq!(
+        agent
+            .list_tools(None)
+            .await
+            .expect("agent tools")
+            .tools
+            .len(),
+        1
+    );
+    assert_eq!(
+        agent
+            .call_tool(params(alias(&id, "echo")))
+            .await
+            .expect("agent routed call")
+            .structured_content,
+        Some(json!({"message":"wire:hello"}))
+    );
+    assert!(agent.call_tool(params("echo".into())).await.is_err());
+    assert_eq!(state.calls.load(Ordering::Relaxed), 1);
+    // A sleep-aware call deadline does not depend on a Tokio sleep advancing.
+    state.mode.store(8, Ordering::Relaxed);
+    {
+        let call = agent.call_tool(params(alias(&id, "echo")));
+        tokio::pin!(call);
+        tokio::select! { _ = state.entered.notified() => (), _ = &mut call => panic!("expected pending tool") }
+        endpoint.time.advance(60);
+        let result = tokio::time::timeout(Duration::from_secs(1), &mut call)
+            .await
+            .expect("native call deadline")
+            .expect("actionable tool error");
+        assert_eq!(result.is_error, Some(true));
+    }
+    // The standard client's notification maps to the exact upstream request.
+    let request = ClientRequest::CallToolRequest(CallToolRequest::new(params(alias(&id, "echo"))));
+    let handle = agent
+        .send_cancellable_request(request, rmcp::service::PeerRequestOptions::no_options())
+        .await
+        .expect("cancellable call");
+    state.entered.notified().await;
+    agent
+        .notify_cancelled(CancelledNotificationParam::new(
+            Some(handle.id.clone()),
+            Some("private-agent-cancellation-reason".into()),
+        ))
+        .await
+        .expect("agent cancellation");
+    drop(handle);
+    for _ in 0..100 {
+        if state.cancellations.load(Ordering::Relaxed) >= 2 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert!(
+        state.cancellations.load(Ordering::Relaxed) >= 2,
+        "deadline and agent cancellation reached upstream"
+    );
+    let before = state.calls.load(Ordering::Relaxed);
+    let mut pending = Vec::new();
+    for _ in 0..16 {
+        pending.push(
+            agent
+                .send_cancellable_request(
+                    ClientRequest::CallToolRequest(CallToolRequest::new(params(alias(
+                        &id, "echo",
+                    )))),
+                    rmcp::service::PeerRequestOptions::no_options(),
+                )
+                .await
+                .expect("parallel call"),
+        );
+    }
+    for _ in 0..200 {
+        if state.calls.load(Ordering::Relaxed) == before + 16 {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert_eq!(state.calls.load(Ordering::Relaxed), before + 16);
+    assert!(
+        agent.call_tool(params(alias(&id, "echo"))).await.is_err(),
+        "seventeenth call is refused without a queue"
+    );
+    assert_eq!(state.calls.load(Ordering::Relaxed), before + 16);
+    let observed = changes.load(Ordering::Relaxed);
+    endpoint.change(|snapshot| snapshot.mcps[0].enabled = false);
+    assert!(
+        agent.call_tool(params(alias(&id, "echo"))).await.is_err(),
+        "same-Mac publication gates the next dispatch"
+    );
+    for _ in 0..150 {
+        if changes.load(Ordering::Relaxed) > observed
+            && gateway.list().expect("current listing").is_empty()
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+    assert!(changes.load(Ordering::Relaxed) > observed);
+    assert!(
+        agent
+            .list_tools(None)
+            .await
+            .expect("disabled tools")
+            .tools
+            .is_empty()
+    );
+    drop(pending);
+    endpoint.time.advance(3600);
+    assert!(
+        agent
+            .list_tools(None)
+            .await
+            .expect("expired listing")
+            .tools
+            .is_empty()
+    );
+    assert!(agent.call_tool(params(alias(&id, "echo"))).await.is_err());
+    stop.cancel();
+    let _ = coordinator.await;
+    gateway.close().await;
+    let _ = agent.cancel().await;
+    let _ = server.cancel().await;
+    upstream.abort();
 }

@@ -184,8 +184,12 @@ impl SyncEngine {
         Ok(false)
     }
     /// Startup refresh, 60-second native-clock cadence, fast offline recovery, and explicit wake/reconnect hints.
-    pub async fn run(&self, mut stop: watch::Receiver<bool>) {
+    pub async fn run(&self, stop: watch::Receiver<bool>) {
         let _ = self.refresh().await;
+        self.run_scheduled(stop).await;
+    }
+    /// Continue cadence when the caller already completed the startup refresh.
+    pub async fn run_scheduled(&self, mut stop: watch::Receiver<bool>) {
         loop {
             if *stop.borrow() {
                 return;

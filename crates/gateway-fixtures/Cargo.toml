@@ -26,6 +26,7 @@ reqwest.workspace = true
 gateway-cli = { path = "../gateway-cli" }
 gateway-core.workspace = true
 zeroize.workspace = true
+tokio-util.workspace = true
 
 [lints]
 workspace = true
