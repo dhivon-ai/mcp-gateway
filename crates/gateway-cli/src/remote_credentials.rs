@@ -15,11 +15,24 @@ use uuid::Uuid;
 pub struct RemoteCredentials {
     pub native: NativeCredentials,
     engine: SyncEngine,
+    oauth: crate::oauth_control::OAuthControl,
 }
 impl RemoteCredentials {
     pub fn new(engine: SyncEngine) -> Self {
+        let fixture_http = engine
+            .cache
+            .sessions
+            .load()
+            .ok()
+            .and_then(|session| session.metadata.active)
+            .is_some_and(|identity| identity.server_origin.starts_with("http://"));
         Self {
             native: NativeCredentials::new(engine.cache.clone()),
+            oauth: crate::oauth_control::OAuthControl::new(
+                engine.clone(),
+                "http://127.0.0.1:19001/oauth/callback".into(),
+                fixture_http,
+            ),
             engine,
         }
     }
@@ -61,6 +74,21 @@ impl CredentialResolver for RemoteCredentials {
                     expires_at: None,
                 });
             }
+            if matches!(mcp.definition.auth, AuthMode::OAuth { .. }) {
+                let session = self.native.cache.sessions.load().map_err(category)?;
+                if session.metadata.generation != snapshot.generation {
+                    return Err(AggregateError::Denied);
+                }
+                if !crate::oauth_pending::pending(&self.native.cache.sessions, &session, mcp)
+                    .map_err(category)?
+                    .is_empty()
+                {
+                    self.oauth
+                        .recover(snapshot.generation, &mcp.definition.id)
+                        .await
+                        .map_err(category)?;
+                }
+            }
             let scope = self.native.scope(snapshot, mcp).map_err(category)?;
             let start = self.native.cache.sample().map_err(category)?;
             let input = CredentialRequest {
@@ -76,8 +104,10 @@ impl CredentialResolver for RemoteCredentials {
                 .sessions
                 .control_request_for(&scope.session, reqwest::Method::POST, &path, Some(&body))
                 .await;
+            let mut online_resolution = false;
             match response {
                 Ok(response) if response.status().is_success() => {
+                    online_resolution = true;
                     let prepared = async {
                         let bytes = bounded_body(response).await.map_err(category)?;
                         let credential: UpstreamCredential =
@@ -122,7 +152,26 @@ impl CredentialResolver for RemoteCredentials {
                         && current.definition.active
                 })
                 .ok_or(AggregateError::Denied)?;
-            self.cached(&latest, current)
+            match self.cached(&latest, current) {
+                Err(AggregateError::TokenExpired)
+                    if online_resolution
+                        && matches!(current.definition.auth, AuthMode::OAuth { .. }) =>
+                {
+                    self.oauth
+                        .refresh(outcome, &current.definition.id)
+                        .await
+                        .map_err(category)?;
+                    let latest = self.native.cache.latest().map_err(category)?;
+                    let current = latest
+                        .snapshot
+                        .mcps
+                        .iter()
+                        .find(|mcp| mcp.definition.id == current.definition.id)
+                        .ok_or(AggregateError::Denied)?;
+                    self.cached(&latest, current)
+                }
+                result => result,
+            }
         })
     }
     fn cached_ready(

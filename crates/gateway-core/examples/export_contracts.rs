@@ -25,6 +25,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     SecretRename::export_all(&config)?;
     VersionInput::export_all(&config)?;
     OAuthStatus::export_all(&config)?;
+    OAuthConsent::export_all(&config)?;
+    OAuthConnectInput::export_all(&config)?;
+    OAuthDisconnectInput::export_all(&config)?;
+    LocalOAuthStatus::export_all(&config)?;
     InventoryReport::export_all(&config)?;
     UiContext::export_all(&config)?;
     ApiError::export_all(&config)?;

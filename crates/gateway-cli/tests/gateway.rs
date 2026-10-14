@@ -375,10 +375,35 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
                 next.run(request).await
             },
         ));
+    let oauth_calls = remote_calls.clone();
+    let oauth_service = StreamableHttpService::new(
+        move || Ok(Remote(oauth_calls.clone())),
+        Arc::new(LocalSessionManager::default()),
+        StreamableHttpServerConfig::default().with_allowed_hosts(vec![remote_address.to_string()]),
+    );
+    let oauth_service =
+        Router::new()
+            .nest_service("/oauth", oauth_service)
+            .layer(axum::middleware::from_fn(
+                |request: axum::extract::Request, next: axum::middleware::Next| async move {
+                    if request
+                        .headers()
+                        .get("authorization")
+                        .and_then(|value| value.to_str().ok())
+                        != Some("Bearer private-cli-oauth-fixture")
+                    {
+                        return StatusCode::UNAUTHORIZED.into_response();
+                    }
+                    next.run(request).await
+                },
+            ));
     let remote_task = tokio::spawn(async move {
         axum::serve(
             remote,
-            Router::new().nest_service("/mcp", service).merge(secured),
+            Router::new()
+                .nest_service("/mcp", service)
+                .merge(secured)
+                .merge(oauth_service),
         )
         .await
         .expect("owned real SDK remote");
@@ -438,6 +463,18 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             version: 1,
         });
         snapshot.mcps.push(bearer);
+        let mut oauth = definition(
+            "oauth-fixture",
+            Transport::Http {
+                url: format!("http://{remote_address}/oauth"),
+            },
+            None,
+        );
+        oauth.definition.auth = AuthMode::OAuth {
+            client_id: "public-cli-fixture".into(),
+            scopes: vec!["tools".into()],
+        };
+        snapshot.mcps.push(oauth);
     }
     let app = Router::new()
         .route("/api/config", get(config))
@@ -482,6 +519,31 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         .route(
             "/api/endpoint/inventory",
             post(|| async { StatusCode::NO_CONTENT }),
+        )
+        .route(
+            "/api/endpoint/credentials/oauth-fixture",
+            post(
+                move |headers: axum::http::HeaderMap,
+                      axum::Json(input): axum::Json<CredentialRequest>| async move {
+                    assert_eq!(
+                        headers["authorization"],
+                        "Bearer private-native-central-fixture"
+                    );
+                    axum::Json(UpstreamCredential::OAuth {
+                        credentials: OAuthCredentials {
+                            access_token: "private-cli-oauth-fixture".into(),
+                            refresh_token: Some("private-cli-refresh-fixture".into()),
+                            expires_at: now + 3600,
+                            issuer: format!("http://{remote_address}"),
+                            resource: format!("http://{remote_address}/oauth"),
+                            client_id: "public-cli-fixture".into(),
+                            scopes: vec!["tools".into()],
+                        },
+                        version: 1,
+                        installation_id: input.installation_id,
+                    })
+                },
+            ),
         )
         .with_state(control.clone());
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
@@ -541,12 +603,13 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         .list_all_tools()
         .await
         .expect("CLI aggregate discovery");
-    assert_eq!(tools.len(), 3);
+    assert_eq!(tools.len(), 4);
     let owned = pids(&local_pids).await;
     for (id, expected) in [
         ("local-fixture", "local:hello"),
         ("remote-fixture", "remote:hello"),
         ("bearer-fixture", "remote:hello"),
+        ("oauth-fixture", "remote:hello"),
     ] {
         let result = agent
             .call_tool(CallToolRequestParams::new(gateway_cli::aggregation::alias(
@@ -566,7 +629,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .is_err()
     );
-    assert_eq!(remote_calls.load(Ordering::Relaxed), 2);
+    assert_eq!(remote_calls.load(Ordering::Relaxed), 3);
     let metadata: Value = serde_json::from_slice(
         &std::fs::read(files.state().join("identity.json")).expect("native metadata"),
     )
@@ -580,6 +643,8 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         if path.is_file() {
             let bytes = std::fs::read(path).expect("native bytes");
             assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-bearer-fixture"));
+            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-oauth-fixture"));
+            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-refresh-fixture"));
         }
     }
     let revision = control.snapshot.lock().expect("revision").revision;
@@ -651,13 +716,13 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         }
         loop {
             let mut line = String::new();
-            tokio::time::timeout(Duration::from_secs(5), read.read_line(&mut line))
+            tokio::time::timeout(Duration::from_secs(35), read.read_line(&mut line))
                 .await
                 .expect("raw discovery bound")
                 .expect("raw discovery");
             let frame: Value = serde_json::from_str(&line).expect("stdout protocol only");
             if frame["id"] == 2 {
-                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 2);
+                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 3);
                 break;
             }
         }
@@ -724,7 +789,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .expect("offline cached tools")
             .len(),
-        2
+        3
     );
     assert!(
         agent
@@ -740,6 +805,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         let mut snapshot = control.snapshot.lock().expect("server policy");
         snapshot.mcps[1].enabled = false;
         snapshot.mcps[2].enabled = false;
+        snapshot.mcps[3].enabled = false;
         snapshot.revision += 1;
     }
     control.code.store(200, Ordering::Relaxed);

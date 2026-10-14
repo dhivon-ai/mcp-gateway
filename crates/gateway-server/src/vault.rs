@@ -362,14 +362,41 @@ pub async fn resolve_credential(
     ApiPath(raw): ApiPath<String>,
     Input(input): Input<CredentialRequest>,
 ) -> Result<Json<UpstreamCredential>, AppError> {
+    resolve_inner(state, headers, raw, input, false).await
+}
+/// Consent recovery can inspect its installation's managed record before explicit enablement.
+/// This native-only route never returns generic bearer secrets or grants MCP execution.
+pub async fn resolve_oauth_credential(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    ApiPath(raw): ApiPath<String>,
+    Input(input): Input<CredentialRequest>,
+) -> Result<Json<UpstreamCredential>, AppError> {
+    resolve_inner(state, headers, raw, input, true).await
+}
+async fn resolve_inner(
+    state: AppState,
+    headers: HeaderMap,
+    raw: String,
+    input: CredentialRequest,
+    consent: bool,
+) -> Result<Json<UpstreamCredential>, AppError> {
     let p = native(&state, &headers).await?;
     let mcp = uuid(&raw)?;
     let installation = uuid(&input.installation_id)?;
     let (mut tx, p, current) = identity::begin_user(&state, &p).await?;
     configuration::check_revision(input.expected_revision, current)?;
     let owner = uuid(&p.user.id)?;
-    require_enabled(&mut tx, owner, mcp).await?;
     let def = configuration::definition(&mut tx, mcp).await?;
+    if consent {
+        if !matches!(def.auth, AuthMode::OAuth { .. })
+            || !configuration::assigned(&mut tx, owner, mcp).await?
+        {
+            return Err(AppError::forbidden());
+        }
+    } else {
+        require_enabled(&mut tx, owner, mcp).await?;
+    }
     let result = match def.auth {
         AuthMode::Bearer {} => {
             let id: Option<Uuid> = sqlx::query_scalar(
@@ -608,6 +635,14 @@ pub async fn disconnect_oauth(
     let (mut tx, p, current) = identity::begin_user(&state, &p).await?;
     configuration::check_revision(input.expected_revision, current)?;
     let owner = uuid(&p.user.id)?;
+    if !configuration::assigned(&mut tx, owner, mcp).await?
+        || !matches!(
+            configuration::definition(&mut tx, mcp).await?.auth,
+            AuthMode::OAuth { .. }
+        )
+    {
+        return Err(AppError::forbidden());
+    }
     if let Some(row) = oauth_row(&mut tx, owner, mcp, installation).await? {
         if revision(row.version)? != input.expected_version {
             return Err(AppError::conflict("OAuth credentials changed."));
@@ -620,13 +655,14 @@ pub async fn disconnect_oauth(
         .bind(installation)
         .execute(&mut *tx)
         .await?;
-        sqlx::query("DELETE FROM user_settings WHERE user_id=$1 AND mcp_id=$2")
-            .bind(owner)
-            .bind(mcp)
-            .execute(&mut *tx)
-            .await?;
-        bump_revision(&mut tx).await?;
     }
+    // Disconnect also fences a consent exchange when no record exists yet.
+    sqlx::query("DELETE FROM user_settings WHERE user_id=$1 AND mcp_id=$2")
+        .bind(owner)
+        .bind(mcp)
+        .execute(&mut *tx)
+        .await?;
+    bump_revision(&mut tx).await?;
     tx.commit().await?;
     tracing::info!(event="oauth_disconnected",user_id=%owner,mcp_id=%mcp);
     Ok(StatusCode::NO_CONTENT)

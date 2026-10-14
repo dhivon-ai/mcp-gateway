@@ -30,6 +30,14 @@ impl From<EndpointError> for BridgeError {
             EndpointError::InvalidCache | EndpointError::ClockUncertain => {
                 (StatusCode::SERVICE_UNAVAILABLE, ErrorCode::InvalidCache)
             }
+            EndpointError::UpstreamRequired
+            | EndpointError::UpstreamRejected
+            | EndpointError::UpstreamExpired => {
+                (StatusCode::PRECONDITION_REQUIRED, ErrorCode::AuthRequired)
+            }
+            EndpointError::OAuthUnsupported => {
+                (StatusCode::UNPROCESSABLE_ENTITY, ErrorCode::Unsupported)
+            }
             _ => (StatusCode::SERVICE_UNAVAILABLE, ErrorCode::Offline),
         };
         Self {

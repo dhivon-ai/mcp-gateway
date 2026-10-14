@@ -248,6 +248,31 @@ pub struct OAuthStatus {
     pub version: Option<u32>,
     pub expires_at: Option<i64>,
 }
+#[derive(Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthConsent {
+    pub flow_id: String,
+    pub authorization_url: String,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthConnectInput {
+    pub expected_revision: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct OAuthDisconnectInput {
+    pub expected_revision: u32,
+    pub expected_version: u32,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct LocalOAuthStatus {
+    pub connected: bool,
+    pub version: Option<u32>,
+    pub expires_at: Option<i64>,
+    pub readiness: String,
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]

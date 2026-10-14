@@ -38,6 +38,9 @@ pub struct Harness {
 }
 impl Harness {
     pub async fn new() -> Self {
+        Self::with_public_url("http://127.0.0.1:18080").await
+    }
+    pub async fn with_public_url(public_url: &str) -> Self {
         let raw = std::env::var("TEST_DATABASE_URL")
             .expect("Set TEST_DATABASE_URL to the isolated gateway_test database");
         let mut url = url::Url::parse(&raw).expect("test DSN");
@@ -61,7 +64,7 @@ impl Harness {
         let state = AppState::connect(
             url.as_str(),
             Options {
-                public_url: "http://127.0.0.1:18080".into(),
+                public_url: public_url.into(),
                 allow_loopback_http: true,
                 vault: gateway_core::crypto::KeyRing::new(
                     "fixture-key".into(),
@@ -125,10 +128,12 @@ impl Harness {
         value: Option<Value>,
         headers: &[(&str, &str)],
     ) -> (u16, HeaderMap, Value) {
-        let mut builder = Request::builder()
-            .method(method)
-            .uri(path)
-            .header("host", "127.0.0.1:18080");
+        let mut builder = Request::builder().method(method).uri(path).header(
+            "host",
+            url::Url::parse(&self.state.options.public_url)
+                .expect("fixture public URL")
+                .authority(),
+        );
         if let Some(token) = token {
             builder = builder.header("authorization", format!("Bearer {token}"));
         }

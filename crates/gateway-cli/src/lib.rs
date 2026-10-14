@@ -10,6 +10,10 @@ pub mod logging;
 pub mod management;
 #[cfg(target_os = "macos")]
 pub mod native_stdio;
+pub mod oauth_control;
+pub mod oauth_http;
+mod oauth_pending;
+pub mod oauth_protocol;
 #[cfg(target_os = "macos")]
 pub mod owned_process;
 pub mod remote_credentials;
@@ -61,6 +65,10 @@ pub enum EndpointError {
     ExecutionDenied,
     #[error("This endpoint operation is unsupported on this platform")]
     Unsupported,
+    #[error(
+        "Unsupported OAuth provider profile: configure a preregistered public client, protected-resource discovery, S256 PKCE, bearer tokens with expiry, and verified HTTPS"
+    )]
+    OAuthUnsupported,
     #[error("Connect or select a credential for this MCP while online")]
     UpstreamRequired,
     #[error("The upstream credential was rejected; replace it or reconnect while online")]

@@ -308,6 +308,10 @@ pub fn router(state: AppState) -> Router {
             post(vault::acquire_refresh).delete(vault::release_refresh),
         )
         .route(
+            "/api/endpoint/oauth/{id}/credentials",
+            post(vault::resolve_oauth_credential),
+        )
+        .route(
             "/api/oauth/{id}/status/{installation}",
             get(vault::oauth_status),
         )

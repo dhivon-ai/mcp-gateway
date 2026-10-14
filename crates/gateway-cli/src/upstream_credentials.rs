@@ -96,6 +96,25 @@ impl NativeCredentials {
         snapshot: &ValidatedSnapshot,
         mcp: &EffectiveMcp,
     ) -> Result<CredentialScope> {
+        self.scope_inner(snapshot, mcp, false)
+    }
+    /// Consent can precede enablement; this never makes an agent credential ready.
+    pub fn management_scope(
+        &self,
+        snapshot: &ValidatedSnapshot,
+        mcp: &EffectiveMcp,
+    ) -> Result<CredentialScope> {
+        if !matches!(mcp.definition.auth, AuthMode::OAuth { .. }) {
+            return Err(EndpointError::UpstreamRequired);
+        }
+        self.scope_inner(snapshot, mcp, true)
+    }
+    fn scope_inner(
+        &self,
+        snapshot: &ValidatedSnapshot,
+        mcp: &EffectiveMcp,
+        consent: bool,
+    ) -> Result<CredentialScope> {
         let before = self.cache.sessions.load()?;
         let latest = self.cache.latest()?;
         let session = self.cache.sessions.load()?;
@@ -110,7 +129,9 @@ impl NativeCredentials {
             .mcps
             .iter()
             .find(|item| {
-                item.definition.id == mcp.definition.id && item.enabled && item.definition.active
+                item.definition.id == mcp.definition.id
+                    && (item.enabled || consent)
+                    && item.definition.active
             })
             .ok_or(EndpointError::UpstreamRequired)?;
         let binding = runtime_binding(current)?;
@@ -146,7 +167,71 @@ impl NativeCredentials {
             Ok(record)
         })
     }
+    /// Cancel local consent and retire this record even if central follow-up synchronization fails.
+    pub fn disconnect_oauth(&self, scope: &CredentialScope) -> Result<()> {
+        if !matches!(scope.mcp.definition.auth, AuthMode::OAuth { .. }) {
+            return Err(EndpointError::Invalid);
+        }
+        self.cache.sessions.store.locked(|metadata| {
+            self.check_scope(metadata, scope)?;
+            let marker = oauth_disconnect_account(
+                &scope.session.metadata,
+                &scope.mcp.definition.id,
+                scope.receipt,
+            )?;
+            if !metadata.credential_accounts.contains(&marker) {
+                if metadata.credential_accounts.len() >= 2048 {
+                    return Err(EndpointError::Storage);
+                }
+                metadata.credential_accounts.push(marker.clone());
+                self.cache.sessions.store.write(metadata)?;
+            }
+            if self
+                .cache
+                .sessions
+                .store
+                .credentials()
+                .get(&marker)?
+                .is_none()
+            {
+                self.cache
+                    .sessions
+                    .store
+                    .credentials()
+                    .set(&marker, b"disconnected")?;
+            }
+            if let Some(account) = metadata.upstream_heads.remove(&scope.mcp.definition.id) {
+                self.cache.sessions.store.credentials().delete(&account)?;
+                metadata
+                    .credential_accounts
+                    .retain(|tracked| tracked != &account);
+            }
+            metadata
+                .upstream_publication_pending
+                .remove(&scope.mcp.definition.id);
+            self.cache.sessions.store.write(metadata)
+        })
+    }
+    fn consent_cancelled(&self, scope: &CredentialScope) -> Result<bool> {
+        if !matches!(scope.mcp.definition.auth, AuthMode::OAuth { .. }) {
+            return Ok(false);
+        }
+        Ok(self
+            .cache
+            .sessions
+            .store
+            .credentials()
+            .get(&oauth_disconnect_account(
+                &scope.session.metadata,
+                &scope.mcp.definition.id,
+                scope.receipt,
+            )?)?
+            .is_some())
+    }
     fn read(&self, account: &str, scope: &CredentialScope) -> Result<CredentialHead> {
+        if self.consent_cancelled(scope)? {
+            return Err(EndpointError::UpstreamRequired);
+        }
         let record = self.read_raw(account, scope, false)?;
         if record.runtime_binding != scope.binding {
             return Err(EndpointError::UpstreamRequired);
@@ -237,6 +322,9 @@ impl NativeCredentials {
         let fingerprint = digest(&encoded);
         self.cache.sessions.store.locked(|metadata| {
             self.check_scope(metadata, scope)?;
+            if self.consent_cancelled(scope)? {
+                return Err(EndpointError::UpstreamRequired);
+            }
             let signature =
                 digest(format!("{}:{}:{}", scope.binding, version, fingerprint).as_bytes());
             if self
@@ -559,6 +647,9 @@ impl NativeCredentials {
             let prefix = StateStore::account_prefix(&record.identity, record.generation);
             let head_prefix = format!("{prefix}upstream-head:");
             let retired_prefix = format!("{prefix}upstream-retired:");
+            let disconnect_prefix = format!("{prefix}od:{}:", digest(record.mcp_id.as_bytes()));
+            let current_disconnect =
+                oauth_disconnect_account(&scope.session.metadata, &record.mcp_id, scope.receipt)?;
             let current: std::collections::HashSet<_> =
                 metadata.upstream_heads.values().cloned().collect();
             let current_ids: std::collections::HashSet<_> = current
@@ -570,6 +661,8 @@ impl NativeCredentials {
                 .iter()
                 .filter(|account| {
                     (account.starts_with(&head_prefix) && !current.contains(*account))
+                        || (account.starts_with(&disconnect_prefix)
+                            && *account != &current_disconnect)
                         || (account.starts_with(&retired_prefix)
                             && account
                                 .rsplit(':')
@@ -681,5 +774,19 @@ fn rejection_account(scope: &CredentialScope, signature: &str) -> Result<String>
             .ok_or(EndpointError::IdentityChanged)?,
         scope.session.metadata.generation,
         &format!("upstream-reject:{signature}"),
+    )
+}
+pub(crate) fn oauth_disconnect_account(
+    metadata: &Metadata,
+    id: &str,
+    receipt: Uuid,
+) -> Result<String> {
+    StateStore::account(
+        metadata
+            .active
+            .as_ref()
+            .ok_or(EndpointError::LoginRequired)?,
+        metadata.generation,
+        &format!("od:{}:{}", digest(id.as_bytes()), receipt.simple()),
     )
 }

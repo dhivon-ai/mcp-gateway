@@ -27,6 +27,10 @@ tower.workspace = true
 
 [dev-dependencies]
 reqwest.workspace = true
+gateway-cli = { path = "../gateway-cli" }
+gateway-fixtures = { path = "../gateway-fixtures" }
+zeroize.workspace = true
+rmcp.workspace = true
 
 [lints]
 workspace = true

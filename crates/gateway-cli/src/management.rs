@@ -36,6 +36,7 @@ pub struct ManagementState {
     pub central: CentralClient,
     pub sync: Option<crate::sync::SyncEngine>,
     pub installs: Option<crate::install::InstallManager>,
+    pub oauth: Option<crate::oauth_control::OAuthControl>,
     authority: String,
     cookie_name: String,
     origin: String,
@@ -62,6 +63,7 @@ impl ManagementState {
             central,
             sync: None,
             installs: None,
+            oauth: None,
             origin: format!("http://{authority}"),
             authority,
             cookie_name: format!("gateway_local_{}", address.port()),
@@ -78,6 +80,11 @@ impl ManagementState {
         }
         self.installs = Some(crate::install::InstallManager::new(
             crate::bridge::ControlBridge::new(sync.clone()),
+        ));
+        self.oauth = Some(crate::oauth_control::OAuthControl::new(
+            sync.clone(),
+            format!("{}/oauth/callback", self.origin),
+            self.central.origin().starts_with("http://"),
         ));
         self.sync = Some(sync);
         Ok(self)
@@ -299,6 +306,9 @@ async fn logout(State(state): State<ManagementState>, headers: HeaderMap) -> Res
     if let Some(installs) = &state.installs {
         installs.shutdown_generation(&generation.to_string()).await;
     }
+    if let Some(oauth) = &state.oauth {
+        oauth.cancel_generation(generation).await;
+    }
     // Check again after bounded child shutdown; never revoke a concurrent new login.
     if let Err(e) = state.sessions.guard_generation(generation) {
         return error(e);
@@ -324,13 +334,89 @@ async fn logout(State(state): State<ManagementState>, headers: HeaderMap) -> Res
         Err(e) => error(e),
     }
 }
-async fn oauth_callback() -> Response {
-    // P5 must validate pending state, issuer and PKCE here; no broad API-guard exemption.
-    (
-        StatusCode::BAD_REQUEST,
-        axum::Json(json!({"code":"invalid_callback","message":"No pending OAuth authorization"})),
+async fn oauth_callback(State(state): State<ManagementState>, request: Request) -> Response {
+    let Some(oauth) = &state.oauth else {
+        return error(EndpointError::Invalid);
+    };
+    let raw = format!("{}{}", state.origin, request.uri());
+    match oauth.callback(&raw).await {
+        Ok(_) => Html("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>OAuth connected</title></head><body><h1>OAuth connected</h1><p>Close this window and return to MCP Gateway. Enable the MCP explicitly when ready.</p></body></html>").into_response(),
+        Err(e) => error(e),
+    }
+}
+fn oauth_manager(
+    state: &ManagementState,
+) -> crate::bridge::BridgeResult<&crate::oauth_control::OAuthControl> {
+    state
+        .oauth
+        .as_ref()
+        .ok_or_else(|| EndpointError::SyncRequired.into())
+}
+async fn oauth_start(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<crate::oauth_control::ConnectInput>(request).await?;
+            oauth_manager(&state)?
+                .start(&action.expected_generation, &id, action.input)
+                .await
+                .map_err(Into::into)
+        }
+        .await,
     )
-        .into_response()
+}
+async fn oauth_status(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    headers: HeaderMap,
+) -> Response {
+    bridge_response(
+        async {
+            oauth_manager(&state)?
+                .status(generation(&headers)?, &id)
+                .await
+                .map_err(Into::into)
+        }
+        .await,
+    )
+}
+async fn oauth_disconnect(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<crate::oauth_control::DisconnectInput>(request).await?;
+            oauth_manager(&state)?
+                .disconnect(&action.expected_generation, &id, action.input)
+                .await?;
+            Ok(json!({"confirmed":true}))
+        }
+        .await,
+    )
+}
+async fn oauth_cancel(
+    State(state): State<ManagementState>,
+    Path(id): Path<String>,
+    request: Request,
+) -> Response {
+    bridge_response(
+        async {
+            let action = input::<serde_json::Value>(request).await?;
+            if action.input != json!({}) {
+                return Err(crate::bridge::BridgeError::invalid());
+            }
+            oauth_manager(&state)?
+                .cancel(&action.expected_generation, &id)
+                .await?;
+            Ok(json!({"cancelled":true}))
+        }
+        .await,
+    )
 }
 async fn asset(State(state): State<ManagementState>, Path(path): Path<String>) -> Response {
     let Some(asset) = state.assets.as_ref().and_then(|a| a.assets.get(&path)) else {
@@ -571,6 +657,10 @@ pub fn router(state: ManagementState) -> Router {
         .route("/api/installations/{id}", get(install_progress))
         .route("/api/installations/{id}/cancel", post(install_cancel))
         .route("/api/installations/{id}/enable", post(install_enable))
+        .route("/api/oauth/{id}/connect", post(oauth_start))
+        .route("/api/oauth/{id}/status", get(oauth_status))
+        .route("/api/oauth/{id}/disconnect", post(oauth_disconnect))
+        .route("/api/oauth/flows/{id}/cancel", post(oauth_cancel))
         .route("/oauth/callback", get(oauth_callback))
         .fallback(|| async { (StatusCode::NOT_FOUND, Body::empty()) })
         .layer(DefaultBodyLimit::max(131072))

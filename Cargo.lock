@@ -900,6 +900,7 @@ dependencies = [
  "http",
  "libproc",
  "nix",
+ "oauth2",
  "reqwest",
  "rmcp",
  "rustix",
@@ -965,8 +966,11 @@ dependencies = [
  "argon2",
  "axum",
  "clap",
+ "gateway-cli",
  "gateway-core",
+ "gateway-fixtures",
  "reqwest",
+ "rmcp",
  "serde",
  "serde_json",
  "sha2 0.11.1",
@@ -977,6 +981,7 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
+ "zeroize",
 ]
 
 [[package]]
