@@ -1,0 +1,14 @@
+.git
+.cadre
+node_modules
+**/node_modules
+target
+dist
+apps/web/dist
+.local
+.env
+.env.*
+*.dump
+*.key
+*.pem
+.DS_Store

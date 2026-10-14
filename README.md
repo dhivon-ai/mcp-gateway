@@ -4,6 +4,17 @@ A self-hosted control plane and Apple Silicon macOS gateway for coding agents.
 Administrators manage a default-deny MCP catalog; users choose enabled MCPs through
 a locally served website. The coding agent connects to one STDIO gateway.
 
+## Run the MVP
+
+1. Build and bootstrap the self-hosted service using [deployment and recovery](docs/deployment.md).
+2. Create users/groups, catalog assignments and original-name tool policies in the [administrator website](docs/admin-ui.md).
+3. Install the Apple Silicon archive and log in through the [local Mac website](docs/mac-install.md). Explicitly install/enable MCPs, select owned bearer keys or connect OAuth.
+4. Configure the coding agent with the single [STDIO entry](docs/agent-configuration.md).
+
+See [release evidence](docs/release.md), [acceptance coverage](docs/acceptance.md),
+[compatibility](docs/compatibility.md), and [OAuth provider setup](docs/oauth.md).
+The locally built release is not Developer ID signed/notarized or published.
+
 ## Development
 
 Rust is pinned in `rust-toolchain.toml`, Node LTS in `.node-version`, and pnpm in
@@ -40,7 +51,7 @@ are rejected. Central configuration is ordinary PostgreSQL data; central user
 secrets and OAuth tokens are encrypted separately with an operator-held key.
 
 The current approved delivery specification and plan are in
-`.cadre/tracks/mac-mvp/`. Deployment and user runbooks are added with delivery.
+`.cadre/tracks/mac-mvp/`. Operator and end-user runbooks are linked above.
 
 See [wire/policy contracts](docs/contracts.md) and [fixture/testing setup](docs/testing.md)
 for isolated PostgreSQL, MCP/OAuth fixtures, and generated-contract verification.

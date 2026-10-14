@@ -33,6 +33,19 @@ use std::{
 };
 use uuid::Uuid;
 
+// The release rehearsal executes the extracted archive through this same Mac journey.
+fn cli_binary() -> &'static str {
+    static BINARY: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    BINARY.get_or_init(|| {
+        let binary = std::env::var("GATEWAY_TEST_CLI")
+            .unwrap_or_else(|_| env!("CARGO_BIN_EXE_mcp-gateway").into());
+        assert!(
+            Path::new(&binary).is_absolute() && Path::new(&binary).is_file(),
+            "Use an absolute existing test CLI"
+        );
+        binary
+    })
+}
 #[derive(Clone)]
 struct Remote(Arc<AtomicUsize>);
 impl ServerHandler for Remote {
@@ -284,6 +297,29 @@ async fn local_login(base: &str, client: &reqwest::Client) -> (String, String, S
         .next()
         .expect("cookie pair")
         .to_owned();
+    let html = page.text().await.expect("compiled local page");
+    if std::env::var_os("GATEWAY_TEST_CLI").is_some() {
+        assert!(
+            html.contains("data-gateway-mode=\"local\""),
+            "packaged local app mode"
+        );
+        let script = html
+            .split("src=\"")
+            .nth(1)
+            .expect("embedded module")
+            .split('"')
+            .next()
+            .expect("module URL");
+        assert!(script.starts_with("/assets/"));
+        let response = client
+            .get(format!("{base}{script}"))
+            .header("cookie", &cookie)
+            .send()
+            .await
+            .expect("embedded script");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert!(response.bytes().await.expect("embedded script bytes").len() > 1000);
+    }
     let context: Value = client
         .get(format!("{base}/api/context"))
         .header("cookie", &cookie)
@@ -315,7 +351,7 @@ async fn local_login(base: &str, client: &reqwest::Client) -> (String, String, S
     (cookie, csrf, generation)
 }
 async fn cleanup(files: &Files) {
-    let status = tokio::process::Command::new(env!("CARGO_BIN_EXE_mcp-gateway"))
+    let status = tokio::process::Command::new(cli_binary())
         .args(["logout", "--allow-fixture-http", "--fixture-state-path"])
         .arg(files.state())
         .stdin(std::process::Stdio::null())
@@ -559,7 +595,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         .expect("port")
         .port();
     let ui = Process::spawn(&command(
-        env!("CARGO_BIN_EXE_mcp-gateway"),
+        cli_binary(),
         vec![
             "ui".into(),
             "--server".into(),
@@ -581,7 +617,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
     let base = format!("http://127.0.0.1:{port}");
     let (cookie, csrf, generation) = local_login(&base, &client).await;
     let gateway_spec = command(
-        env!("CARGO_BIN_EXE_mcp-gateway"),
+        cli_binary(),
         vec![
             "mcp".into(),
             "--allow-fixture-http".into(),
@@ -882,7 +918,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .expect("selected fixture origin")
             .to_owned();
         let ui = Process::spawn(&command(
-            env!("CARGO_BIN_EXE_mcp-gateway"),
+            cli_binary(),
             vec![
                 "ui".into(),
                 "--server".into(),

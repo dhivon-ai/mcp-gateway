@@ -47,5 +47,6 @@ unsafe_code = "forbid"
 unwrap_used = "warn"
 
 [profile.release]
-strip = true
+# Keep native proc-macro dylibs loadable on macOS 27 (rust-lang/rust#157750).
+strip = false
 lto = "thin"

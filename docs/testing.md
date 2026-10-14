@@ -51,3 +51,34 @@ requires PKCE S256, state/resource, binds redirect URI, expires codes after five
 minutes, issues 30-second access tokens, and rotates one-use refresh tokens.
 It deliberately has no real identity provider and must never be deployed publicly.
 HTTP fixtures are test-only exceptions; production adapters require verified TLS.
+
+## Release checks
+
+Build the container with `docker build -f deploy/Dockerfile -t mcp-gateway-server:0.1.0 .`.
+With an existing owned GATEWAY_BUILD_CACHE, run `node scripts/verify-deployment.ts`
+using Node24 to rehearse two isolated Compose stacks and external-key recovery.
+It accepts no production DSN/project/key and removes only generated stacks/volumes.
+Failure retains its private recovery directory. See [deployment](deployment.md).
+
+On the validated Apple Silicon Mac, run `bash scripts/package-macos.sh`. It builds
+the compiled frontend and release target, embeds assets and creates a versioned
+archive/checksum under `$GATEWAY_BUILD_CACHE/releases`. Builds keep Rust symbols
+because the pinned Rust toolchain's Mach-O strip step can produce unloadable
+proc-macro libraries on macOS27 ([upstream issue](https://github.com/rust-lang/rust/issues/157750)).
+No signing, publication or existing agent configuration edits occur.
+
+Extract into a new owned directory, then run the actual CLI suite with
+`GATEWAY_TEST_CLI=/absolute/extracted/mcp-gateway cargo test --locked -p gateway-cli --test gateway`.
+The creating binary is used for login/Keychain/logout, all four MCP auth modes,
+embedded local index/module delivery and process/signal cleanup. Retain the
+extracted binary until its Keychain fixture cleanup has completed. Without the
+override, the same suite tests Cargo's development binary.
+
+The full container-to-archive journey also runs with both `GATEWAY_TEST_CLI`
+(extracted release executable) and `GATEWAY_FIXTURE_BIN` (built gateway-fixture)
+set while invoking `node scripts/verify-deployment.ts` on the Mac. It creates a
+fixture-only loopback proxy for the internal control-plane hop, logs in through
+the packaged local APIs, explicitly installs/enables, spawns the sole STDIO entry
+through Node socket pairs, invokes the exact namespaced echo tool, then confirms
+disable blocks the next dispatch. Its immutable creating-binary copy performs
+Keychain logout and verifies empty cleanup metadata before removing private state.

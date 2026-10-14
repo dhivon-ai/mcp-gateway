@@ -289,7 +289,7 @@ pub async fn serve_stdio(
         concurrency,
     )?;
     #[cfg(target_os = "macos")]
-    let (read, write) = crate::native_stdio::pipes().map_err(|_| AggregateError::Unavailable)?;
+    let (read, write) = crate::native_stdio::streams().map_err(|_| AggregateError::Unavailable)?;
     #[cfg(not(target_os = "macos"))]
     let (read, write) = (tokio::io::stdin(), tokio::io::stdout());
     let transport = crate::wire::BoundedTransport::new(

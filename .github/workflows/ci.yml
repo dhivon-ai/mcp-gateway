@@ -57,3 +57,16 @@ jobs:
       - uses: actions/checkout@v4
       - run: rustup toolchain install 1.95.0 --profile minimal
       - run: cargo test --locked -p gateway-server -- --ignored
+
+  deployment:
+    runs-on: ubuntu-24.04
+    env:
+      GATEWAY_BUILD_CACHE: ${{ runner.temp }}/gateway-release-check
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      - run: mkdir -p "$GATEWAY_BUILD_CACHE"
+      - run: docker build -f deploy/Dockerfile -t mcp-gateway-server:0.1.0 .
+      - run: node scripts/verify-deployment.ts

@@ -21,9 +21,9 @@ Configure the agent with one STDIO server. For clients using a JSON `mcpServers`
 }
 ```
 
-Do not put the central URL, passwords, bearer tokens, or OAuth tokens in agent configuration or environment variables. The gateway uses the deployment/account already selected by `ui`. A different login generation requires restarting the agent's gateway process; an old process cannot silently adopt a new user's identity. The gateway requires pipe-based STDIO, as provided by a spawning MCP client. It does not provide terminal-based interactive login or file-based protocol playback.
+Do not put the central URL, passwords, bearer tokens, or OAuth tokens in agent configuration or environment variables. The gateway uses the deployment/account already selected by `ui`. A different login generation requires restarting the agent's gateway process; an old process cannot silently adopt a new user's identity. The gateway supports native pipes and the connected Unix stream socket pairs used by Node child_process on macOS. It does not provide terminal-based interactive login or file-based protocol playback.
 
-The tested client is the standard official rmcp 3.5.1 client configured with only this CLI entry point on macOS 27.0.1 arm64. The negotiated protocol is MCP 2025-11-25. Named commercial coding agents and other macOS versions have not yet been independently verified. Self-hosting and signed distribution instructions are completed in the release phase.
+The tested client is the standard official rmcp 3.5.1 client configured with only this CLI entry point on macOS 27.0.1 arm64. The negotiated protocol is MCP 2025-11-25. Named commercial coding agents and other macOS versions have not yet been independently verified. See [deployment](deployment.md) and [Mac installation](mac-install.md) for the self-hosted service and locally built unsigned arm64 archive. Signing/notarization remains later scope.
 
 The gateway advertises tools and tool-list changes. Resources, prompts, sampling, elicitation, subscriptions, and tasks are not forwarded. Tool names are deterministic aliases; [gateway aggregation](gateway-aggregation.md) describes mapping, original-name policy, bounds, and error isolation. Both input and output schemas and supported typed results are retained. The agent should follow `nextCursor` until exhausted; a changed catalog invalidates an old cursor and requires restarting discovery.
 
@@ -33,7 +33,7 @@ Every running gateway refreshes at startup and every 60 seconds with a 10-second
 
 Calls have a 60-second native sleep-aware deadline and at most 16 are admitted concurrently. Excess calls are refused immediately; there is no local call queue. Caller cancellation, learned policy denial, token/policy expiry, and gateway shutdown cancel the exact upstream request where possible. A dropped handler also sends best-effort cancellation. The runtime checks running-call policy/deadline at most every 50 ms and connection retirement at most every 250 ms while awake, and checks again before accepting a completed result. A side effect already performed upstream cannot be undone. Calls are never automatically replayed after reconnect or HTTP session expiry.
 
-SIGTERM, Ctrl-C, and agent EOF trigger owned cleanup. Shutdown shares a five-second deadline; only gateway-owned upstream processes/connections are closed. Mac process-group ownership retains unreaped leaders through termination and reap. Nonblocking native stdin/stdout pipes avoid waiting indefinitely for an idle or blocked agent. Escaped or inaccessible descendants require external supervision, and abrupt SIGKILL cannot execute graceful shutdown handlers.
+SIGTERM, Ctrl-C, and agent EOF trigger owned cleanup. Shutdown shares a five-second deadline; only gateway-owned upstream processes/connections are closed. Mac process-group ownership retains unreaped leaders through termination and reap. Nonblocking native stdin/stdout adapters avoid waiting indefinitely for an idle or blocked agent. Escaped or inaccessible descendants require external supervision, and abrupt SIGKILL cannot execute graceful shutdown handlers.
 
 You can reduce the call/startup/concurrency limits:
 
