@@ -1,0 +1,3 @@
+apps/web/src/generated/
+node_modules/
+.cadre/
