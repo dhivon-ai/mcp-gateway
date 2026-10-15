@@ -2,14 +2,14 @@
 
 - Track: `mac-mvp`
 - Type: `feature`
-- Revision: 1
+- Revision: 2
 - Status: proposed
 
 ## Goal and scope
 
 Deliver a complete usable self-hosted MVP: a central Rust service and administrator website, an Apple Silicon macOS Rust CLI serving a local user website, and one agent-facing STDIO MCP gateway aggregating permitted local and remote tools. Both websites use React, strict TypeScript, and shadcn/ui.
 
-The user has explicitly selected: complete MVP; Apple Silicon only; username/password initially; online configuration refresh; server-authoritative per-user enable/disable state; an encrypted timestamped local configuration file usable for at most one hour after successful synchronization; no offline configuration changes; remote unauthenticated, bearer-token, and OAuth authentication; centrally encrypted per-user key/value secrets with a secret-key selector when enabling bearer-token MCPs. Ordinary configuration in the central database does not require application-level encryption.
+The user has explicitly selected: complete MVP; Apple Silicon only; email/password initially; online configuration refresh; server-authoritative per-user enable/disable state; an encrypted timestamped local configuration file usable for at most one hour after successful synchronization; no offline configuration changes; remote unauthenticated, bearer-token, and OAuth authentication; centrally encrypted per-user key/value secrets with a secret-key selector when enabling bearer-token MCPs. Ordinary configuration in the central database does not require application-level encryption.
 
 Include the complete development, test, packaging, deployment, and operator/user documentation needed to run this journey. Proposed implementation defaults below are part of the combined specification/plan approval.
 
@@ -18,7 +18,7 @@ Exclude hosted multi-enterprise SaaS, SAML, Intel macOS/Windows/Linux endpoint r
 ## Functional Requirements
 
 - FR-001: Provide a self-hosted Rust/Axum service backed by PostgreSQL migrations, serving the compiled React/TypeScript/shadcn admin website. Bootstrap the first administrator through an explicit operator command with no default password; administer ordinary users, groups, membership, account disablement, and password reset without exposing password material.
-- FR-002: Authenticate administrators and users with username/password, salted Argon2id hashes, revocable opaque sessions, login throttling, and explicit roles. Proposed session maximum is 12 hours, with no automatic extension from polling. Known session/account rejection immediately invalidates endpoint authorization; a network outage may use only the still-valid previously issued lease. Password reset/account disablement invalidates affected sessions.
+- FR-002: Authenticate administrators and users with email/password, salted Argon2id hashes, revocable opaque sessions, login throttling, and explicit roles. Proposed session maximum is 12 hours, with no automatic extension from polling. Known session/account rejection immediately invalidates endpoint authorization; a network outage may use only the still-valid previously issued lease. Password reset/account disablement invalidates affected sessions.
 - FR-003: Administrators define catalog entries with stable IDs, names/descriptions, local executable/argument/environment/working-directory configuration or remote Streamable HTTP endpoint, optional structured installation command, auth mode, and tool policy. Reject invalid combinations; credential-bearing authentication fields accept scoped references/registration metadata rather than inline bearer or OAuth tokens. Remote auth modes are none, bearer, or OAuth; bearer mode requires a user-secret selection, while OAuth records supported public-client registration/scopes rather than an inline token.
 - FR-004: Administrators assign catalog entries to users, groups, or all users. Grants are additive; no grant means no access. A new catalog entry grants nothing and enables nothing. Removal of the last effective grant clears the user's enablement for that MCP; reassignment requires a new enable action. Deletion or disabling a catalog entry removes its effective tools and credential bindings from subsequent snapshots.
 - FR-005: Support MCP-wide tool allowlist and denylist modes based on original upstream tool names. Allowlist mode permits only listed tools, including denying new names until selected; denylist mode permits all discovered names except listed names. An empty initial allowlist exposes no tools. Admin tool policies remain authoritative over all user enablement.
@@ -41,6 +41,8 @@ Exclude hosted multi-enterprise SaaS, SAML, Intel macOS/Windows/Linux endpoint r
 - FR-022: Deliver admin screens for user/group management, catalog definitions, assignments, and allowlist/denylist editing, with validated forms and clear effective-access explanations. Assigned online gateways may report bounded discovered tool-name inventory without credentials or results; treat observations as untrusted metadata, never access grants. Administrators select original names from this inventory or enter names manually before discovery. Ordinary users cannot access admin APIs, and endpoint credentials/commands are never executed centrally merely to render this website.
 - FR-023: Deliver local screens for login, assigned catalog, installation progress, enable/disable, bearer key selection, per-user secret management, OAuth connect/reconnect/disconnect, and redacted connection/config freshness status. Show offline read-only state and expiry; allow new server-confirmed settings only after successful validation. Distinguish missing executable, install failure, OAuth-required, expired token, offline service, and blocked tool states.
 - FR-024: Deliver a self-hosted container/Compose deployment with PostgreSQL, migrations, health checks, configurable HTTPS termination, and separately supplied encryption keys; an Apple Silicon CLI archive with embedded UI assets/checksum; bootstrap/admin/user/agent guides; fixture MCP/OAuth services; and verified development/CI commands. Declare the actual minimum validated macOS version, protocol/agent compatibility, and supported browser matrix in release documentation, based on evidence rather than untested platform claims.
+
+- FR-025: User creation requires distinct display name, email and password. Name is display-only (trimmed nonempty Unicode, at most200UTF-8 bytes); email is the sole login identifier in central and local websites/APIs/CLI operator bootstrap. Normalize surrounding whitespace and ASCII case consistently; enforce unique canonical emails and a validated bounded ASCII mailbox contract (at most254bytes). Names need not be unique and never authenticate. Admins can edit name/email with existing revision checks; account/profile changes revoke affected sessions and preserve stable user IDs, assignments, memberships and credential ownership. Passwords remain write-only/salted-hashed with protected reset. No username sign-in fallback or compatibility with pre-change credentials/cache/API is required: the system is not live. New pre-release deployments use fresh databases; a nonempty older identity schema must fail migration explicitly without silently deleting data. Update generated/native/public contracts, fixtures, documentation and packaged assets together.
 
 ## Non-Functional Requirements
 
@@ -68,6 +70,8 @@ Exclude hosted multi-enterprise SaaS, SAML, Intel macOS/Windows/Linux endpoint r
 - AC-011: Exercise both compiled websites in a browser: admin assignments/tool restrictions; user login/catalog/install/enable/secrets/OAuth; offline/read-only and expired states; denied admin access; keyboard navigation and actionable errors. Covers FR-017, FR-022, FR-023 and NFR-005.
 - AC-012: Verify migrations, data durability through restart, database backup/restore including recoverable encrypted secrets with separately protected keys, and server health checks. Produce/check the arm64 archive, run it with embedded assets, and execute the complete documented deployment-to-agent manual journey. Record actual platform/protocol/browser compatibility. Covers FR-024 and NFR-006 to NFR-008.
 
+- AC-013: Bootstrap an administrator with name/email/password; create and edit users through the actual admin UI and real PostgreSQL APIs. Both login screens accept normalized email/password and reject username/display-name sign-in. Duplicate/invalid email, blank/overlong name, stale updates, role bypass and reset/session invalidation are tested. Name is displayed independently of email; edits preserve user IDs/grants/memberships/credential ownership. No password values occur in list/read/status/log responses. Verify fresh migration and safe explicit rejection of a populated pre-change identity schema, regenerate TypeScript contracts, test actual Mac Keychain/native login and compiled desktop/narrow keyboard flows, rebuild image/arm64 archive and run deployment-to-agent/restore acceptance. Covers FR-025 and original auth/security invariants.
+
 ## Dependencies
 
 None. There are no active or archived delivery tracks or existing reusable patterns. This track starts from the approved Cadre-only repository at commit `0655a113033a0977b83174a5f8ad46dabe5c9217`.
@@ -82,6 +86,10 @@ None. There are no active or archived delivery tracks or existing reusable patte
 - Central and endpoint contracts carry schema/revision identity. Default session/poll/resource bounds and the proposed CLI command names are explicit approval choices. Minimum validated macOS/browser/agent versions will be recorded from the release verification, not invented in this planning operation.
 - No external production credentials, OAuth providers, signing certificates, publication, or real user-data migration are required to implement fixture-backed MVP behavior. Real coding-agent/provider verification may require the user's installed client or pre-registered provider.
 - References: [MCP authorization](https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization), [Rust SDK OAuth guide](https://github.com/modelcontextprotocol/rust-sdk/blob/main/docs/OAUTH_SUPPORT.md), [Rust SDK](https://github.com/modelcontextprotocol/rust-sdk), [RustCrypto AES-GCM](https://docs.rs/aes-gcm/latest/aes_gcm/), and the approved project artifacts under `.cadre/`. Verify exact protocol/SDK behavior against pinned releases during implementation.
+
+## Product-owner identity correction (2026-10-15)
+
+BUG-005 is now implementation scope by explicit request. The owner chose email-only sign-in with no backward compatibility because the system is not live, and clarified that Name is display name only. Earlier username/password planning language is superseded for identity fields by FR-025/AC-013. Existing completed provenance remains historical.
 
 ## Dependent-track impact
 

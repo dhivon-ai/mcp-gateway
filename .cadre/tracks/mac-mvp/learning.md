@@ -6,11 +6,11 @@ Never overwrite an earlier phase. Each phase begins by reading the learning of e
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":3,"patterns":[]}
+{"schemaVersion":1,"specRevision":2,"planRevision":4,"patterns":[]}
 <!-- cadre:memory:end -->
 
-- Spec revision: 1
-- Plan revision: 3
+- Spec revision: 2
+- Plan revision: 4
 
 | Pattern | Relevance to this track | Constraints to carry forward |
 | --- | --- | --- |
@@ -20,6 +20,8 @@ No existing pattern applies: `.cadre/patterns/index.md` is an empty approved cat
 - Review-cycle 1 reassessment: the approved pattern catalog remains empty. Append-only remediation P10–P13 preserves prior phase history and the unchanged specification. Carry the full P3/P5 identity/credential invariants and P6/P7 browser contracts into the new phases; findings are confirmed defects within those requirements. No dependency track or reusable pattern was introduced.
 
 - Review-cycle 2 reassessment: same empty approved catalog and unchanged specification. Preserve all P1–P13 history. P14 carries forward backend/frontend contract validation and P11 revision/command fixes; accept server-valid unbounded admin collections without weakening explicit bounded contracts. No dependency/pattern introduced.
+
+- Revision2 reassessment: empty pattern catalog and no dependent tracks remain unchanged. Carry all existing security/revision/Keychain/lease/ownership invariants into P16. User explicitly replaces username sign-in with email-only and display name; no compatibility is required because the system is not live. Preserve P1–P15 history and append P16/P17.
 
 <!-- cadre:pattern-seed:end -->
 

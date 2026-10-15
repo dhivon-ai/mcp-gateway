@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "operationId": "revise-2f01f41fd4e5574165e2f0a52b18de07",
+  "kind": "revise",
+  "status": "completed",
+  "approvalDigest": "06a375bbeaa11ffc6bf85221f6a8ebfeec0ac89bf047d7ea7612c7ece9337204",
+  "baseCommit": "892b94dd1c3efa0f0d74b382366d6b2fa0d25f0a",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "7ac08adee3a39c0b119ab5fe04e00f1b0c5c86b4d6d459491a5a618c768fc80f"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/dependency-context.json",
+      "sha256": "628613c06bafadf64b099196c105d7164ca421af58947e602ded04211458a1a3"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/learning.md",
+      "sha256": "9c00a5fc659ddde61ce3a72d38a7ccbb6f176b5dbd60b0b9152df4cd7eb173c5"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/plan.md",
+      "sha256": "1aee162d1d81a1c19dc46cc3aeb7ca8ae5170a2ba17c0f5346e5fb7140576e29"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/revisions/revision-2.md",
+      "sha256": "525721f240b8c6cd4d784ff6d477458ef73c8d01083dadfa9ecf9786a5595b86"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/spec.md",
+      "sha256": "3418197b4de7b8c3daf04f39c72635def566f16873fa76b678a0fa2fe5ef20e7"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/state.json",
+      "sha256": "cb67b8f9aa5c5968e2456a9f8945c063b80c4838c8f9331509d1a05dbd6efb07"
+    }
+  ]
+}

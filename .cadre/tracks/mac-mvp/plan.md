@@ -1,8 +1,8 @@
 # Plan: macOS enterprise MCP Gateway MVP
 
 - Track: `mac-mvp`
-- Spec revision: 1
-- Plan revision: 3
+- Spec revision: 2
+- Plan revision: 4
 - Status: proposed
 
 ## Phase 1: Workspace and policy contracts
@@ -430,6 +430,47 @@ Verify the complete canonical MVP and all remediation against unchanged scope be
 - [x] T15.1 User Manual Verification <!-- commit: 52c288b70ad0d8839aea8b3f12952ecd3e0cb26d -->
 
 - Phase completion commit: `52c288b70ad0d8839aea8b3f12952ecd3e0cb26d`
+
+## Phase 16: Email identity and display names
+
+- Phase dependencies: P15
+
+### Outcome
+
+User management requires display name/email/password and email is the sole sign-in identity (BUG-005, FR-025/AC-013).
+
+- [ ] T16.1 Implement email/name persistence, contracts and authentication
+  - Task dependencies: none
+  - Commit group: email-profile-identity
+  - Scope: Add immutable forward migration for fresh pre-release identity schema with explicit safe rejection of populated old accounts. Replace username wire/storage/login fields with canonical email and separate display name. Validate/uniquely constrain normalized email and bounded display names; bootstrap/create/edit/login/session/native status all carry consistent fields. Preserve role/revision/CSRF/last-admin checks, password secrecy, session revocation and stable identity ownership. Update fixtures/code generation; no legacy login fallback.
+  - Verification: RealPG identity/migration/CRUD/normalized login/duplicate concurrent writes/name edits/stale revision/role/password reset/session revocation and ownership tests; current Rust/workspace/native/security/contracts checks pass.
+  - Handoff: Explicit identity/email normalization and deployment compatibility contract, migration and API/native evidence.
+- [ ] T16.2 Implement and verify both email-based websites
+  - Task dependencies: T16.1
+  - Commit group: email-profile-identity
+  - Scope: Admin create/edit name/email/password and name/email listings; both login screens use email/password. Display names in account/group/access surfaces with email for disambiguation. Keep write-only/reset and coherent revision reads/frozen editors, accessible feedback/focus and responsive shadcn composition. Update strict decoders/generated contracts and behavioral tests; close BUG-005 only with actual evidence.
+  - Verification: Frontend tests/strictTS/lint/format/build; actual compiled Mac/central browser create/edit/login/duplicate/stale/password flows at desktop/narrow widths, keyboard and no relevant console errors. No display-name/username sign-in.
+  - Handoff: Browser screenshots/evidence, field semantics and contract/security regression proof.
+- [ ] T16.3 Rebuild and verify the email-identity MVP artifacts
+  - Task dependencies: T16.2
+  - Commit group: email-identity-release
+  - Scope: Update bootstrap/operator/Mac/agent/API/compatibility/release runbooks and bug record. Rebuild image/arm64 embedded archive/checksum. Run full relevant Rust/frontend/realPG checks and current package oneSTDIO/nativeKeychain/fourauth/deployment/restart/freshrestore/keyrecovery journey. Clean exact owned fixtures; no production data deletion, publication or signing.
+  - Verification: All AC001–013 current evidence, archive/source/hash identity, full relevant checks and disposable actual deployment-to-Mac-to-agent/restore proof. Explicit prerelease freshdatabase/no legacycompatibility documented.
+  - Handoff: Final artifacts, exact checksums/platform limits and cumulative acceptance evidence.
+- [ ] T16.4 User Manual Verification
+  - Verification: Verify BUG-005/AC013 plus original security/policy/lease/credential/agent journeys under inherited Autonomous authority; record actual evidence without human approval claims.
+
+- Phase completion commit: pending
+
+## Phase 17: Track-level User Manual Verification
+
+### Outcome
+
+Verify the full integrated revised MVP before cumulative review and explicit final completion approval.
+
+- [ ] T17.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 
