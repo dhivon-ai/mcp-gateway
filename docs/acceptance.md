@@ -19,6 +19,7 @@ synthetic credentials and do not contact production providers.
 | AC-010 one agent entry | Actual CLI `gateway` uses one official rmcp client to call local STDIO and remote none/bearer/OAuth. Native descriptor regressions exercise Node-style Unix stream pairs, idle read cancellation, output backpressure and rejection of non-protocol descriptors. Fixtures `aggregation`, CLI `protocol`: pagination/schema changes/collisions, bounded invalid input, cancellation/deadline/admission, policy revocation, process exit/descendants and protocol-only stdout. |
 | AC-011 compiled websites | [Admin evidence](admin-ui.md) and [local evidence](local-ui.md): actual browser principal journeys, real 409/reload, ordinary-role denial, offline/read-only countdown, keyboard focus/Escape/return, desktop/laptop/390px layouts. Frontend behavioral suite includes exact expiry and late old-identity responses. |
 | AC-012 release/restore | [Release evidence](release.md): clean container migration/health/restart, pg_dump/fresh pg_restore, session invalidation, wrong/matching external keys, arm64 checksum/extracted embedded UI, actual container-to-Mac-to-Node-STDIO install/enable/call/disable journey and creating-binary Keychain cleanup. |
+| AC-013 email/display name | Real PostgreSQL `email_identity` tests: normalized email-only login, separate names, duplicate/invalid inputs, stale/role rejection, stable IDs/memberships, profile-session revocation, concurrent old-email login fence and populated legacy migration rejection without data loss. Updated identity/reset/native Keychain suites and 44 frontend tests pass. Actual compiled desktop/390px admin create/edit, duplicate feedback, central/native email login and keyboard journeys pass; current image/archive deployment-to-agent/restore rehearsal is in [release evidence](release.md). |
 
 Run the documented commands in [testing](testing.md). Database tests are explicitly
 ignored by ordinary `cargo test`; execute them with the isolated fixture DSN.
@@ -48,3 +49,12 @@ remediation keeps the original specification and completed phase history.
 Compiled browser remediation evidence and compatibility limits are recorded in
 [administrator UI verification](admin-ui.md). Artifact/rehearsal results for the
 same source revision are recorded in [release evidence](release.md).
+
+## Email identity verification
+
+Current verification ran 83 Rust workspace tests, 11 real PostgreSQL cases and
+44 frontend tests, with strict TypeScript/lint/format/build/contracts and all-target
+Clippy passing. Name is a display label only, email is the sole canonical login,
+and passwords remain write-only. Fresh pre-release schema deployment replaces
+legacy username compatibility by explicit product-owner decision. All original
+policy/lease/vault/OAuth/agent checks remain enforced and passed after the change.

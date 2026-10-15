@@ -6,10 +6,10 @@ The approved scope and acceptance mapping are in [acceptance](acceptance.md).
 ## Artifacts
 
 - Apple Silicon archive: `$GATEWAY_BUILD_CACHE/releases/mcp-gateway-0.1.0-macos-arm64.tar.gz`.
-- SHA-256: `95d8e6283e1e77609154ddd771c8f3d5d4f46ef4eda4d2c45b6293178e5f4ce4`.
+- SHA-256: `0e4facd8cd28ac5f98a816a1fc38acf01f703ce526036e1c3b28e143f54e8166`.
 - Check file: the archive name plus `.sha256`; `shasum -a 256 -c` passed.
 - Local service image: `mcp-gateway-server:0.1.0`, Linux arm64;
-  image ID `sha256:3aa9d38940e78888f28b600fc15e27041a4634906a1bec8be4273b704a63c075`.
+  image ID `sha256:9e27cdba89cac2e8d1da7eac363febe687b3305a67b5876212d48d6733fa2d7c`.
 
 The archive contains only the arm64 executable, installation README and
 compatibility document. Mach-O inspection reports deployment target 27.0.1 and
@@ -51,16 +51,38 @@ input and blocked output. Compiled local index/module delivery is asserted.
 The cumulative browser journeys, reference comparison, keyboard and responsive
 checks remain in [admin UI](admin-ui.md) and [local UI](local-ui.md).
 
-Current local quality results: 41 frontend behavioral tests, strict TypeScript,
-lint, formatting, generated contracts, all-target Clippy and embedded builds pass.
-The unchanged Rust runtime/security/test inputs retain the previous full 83
-workspace tests and eight PostgreSQL tests; an additional real PostgreSQL/API
-regression passes with 10,002 users, 10,001 groups and 10,001 assignments. Together
-these provide nine database cases. The final extracted archive's official-client
-suite passes in 38.60s; its native executable is byte-identical to the successful
-combined container/Node/Keychain rehearsal. Fresh deployment, restart, backup,
-fresh restore and independent wrong/matching-key recovery were repeated with
-this image and archive.
+Current local quality results: all 83 Rust workspace tests, 11 explicitly run
+real PostgreSQL cases and 44 frontend behavioral tests pass. Strict TypeScript,
+lint, formatting, generated contracts, all-target Clippy with warnings denied,
+workspace and embedded release builds pass. The final extracted archive's
+all-authentication-mode official-client suite passes in 40.47s. Its executable
+is byte-identical to the current arm64 release build and the successful combined
+container/Node/Keychain rehearsal. Fresh deployment, restart, backup, fresh restore
+and independent wrong/matching-key recovery were repeated with this image and
+archive. Current source includes email identity commit `fabb614`.
+
+## Email identity correction (BUG-005)
+
+Name is display-only; email is the sole login identifier in both websites and all
+login APIs. User creation requires Name, Email and Password; profile edits preserve
+stable IDs/ownership and revoke affected sessions. Canonical email duplicates
+produce clear validation feedback. A locked final login check rejects an old
+email when a concurrent profile edit changes it after password verification.
+
+Two additional real PostgreSQL cases verify normalized create/edit/login,
+invalid/duplicate input, stale/role/session boundaries and safe explicit rejection
+of a populated old identity schema without deleting data. Fresh pre-release
+databases are required; account/API/cache compatibility is not provided. The
+packaged compatibility file and operator/bootstrap guides state this explicitly.
+
+Compiled Rust websites were exercised at 1280×720 and 390×844 on the actual Mac:
+create/edit separate name/email, normalized central/native login, duplicate-email
+400 feedback, required password fields, keyboard Escape/focus return, retained
+sheet footer, no page overflow and no relevant console errors. Current screenshots
+are `email-users-desktop.png`, `email-user-form-mobile.png`,
+`email-local-mobile.png` and `email-duplicate-feedback.png` in the task's external
+visualization directory. See [identity contract](identity.md),
+[admin evidence](admin-ui.md) and [bug resolution](bugs/bug-005.md).
 
 ## Review corrections
 
@@ -106,7 +128,7 @@ Compose rehearsal; no hosted run is claimed.
 
 ## Definition of Done
 
-- [x] Central password identity/roles, default deny, additive grants, original-name
+- [x] Central email/password identity with separate display names/roles, default deny, additive grants, original-name
   tool policy and revision-checked user enablement are implemented and verified.
 - [x] Mac Keychain/encrypted cache, complete-only startup/60s refresh, exclusive
   one-hour ceiling and online-only mutations fail closed under tested failures.

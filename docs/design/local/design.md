@@ -2,6 +2,10 @@
 
 T7.1 design specification for FR-023. Generated with the built-in ImageGen tool, inspected before implementation. These references guide code-native React/TypeScript/shadcn interfaces; no screenshot is shipped as UI. The existing vector GatewayMark is the brand authority.
 
+BUG-005 supersedes identity copy in the historical reference images below: login
+uses Email (`you@company.com`) and Password; the account label uses display name.
+Name never authenticates. Current compiled-browser evidence is in `docs/local-ui.md`.
+
 ## Reference inventory and visual lock
 
 - `catalog.png` is the primary shell/table reference (1584 × 993). White main background, 350px pale sidebar, 58px main gutter, 84px top gutter. Heading 48/58, body 22/30, muted secondary 20/28. Table header 60px, rows 106px, buttons 58px, radius 6px. At narrower widths reduce gutters/type and retain an accessible horizontally scrollable table.

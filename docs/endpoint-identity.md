@@ -1,5 +1,13 @@
 # Native endpoint identity and local browser boundary
 
+This document retains the Phase 3 identity-slice verification below. The complete
+MVP now serves the local React UI, synchronizes encrypted snapshots and runs MCP
+aggregation; see [local UI](local-ui.md), [cache](endpoint-cache.md) and
+[agent configuration](agent-configuration.md) for current behavior. Sign-in uses
+email/password only; Name is display-only. Current status returns separate
+`email` and `name` metadata. Older username accounts/API/cache are unsupported;
+see [identity deployment compatibility](identity.md#pre-release-identity-deployment-change).
+
 The identity slice provides real native login, Keychain storage and a protected
 loopback API. The local product UI belongs to Phase 7; the current page explicitly
 identifies itself as a development endpoint. Encrypted snapshot refresh belongs
@@ -99,7 +107,7 @@ contains no native token or password. Native and browser sessions are separate.
 | GET `/` | Exact Host and permitted navigation context; establishes local cookie |
 | GET `/api/context` | Local cookie; redacted status, configured origin and CSRF challenge |
 | GET `/api/status` | Local cookie; redacted status only |
-| POST `/api/auth/login` | Cookie, exact Origin and CSRF; JSON username/password; redacted status |
+| POST `/api/auth/login` | Cookie, exact Origin and CSRF; JSON email/password; redacted status |
 | POST `/api/auth/logout` | Cookie, exact Origin and CSRF; local cleanup and best-effort revocation; clears cookie |
 | GET `/oauth/callback` | Separate callback hook; currently rejects every request because no OAuth flow is pending |
 

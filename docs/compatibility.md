@@ -31,3 +31,15 @@ bounds are specified in `docs/gateway-aggregation.md` in the source repository.
 Native credential metadata tracks at most 128 MCP identities per login generation,
 including retired assignments. Capacity rejection preserves existing credentials
 and shared identity; online logout/sign-in clears the retired generation state.
+
+Identity uses email/password for sign-in and a separate display name. Email is
+trimmed and ASCII-lowercased, unique, and limited to 254 bytes: an unquoted ASCII
+dot-atom mailbox with a hostname domain. Quoted/Unicode mailboxes and domain
+literals are unsupported. Display names are trimmed nonempty Unicode, at most
+200 UTF-8 bytes, and never authenticate. Profile edits revoke affected sessions.
+
+This pre-release requires a fresh database for the email identity schema. Migration
+0004 explicitly refuses populated older username schemas without deleting data.
+Preserve any old database separately and create a fresh deployment; no legacy
+account/API/cache compatibility is provided. Log out with the creating older CLI
+before switching packages, then sign in to the new deployment with email.
