@@ -14,14 +14,27 @@ import type { UiContext } from "@/generated/UiContext";
 
 const alice = {
   id: "alice",
-  username: "alice",
+  name: "alice",
+  email: "alice@example.test",
   role: "user" as const,
   active: true,
 };
-const bob = { id: "bob", username: "bob", role: "user" as const, active: true };
+const bob = {
+  id: "bob",
+  name: "bob",
+  email: "bob@example.test",
+  role: "user" as const,
+  active: true,
+};
 const context: UiContext = {
   mode: "admin",
-  user: { id: "admin", username: "admin", role: "admin", active: true },
+  user: {
+    id: "admin",
+    name: "admin",
+    email: "admin@example.test",
+    role: "admin",
+    active: true,
+  },
   serverUrl: "https://central.example",
   online: true,
   expiresAt: 12345,
@@ -110,6 +123,94 @@ afterEach(() => {
   window.location.hash = "";
 });
 describe("Administrator journeys", () => {
+  it.each(["create", "edit"])(
+    "%s uses distinct display name and email profile fields",
+    async (mode) => {
+      const calls = api(context, () =>
+        response({
+          ...alice,
+          name: "Display Name",
+          email: "display@example.test",
+        }),
+      );
+      render(<AdminApp />);
+      await screen.findByRole("heading", { name: "MCP catalog" });
+      fireEvent.click(screen.getByRole("link", { name: "Users" }));
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name:
+            mode === "create"
+              ? "Create user"
+              : "Edit user alice (alice@example.test)",
+        }),
+      );
+      const dialog = screen.getByRole("dialog");
+      fireEvent.change(within(dialog).getByLabelText("Name"), {
+        target: { value: "Display Name" },
+      });
+      const email = within(dialog).getByLabelText("Email");
+      expect(email).toHaveAttribute("type", "email");
+      fireEvent.change(email, { target: { value: "display@example.test" } });
+      if (mode === "create")
+        fireEvent.change(within(dialog).getByLabelText("Password"), {
+          target: { value: "fixture-password" },
+        });
+      else
+        expect(
+          within(dialog).queryByLabelText("Password"),
+        ).not.toBeInTheDocument();
+      fireEvent.click(
+        within(dialog).getByRole("button", {
+          name: mode === "create" ? "Create user" : "Save user",
+        }),
+      );
+      await waitFor(() =>
+        expect(
+          calls.filter(
+            (c) => c.options.method === (mode === "create" ? "POST" : "PUT"),
+          ),
+        ).toHaveLength(1),
+      );
+      const write = calls.find(
+        (c) => c.options.method === (mode === "create" ? "POST" : "PUT"),
+      );
+      expect(JSON.parse(String(write?.options.body))).toEqual({
+        expectedRevision: 7,
+        name: "Display Name",
+        email: "display@example.test",
+        role: "user",
+        ...(mode === "create"
+          ? { password: "fixture-password" }
+          : { active: true }),
+      });
+    },
+  );
+  it("keeps existing passwords absent and resets through the protected write-only action", async () => {
+    const calls = api(context, () => response(null, 204));
+    render(<AdminApp />);
+    await screen.findByRole("heading", { name: "MCP catalog" });
+    fireEvent.click(screen.getByRole("link", { name: "Users" }));
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Edit user alice (alice@example.test)",
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Reset password" }));
+    fireEvent.change(screen.getByLabelText("New password"), {
+      target: { value: "new-fixture-password" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Reset password" }));
+    await waitFor(() =>
+      expect(calls.filter((c) => c.options.method === "PUT")).toHaveLength(1),
+    );
+    const write = calls.find((c) => c.options.method === "PUT");
+    expect(write?.path).toBe("/api/admin/users/alice/password");
+    expect(JSON.parse(String(write?.options.body))).toEqual({
+      expectedRevision: 7,
+      password: "new-fixture-password",
+    });
+  });
+
   it.each(["group", "user"])(
     "rejects an initial mixed %s read set and only edits explicitly reloaded state",
     async (kind) => {
@@ -173,7 +274,10 @@ describe("Administrator journeys", () => {
       );
       fireEvent.click(
         await screen.findByRole("button", {
-          name: kind === "group" ? "Edit group Engineering" : "Edit user alice",
+          name:
+            kind === "group"
+              ? "Edit group Engineering"
+              : "Edit user alice (alice@example.test)",
         }),
       );
       if (kind === "group") {
@@ -200,7 +304,13 @@ describe("Administrator journeys", () => {
       ).toEqual(
         kind === "group"
           ? { expectedRevision: 8, name: "Renamed", memberIds: [] }
-          : { expectedRevision: 8, role: "user", active: false },
+          : {
+              expectedRevision: 8,
+              name: "alice",
+              email: "alice@example.test",
+              role: "user",
+              active: false,
+            },
       );
     },
   );
@@ -358,8 +468,8 @@ describe("Administrator journeys", () => {
       response({ code: "unauthorized", message: "Login is required." }, 401),
     );
     render(<AdminApp />);
-    fireEvent.change(await screen.findByLabelText("Username"), {
-      target: { value: "alice" },
+    fireEvent.change(await screen.findByLabelText("Email"), {
+      target: { value: "alice@example.test" },
     });
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "fixture-password" },
@@ -372,6 +482,10 @@ describe("Administrator journeys", () => {
       "X-CSRF-Token": "memory-only-csrf",
     });
     expect(sent?.options.credentials).toBe("same-origin");
+    expect(JSON.parse(String(sent?.options.body))).toEqual({
+      email: "alice@example.test",
+      password: "fixture-password",
+    });
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
   });

@@ -108,14 +108,18 @@ async fn server() -> Server {
             post(
                 |State(s): State<Central>, axum::Json(input): axum::Json<LoginRequest>| async move {
                     axum::Json(EndpointSession {
-                        token: format!("private-central-token-{}", input.username),
+                        token: format!(
+                            "private-central-token-{}",
+                            input.email.split('@').next().expect("fixture local part")
+                        ),
                         user: UserInfo {
-                            id: if input.username == "alice" {
+                            name: "Fixture User".into(),
+                            id: if input.email == "alice@example.test" {
                                 s.alice
                             } else {
                                 s.bob
                             },
-                            username: input.username,
+                            email: input.email,
                             role: Role::User,
                             active: true,
                         },
@@ -162,7 +166,7 @@ async fn server() -> Server {
 }
 fn login(name: &str) -> LoginRequest {
     LoginRequest {
-        username: name.into(),
+        email: format!("{name}@example.test"),
         password: "never-persist-this-password".into(),
     }
 }
@@ -245,8 +249,8 @@ async fn identity_generation_cleanup_and_redacted_status() {
             .expect("bob remains")
             .credentials
             .user
-            .username,
-        "bob"
+            .email,
+        "bob@example.test"
     );
     f.manager.logout().await.expect("logout");
     assert!(credentials.0.lock().expect("fixture lock").is_empty());
@@ -726,8 +730,9 @@ async fn in_flight_login_cannot_resurrect_logout() {
                         axum::Json(EndpointSession {
                             token: "stale-central-session".into(),
                             user: UserInfo {
+                                name: "Fixture User".into(),
                                 id: Uuid::new_v4().to_string(),
-                                username: "alice".into(),
+                                email: "alice@example.test".into(),
                                 role: Role::User,
                                 active: true,
                             },

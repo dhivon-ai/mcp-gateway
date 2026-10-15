@@ -62,7 +62,8 @@ export function user(value: unknown): UserInfo {
   if (v.role !== "admin" && v.role !== "user") return invalid();
   return {
     id: string(v.id, 64),
-    username: string(v.username, 64),
+    email: string(v.email, 254),
+    name: string(v.name, 200),
     role: v.role,
     active: bool(v.active),
   };

@@ -24,7 +24,8 @@ const SESSION_SECONDS: i64 = 12 * 3600;
 #[derive(FromRow)]
 struct UserRow {
     id: Uuid,
-    username: String,
+    email: String,
+    name: String,
     role: String,
     active: bool,
 }
@@ -32,7 +33,8 @@ impl UserRow {
     fn info(self) -> UserInfo {
         UserInfo {
             id: self.id.to_string(),
-            username: self.username,
+            email: self.email,
+            name: self.name,
             role: if self.role == "admin" {
                 Role::Admin
             } else {
@@ -45,7 +47,8 @@ impl UserRow {
 #[derive(FromRow)]
 struct SessionRow {
     id: Uuid,
-    username: String,
+    email: String,
+    name: String,
     role: String,
     active: bool,
     csrf_token: String,
@@ -59,19 +62,44 @@ pub(crate) struct Principal {
     pub expires_at: i64,
 }
 
-pub fn username(raw: &str) -> Result<String, AppError> {
+pub fn email(raw: &str) -> Result<String, AppError> {
     let value = raw.trim().to_ascii_lowercase();
-    if value.is_empty()
-        || value.len() > 64
-        || !value
+    let invalid = || AppError::bad("Enter a valid email address (at most 254 ASCII bytes).");
+    let (local, domain) = value.split_once('@').ok_or_else(invalid)?;
+    if !value.is_ascii()
+        || value.len() > 254
+        || local.is_empty()
+        || local.len() > 64
+        || local.starts_with('.')
+        || local.ends_with('.')
+        || local.contains("..")
+        || !local
             .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b"._-@".contains(&b))
+            .all(|b| b.is_ascii_alphanumeric() || b".!#$%&'*+-/=?^_`{|}~".contains(&b))
+        || domain.is_empty()
+        || domain.len() > 253
+        || domain.split('.').any(|label| {
+            label.is_empty()
+                || label.len() > 63
+                || label.starts_with('-')
+                || label.ends_with('-')
+                || !label
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-')
+        })
     {
-        return Err(AppError::bad(
-            "Username must contain 1–64 ASCII letters, digits, or ._-@.",
-        ));
+        return Err(invalid());
     }
     Ok(value)
+}
+pub fn display_name(raw: &str) -> Result<String, AppError> {
+    let value = raw.trim();
+    if value.is_empty() || value.len() > 200 || value.chars().any(char::is_control) {
+        return Err(AppError::bad(
+            "Name must contain 1–200 UTF-8 bytes without control characters.",
+        ));
+    }
+    Ok(value.to_owned())
 }
 fn check_password(password: &str) -> Result<(), AppError> {
     if !(12..=128).contains(&password.len()) {
@@ -145,7 +173,8 @@ fn principal(row: SessionRow, hash: Vec<u8>, endpoint: bool) -> Principal {
     Principal {
         user: UserRow {
             id: row.id,
-            username: row.username,
+            email: row.email,
+            name: row.name,
             role: row.role,
             active: row.active,
         }
@@ -156,7 +185,7 @@ fn principal(row: SessionRow, hash: Vec<u8>, endpoint: bool) -> Principal {
         endpoint,
     }
 }
-const SESSION_QUERY: &str = "SELECT u.id,u.username,u.role,u.active,s.csrf_token,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>$2 AND u.active";
+const SESSION_QUERY: &str = "SELECT u.id,u.email,u.name,u.role,u.active,s.csrf_token,s.expires_at FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>$2 AND u.active";
 pub(crate) async fn authenticate(
     state: &AppState,
     headers: &HeaderMap,
@@ -306,13 +335,13 @@ async fn login(
     input: LoginRequest,
     peer: Option<Extension<ConnectInfo<SocketAddr>>>,
 ) -> Result<EndpointSession, AppError> {
-    let name = username(&input.username).map_err(|_| AppError::unauthorized())?;
+    let name = email(&input.email).map_err(|_| AppError::unauthorized())?;
     if input.password.len() > 128 {
         return Err(AppError::unauthorized());
     }
     throttle(state, &name, peer).await?;
     let found: Option<(Uuid, String)> =
-        sqlx::query_as("SELECT id,password_hash FROM users WHERE username=$1 AND active")
+        sqlx::query_as("SELECT id,password_hash FROM users WHERE email=$1 AND active")
             .bind(&name)
             .fetch_optional(&state.pool)
             .await?;
@@ -347,8 +376,8 @@ async fn login(
         .execute(&state.pool)
         .await?;
     let mut tx = state.pool.begin().await?;
-    // Reset/disable races cannot mint a session from a superseded hash.
-    let row=sqlx::query_as::<_,UserRow>("SELECT id,username,role,active FROM users WHERE id=$1 AND active AND password_hash=$2 FOR UPDATE").bind(id).bind(hash).fetch_optional(&mut *tx).await?.ok_or_else(AppError::unauthorized)?;
+    // Reset/disable/email-edit races cannot mint a session from superseded credentials.
+    let row=sqlx::query_as::<_,UserRow>("SELECT id,email,name,role,active FROM users WHERE id=$1 AND active AND password_hash=$2 AND email=$3 FOR UPDATE").bind(id).bind(hash).bind(&name).fetch_optional(&mut *tx).await?.ok_or_else(AppError::unauthorized)?;
     let token = opaque();
     let csrf = opaque();
     let expires_at = now + SESSION_SECONDS;
@@ -428,12 +457,24 @@ pub async fn logout(
     set_cookie(&mut response, &state, "gateway_session", "", 0)?;
     Ok(response)
 }
+fn email_write_error(error: sqlx::Error) -> AppError {
+    if error
+        .as_database_error()
+        .is_some_and(|e| e.is_unique_violation())
+    {
+        AppError::bad("That email address is already in use.")
+    } else {
+        error.into()
+    }
+}
 pub async fn bootstrap(
     state: &AppState,
-    raw_username: &str,
+    raw_email: &str,
+    raw_name: &str,
     password: String,
 ) -> Result<UserInfo, AppError> {
-    let username = username(raw_username)?;
+    let email = email(raw_email)?;
+    let name = display_name(raw_name)?;
     check_password(&password)?;
     let hash = hash_password(password).await?;
     let mut tx = state.pool.begin().await?;
@@ -447,17 +488,20 @@ pub async fn bootstrap(
         ));
     }
     let id = Uuid::new_v4();
-    sqlx::query("INSERT INTO users(id,username,password_hash,role) VALUES($1,$2,$3,'admin')")
+    sqlx::query("INSERT INTO users(id,email,password_hash,role,name) VALUES($1,$2,$3,'admin',$4)")
         .bind(id)
-        .bind(&username)
+        .bind(&email)
         .bind(hash)
+        .bind(&name)
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(email_write_error)?;
     bump_revision(&mut tx).await?;
     tx.commit().await?;
     Ok(UserInfo {
         id: id.to_string(),
-        username,
+        email,
+        name,
         role: Role::Admin,
         active: true,
     })
@@ -468,7 +512,7 @@ pub async fn list_users(
 ) -> Result<Json<Vec<UserInfo>>, AppError> {
     admin(&state, &headers, false).await?;
     let rows =
-        sqlx::query_as::<_, UserRow>("SELECT id,username,role,active FROM users ORDER BY username")
+        sqlx::query_as::<_, UserRow>("SELECT id,email,name,role,active FROM users ORDER BY email")
             .fetch_all(&state.pool)
             .await?;
     Ok(Json(rows.into_iter().map(UserRow::info).collect()))
@@ -485,24 +529,28 @@ pub async fn create_user(
     Input(input): Input<UserCreate>,
 ) -> Result<Json<UserInfo>, AppError> {
     let p = admin(&state, &headers, true).await?;
-    let username = username(&input.username)?;
+    let email = email(&input.email)?;
+    let name = display_name(&input.name)?;
     check_password(&input.password)?;
     let hash = hash_password(input.password).await?;
     let id = Uuid::new_v4();
     let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
-    sqlx::query("INSERT INTO users(id,username,password_hash,role) VALUES($1,$2,$3,$4)")
+    sqlx::query("INSERT INTO users(id,email,password_hash,role,name) VALUES($1,$2,$3,$4,$5)")
         .bind(id)
-        .bind(&username)
+        .bind(&email)
         .bind(hash)
         .bind(role(&input.role))
+        .bind(&name)
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(email_write_error)?;
     bump_revision(&mut tx).await?;
     tx.commit().await?;
     tracing::info!(event="user_created",actor=%p.user.id,user_id=%id);
     Ok(Json(UserInfo {
         id: id.to_string(),
-        username,
+        email,
+        name,
         role: input.role,
         active: true,
     }))
@@ -515,9 +563,11 @@ pub async fn edit_user(
 ) -> Result<Json<UserInfo>, AppError> {
     let p = admin(&state, &headers, true).await?;
     let id = uuid(&id)?;
+    let email = email(&input.email)?;
+    let name = display_name(&input.name)?;
     let mut tx = begin_admin_checked(&state, &p, input.expected_revision).await?;
     let current = sqlx::query_as::<_, UserRow>(
-        "SELECT id,username,role,active FROM users WHERE id=$1 FOR UPDATE",
+        "SELECT id,email,name,role,active FROM users WHERE id=$1 FOR UPDATE",
     )
     .bind(id)
     .fetch_optional(&mut *tx)
@@ -534,12 +584,15 @@ pub async fn edit_user(
             ));
         }
     }
-    sqlx::query("UPDATE users SET role=$2,active=$3 WHERE id=$1")
+    sqlx::query("UPDATE users SET role=$2,active=$3,email=$4,name=$5 WHERE id=$1")
         .bind(id)
         .bind(role(&input.role))
         .bind(input.active)
+        .bind(&email)
+        .bind(&name)
         .execute(&mut *tx)
-        .await?;
+        .await
+        .map_err(email_write_error)?;
     crate::configuration::reconcile(&mut tx).await?;
     sqlx::query("DELETE FROM sessions WHERE user_id=$1")
         .bind(id)
@@ -550,7 +603,8 @@ pub async fn edit_user(
     tracing::info!(event="user_updated_sessions_revoked",actor=%p.user.id,user_id=%id);
     Ok(Json(UserInfo {
         id: id.to_string(),
-        username: current.username,
+        email,
+        name,
         role: input.role,
         active: input.active,
     }))

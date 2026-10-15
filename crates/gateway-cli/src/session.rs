@@ -19,7 +19,8 @@ pub struct RedactedStatus {
     pub generation: Option<String>,
     pub session_expires_at: Option<i64>,
     pub configuration: &'static str,
-    pub username: Option<String>,
+    pub email: Option<String>,
+    pub name: Option<String>,
 }
 pub struct NativeSession {
     pub metadata: Metadata,
@@ -138,7 +139,8 @@ impl SessionManager {
                 identity: s.metadata.active,
                 session_expires_at: Some(s.credentials.expires_at),
                 configuration: "sync_required",
-                username: Some(s.credentials.user.username),
+                email: Some(s.credentials.user.email),
+                name: Some(s.credentials.user.name),
             }),
             Err(EndpointError::ServerMismatch) => Ok(RedactedStatus {
                 state: "server_mismatch",
@@ -146,7 +148,8 @@ impl SessionManager {
                 generation: None,
                 session_expires_at: None,
                 configuration: "server_mismatch",
-                username: None,
+                email: None,
+                name: None,
             }),
             Err(EndpointError::LoginRequired) => Ok(RedactedStatus {
                 state: "login_required",
@@ -154,7 +157,8 @@ impl SessionManager {
                 generation: None,
                 session_expires_at: None,
                 configuration: "sync_required",
-                username: None,
+                email: None,
+                name: None,
             }),
             Err(e) => Err(e),
         }

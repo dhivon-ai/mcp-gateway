@@ -65,7 +65,7 @@ function Login({
       await apiRequest("/api/auth/login", decode.status, {
         method: "POST",
         csrfToken: context.csrfToken,
-        body: { username: name, password },
+        body: { email: name, password },
         timeoutMs: 90_000,
       });
       await onLogin();
@@ -99,12 +99,13 @@ function Login({
                 <p className="muted break-value">{context.serverUrl}</p>
               </Field>
               <Field>
-                <FieldLabel htmlFor="local-username">Username</FieldLabel>
+                <FieldLabel htmlFor="local-email">Email</FieldLabel>
                 <Input
-                  id="local-username"
-                  placeholder="Your username"
+                  id="local-email"
+                  placeholder="you@company.com"
+                  type="email"
                   autoComplete="username"
-                  maxLength={64}
+                  maxLength={254}
                   required
                   disabled={busy}
                   value={name}
@@ -356,11 +357,10 @@ function Workspace({
           <div className="account-identity">
             <Avatar>
               <AvatarFallback>
-                {context.status.identity.username?.slice(0, 1).toUpperCase() ??
-                  "U"}
+                {context.status.identity.name?.slice(0, 1).toUpperCase() ?? "U"}
               </AvatarFallback>
             </Avatar>
-            <strong>{context.status.identity.username ?? "Signed in"}</strong>
+            <strong>{context.status.identity.name ?? "Signed in"}</strong>
           </div>
           <Separator />
           <Button variant="ghost" onClick={() => void logout()} disabled={busy}>

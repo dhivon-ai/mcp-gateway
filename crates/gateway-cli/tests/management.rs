@@ -128,8 +128,9 @@ impl Fixture {
         let memory = Arc::new(Memory::default());
         let now = epoch().expect("owned management fixture");
         let user = UserInfo {
+            name: "Fixture User".into(),
             id: Uuid::new_v4().to_string(),
-            username: "alice".into(),
+            email: "alice@example.test".into(),
             role: Role::User,
             active: true,
         };
@@ -171,7 +172,7 @@ impl Fixture {
             release: Arc::new(tokio::sync::Notify::new()),
         };
         let app = Router::new()
-            .route("/api/endpoint/login", post(|State(s): State<Central>, axum::Json(input): axum::Json<LoginRequest>| async move { let mut snapshot = s.snapshot.lock().expect("owned management fixture"); if snapshot.user.username != input.username { snapshot.user.id = Uuid::new_v4().to_string(); snapshot.user.username = input.username.clone(); } axum::Json(EndpointSession { token: format!("private-central-{}", input.username), user: snapshot.user.clone(), deployment_id: snapshot.deployment_id.clone(), expires_at: snapshot.session_expires_at }) }))
+            .route("/api/endpoint/login", post(|State(s): State<Central>, axum::Json(input): axum::Json<LoginRequest>| async move { let mut snapshot = s.snapshot.lock().expect("owned management fixture"); if snapshot.user.email != input.email { snapshot.user.id = Uuid::new_v4().to_string(); snapshot.user.email = input.email.clone(); } axum::Json(EndpointSession { token: format!("private-central-{}", input.email.split('@').next().expect("fixture local part")), user: snapshot.user.clone(), deployment_id: snapshot.deployment_id.clone(), expires_at: snapshot.session_expires_at }) }))
             .route("/api/config", get(|State(s): State<Central>| async move { let code = StatusCode::from_u16(s.config_code.load(Ordering::Relaxed)).expect("owned management fixture"); (code, axum::Json(s.snapshot.lock().expect("owned management fixture").clone())) }))
             .route("/api/auth/logout", post(|| async { StatusCode::NO_CONTENT }))
             .route("/api/settings/{id}", put(|State(s): State<Central>, headers: HeaderMap, axum::Json(input): axum::Json<SettingsUpdate>| async move {
@@ -215,7 +216,7 @@ impl Fixture {
             .login(
                 &client,
                 LoginRequest {
-                    username: "alice".into(),
+                    email: "alice@example.test".into(),
                     password: "private-password".into(),
                 },
             )
@@ -467,7 +468,7 @@ async fn pinned_owner_and_atomic_logout_preserve_concurrent_login() {
         .login(
             &f.client,
             LoginRequest {
-                username: "bob".into(),
+                email: "bob@example.test".into(),
                 password: "private-other-password".into(),
             },
         )
@@ -495,8 +496,8 @@ async fn pinned_owner_and_atomic_logout_preserve_concurrent_login() {
             .expect("owned management fixture")
             .credentials
             .user
-            .username,
-        "bob"
+            .email,
+        "bob@example.test"
     );
     assert!(
         f.installs
@@ -644,7 +645,7 @@ async fn protected_routes_bind_generation_host_origin_csrf_and_bound_values() {
     .expect("owned management fixture");
     assert_eq!(context["status"]["identity"]["generation"], generation);
     assert_eq!(context["mode"], "local");
-    assert_eq!(context["status"]["identity"]["username"], "alice");
+    assert_eq!(context["status"]["identity"]["email"], "alice@example.test");
     let csrf = context["csrfToken"]
         .as_str()
         .expect("owned management fixture");
@@ -1341,7 +1342,7 @@ async fn stale_generation_shutdown_cannot_cancel_new_owner_install_and_process_l
         .login(
             &f.client,
             LoginRequest {
-                username: "bob".into(),
+                email: "bob@example.test".into(),
                 password: "private-other-password".into(),
             },
         )
@@ -1549,7 +1550,7 @@ async fn actual_cli_sigterm_and_ctrl_c_clean_owned_installer_without_production_
             .header("origin", &base)
             .header("x-csrf-token", csrf)
             .json(&LoginRequest {
-                username: "alice".into(),
+                email: "alice@example.test".into(),
                 password: "private-cli-password".into(),
             })
             .send()

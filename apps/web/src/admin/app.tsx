@@ -65,7 +65,7 @@ function SignIn({
         await apiRequest("/api/auth/login", decode.context, {
           method: "POST",
           csrfToken: context.csrfToken ?? undefined,
-          body: { username: name, password },
+          body: { email: name, password },
         }),
       );
     } catch (e) {
@@ -87,14 +87,15 @@ function SignIn({
       >
         <FieldGroup>
           <Field>
-            <FieldLabel htmlFor="username">Username</FieldLabel>
+            <FieldLabel htmlFor="email">Email</FieldLabel>
             <Input
-              id="username"
+              id="email"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              type="email"
               autoComplete="username"
               required
-              maxLength={64}
+              maxLength={254}
               disabled={busy}
             />
           </Field>
@@ -254,11 +255,12 @@ function Administration({
           <div className="account-identity">
             <Avatar size="lg">
               <AvatarFallback>
-                {context.user?.username.slice(0, 1).toUpperCase()}
+                {context.user?.name.slice(0, 1).toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div>
-              <strong>{context.user?.username}</strong>
+              <strong>{context.user?.name}</strong>
+              <p className="break-value">{context.user?.email}</p>
               <p>Administrator</p>
             </div>
           </div>

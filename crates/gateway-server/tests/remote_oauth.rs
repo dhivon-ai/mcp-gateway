@@ -197,7 +197,7 @@ async fn consent_central_encryption_gateway_refresh_coordination_and_disconnect(
         .login(
             &central,
             LoginRequest {
-                username: "alice".into(),
+                email: "alice@example.test".into(),
                 password: PASSWORD.into(),
             },
         )

@@ -25,7 +25,8 @@ function initial(): LocalContext {
       identity: {
         state: "authenticated",
         generation,
-        username: "alice",
+        name: "alice",
+        email: "alice@example.test",
         sessionExpiresAt: now + 43200,
       },
       configuration: {
@@ -148,7 +149,8 @@ describe("Local management journeys", () => {
   it("ignores a late context response from the previous identity", async () => {
     const alice = initial(),
       bob = initial();
-    bob.status.identity.username = "bob";
+    bob.status.identity.email = "bob@example.test";
+    bob.status.identity.name = "bob";
     bob.status.identity.generation = "00000000-0000-4000-8000-000000000002";
     let resolveOld: (value: Response) => void = () => {};
     let contexts = 0;
@@ -186,8 +188,8 @@ describe("Local management journeys", () => {
       response({ code: "unauthorized", message: "Login is required" }, 401),
     );
     render(<LocalApp />);
-    fireEvent.change(await screen.findByLabelText("Username"), {
-      target: { value: "alice" },
+    fireEvent.change(await screen.findByLabelText("Email"), {
+      target: { value: "alice@example.test" },
     });
     fireEvent.change(screen.getByLabelText("Password"), {
       target: { value: "fixture-password" },
@@ -198,6 +200,11 @@ describe("Local management journeys", () => {
     expect(
       calls.find((c) => c.path === "/api/auth/login")?.options.headers,
     ).toMatchObject({ "X-CSRF-Token": "local-csrf" });
+    expect(
+      JSON.parse(
+        String(calls.find((c) => c.path === "/api/auth/login")?.options.body),
+      ),
+    ).toEqual({ email: "alice@example.test", password: "fixture-password" });
     expect(localStorage.length).toBe(0);
   });
   it("loads under StrictMode and waits for a confirmed settings response before changing enablement", async () => {

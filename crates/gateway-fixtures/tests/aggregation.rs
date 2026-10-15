@@ -145,8 +145,9 @@ impl Endpoint {
             StateStore::new(root.clone(), Arc::new(Memory::default())).expect("fixture state");
         let now = epoch().expect("fixture epoch");
         let user = UserInfo {
+            name: "Fixture User".into(),
             id: Uuid::new_v4().to_string(),
-            username: "fixture".into(),
+            email: "fixture@example.test".into(),
             active: true,
             role: Role::User,
         };

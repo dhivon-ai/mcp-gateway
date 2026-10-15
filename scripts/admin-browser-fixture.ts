@@ -115,7 +115,15 @@ try {
   databaseCreated = true;
   command(["generate-vault-key", "--output", key]);
   command(
-    [...common, "bootstrap-admin", "--username", "admin", "--password-stdin"],
+    [
+      ...common,
+      "bootstrap-admin",
+      "--email",
+      "admin@example.test",
+      "--name",
+      "Administrator",
+      "--password-stdin",
+    ],
     PASSWORD,
   );
   const log = openSync(join(directory, "server.log"), "w", 0o600);
@@ -140,7 +148,7 @@ try {
   }
   if (!healthy) throw new Error("Owned control plane did not become healthy");
   const auth = await request("/api/endpoint/login", null, "POST", {
-    username: "admin",
+    email: "admin@example.test",
     password: PASSWORD,
   });
   const token = String(auth?.token);
@@ -148,13 +156,15 @@ try {
     Number((await request("/api/admin/configuration", token))?.revision);
   const alice = await request("/api/admin/users", token, "POST", {
     expectedRevision: await revision(),
-    username: "alice",
+    email: "alice@example.test",
+    name: "Alice",
     password: PASSWORD,
     role: "user",
   });
   const bob = await request("/api/admin/users", token, "POST", {
     expectedRevision: await revision(),
-    username: "bob",
+    email: "bob@example.test",
+    name: "Bob",
     password: PASSWORD,
     role: "user",
   });
@@ -225,7 +235,7 @@ try {
     target: { kind: "all" },
   });
   const aliceAuth = await request("/api/endpoint/login", null, "POST", {
-    username: "alice",
+    email: "alice@example.test",
     password: PASSWORD,
   });
   const aliceToken = String(aliceAuth?.token);

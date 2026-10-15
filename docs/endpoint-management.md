@@ -6,7 +6,7 @@
 
 The exact Host/Origin, cross-site Fetch metadata rejection, HttpOnly SameSite=Strict cookie and mutation CSRF checks in [endpoint identity](endpoint-identity.md) apply to every route below. `GET /api/context` includes `status.identity.generation`. Generation is ordinary metadata: it supplements local authentication and prevents an old UI action from targeting a newly logged-in account. Never place credentials or local capabilities in a URL, localStorage or sessionStorage.
 
-All new mutations use the JSON envelope `{ "expectedGeneration": "<displayed generation>", "input": <typed input> }`. Reads below require `X-Endpoint-Generation`. Browser logout also requires that header: it checks and clears the expected generation under one state lock and revokes only that old native principal. Logout cancellation is scoped to that generation; process exit cancels all jobs owned by that process. Login is an explicit identity transition, using the existing username/password request.
+All new mutations use the JSON envelope `{ "expectedGeneration": "<displayed generation>", "input": <typed input> }`. Reads below require `X-Endpoint-Generation`. Browser logout also requires that header: it checks and clears the expected generation under one state lock and revokes only that old native principal. Logout cancellation is scoped to that generation; process exit cancels all jobs owned by that process. Login is an explicit identity transition, using the existing email/password request.
 
 | Local route | Method / input | Metadata response |
 | --- | --- | --- |

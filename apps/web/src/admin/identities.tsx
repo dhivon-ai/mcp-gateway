@@ -94,7 +94,8 @@ function UserEditor({
   actions: Actions;
   onClose: () => void;
 }) {
-  const [name, setName] = useState(initial?.username ?? "");
+  const [name, setName] = useState(initial?.name ?? "");
+  const [email, setEmail] = useState(initial?.email ?? "");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>(initial?.role ?? "user");
   const [active, setActive] = useState(initial?.active ?? true);
@@ -104,12 +105,15 @@ function UserEditor({
     const ok = initial
       ? await actions.execute(`/api/admin/users/${initial.id}`, "PUT", {
           expectedRevision: revision,
+          name,
+          email,
           role,
           active,
         })
       : await actions.execute("/api/admin/users", "POST", {
           expectedRevision: revision,
-          username: name,
+          name,
+          email,
           password,
           role,
         });
@@ -133,7 +137,7 @@ function UserEditor({
   }
   return (
     <Editor
-      title={initial?.username ?? "Create user"}
+      title={initial?.name ?? "Create user"}
       description="Account and password changes revoke this user's sessions."
       onClose={onClose}
       busy={actions.busy}
@@ -161,12 +165,21 @@ function UserEditor({
             ) : (
               <>
                 <TextField
-                  label="Username"
+                  label="Name"
                   value={name}
                   onChange={setName}
                   required
-                  disabled={Boolean(initial)}
-                  maxLength={64}
+                  maxLength={200}
+                  description="Display name only. Sign in with email."
+                />
+                <TextField
+                  label="Email"
+                  type="email"
+                  value={email}
+                  onChange={setEmail}
+                  required
+                  maxLength={254}
+                  description="Unique email address used to sign in."
                 />
                 {!initial ? (
                   <TextField
@@ -257,7 +270,8 @@ export function Users({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead scope="col">Username</TableHead>
+                <TableHead scope="col">Name</TableHead>
+                <TableHead scope="col">Email</TableHead>
                 <TableHead scope="col">Role</TableHead>
                 <TableHead scope="col">Status</TableHead>
                 <TableHead scope="col">
@@ -269,8 +283,9 @@ export function Users({
               {data.users.map((u) => (
                 <TableRow key={u.id}>
                   <TableCell>
-                    <strong>{u.username}</strong>
+                    <strong>{u.name}</strong>
                   </TableCell>
+                  <TableCell>{u.email}</TableCell>
                   <TableCell>
                     {u.role === "admin" ? "Administrator" : "User"}
                   </TableCell>
@@ -278,7 +293,7 @@ export function Users({
                   <TableCell className="row-actions">
                     <Button
                       variant="outline"
-                      aria-label={`Edit user ${u.username}`}
+                      aria-label={`Edit user ${u.name} (${u.email})`}
                       onClick={() => setEditing(u)}
                       disabled={actions.busy}
                     >
@@ -376,9 +391,10 @@ function GroupEditor({
                     />
                     <FieldContent>
                       <FieldLabel htmlFor={`member-${u.id}`}>
-                        {u.username}
+                        {u.name}
                       </FieldLabel>
                       <FieldDescription>
+                        {u.email} ·{" "}
                         {u.role === "admin" ? "Administrator" : "User"}
                         {u.active ? "" : " · Disabled"}
                       </FieldDescription>
@@ -476,7 +492,7 @@ export function Groups({
                     {g.memberIds
                       .map(
                         (id) =>
-                          data.users.find((u) => u.id === id)?.username ??
+                          data.users.find((u) => u.id === id)?.name ??
                           "Unknown user",
                       )
                       .join(", ") || "No members"}

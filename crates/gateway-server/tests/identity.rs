@@ -38,32 +38,43 @@ async fn bootstrap_roles_revocation_and_membership() {
             "POST",
             "/api/endpoint/login",
             None,
-            Some(json!({"username":"admin","password":PASSWORD}))
+            Some(json!({"email":"admin@example.test","password":PASSWORD}))
         )
         .await
         .0,
         401
     );
     assert!(
-        gateway_server::identity::bootstrap(&h.state, "admin", "short".into())
-            .await
-            .is_err()
+        gateway_server::identity::bootstrap(
+            &h.state,
+            "admin@example.test",
+            "admin",
+            "short".into()
+        )
+        .await
+        .is_err()
     );
     let admin = h.bootstrap().await;
     assert!(
-        gateway_server::identity::bootstrap(&h.state, "another", PASSWORD.into())
-            .await
-            .is_err()
-    );
-    let hash: String = sqlx::query_scalar("SELECT password_hash FROM users WHERE username='admin'")
-        .fetch_one(&h.state.pool)
+        gateway_server::identity::bootstrap(
+            &h.state,
+            "another@example.test",
+            "another",
+            PASSWORD.into()
+        )
         .await
-        .expect("password hash");
+        .is_err()
+    );
+    let hash: String =
+        sqlx::query_scalar("SELECT password_hash FROM users WHERE email='admin@example.test'")
+            .fetch_one(&h.state.pool)
+            .await
+            .expect("password hash");
     assert!(hash.starts_with("$argon2id$v=19$m=19456,t=2,p=1$"));
     assert!(!hash.contains(PASSWORD));
     let alice_id = h.user(&admin.token, "alice").await;
     let bob_id = h.user(&admin.token, "bob").await;
-    let stale = json!({"role":"user","active":false,"expectedRevision":0});
+    let stale = json!({"name":"alice","email":"alice@example.test","role":"user","active":false,"expectedRevision":0});
     assert_eq!(
         h.custom(
             "PUT",
@@ -105,7 +116,9 @@ async fn bootstrap_roles_revocation_and_membership() {
         (
             "POST",
             "/api/admin/users",
-            Some(json!({"username":"attack","password":PASSWORD,"role":"admin"})),
+            Some(
+                json!({"name":"attack","email":"attack@example.test","password":PASSWORD,"role":"admin"}),
+            ),
         ),
         (
             "POST",
@@ -214,7 +227,7 @@ async fn bootstrap_roles_revocation_and_membership() {
             "POST",
             "/api/endpoint/login",
             None,
-            Some(json!({"username":"alice","password":PASSWORD}))
+            Some(json!({"email":"alice@example.test","password":PASSWORD}))
         )
         .await
         .0,
@@ -295,7 +308,7 @@ async fn browser_security_redaction_and_throttling() {
             .expect("cookie")
             .contains("HttpOnly; SameSite=Strict")
     );
-    let login = json!({"username":"admin","password":PASSWORD});
+    let login = json!({"email":"admin@example.test","password":PASSWORD});
     assert_eq!(
         h.custom(
             "POST",
@@ -393,7 +406,7 @@ async fn browser_security_redaction_and_throttling() {
             "POST",
             "/api/auth/login",
             None,
-            Some(json!({"username":"admin","password":PASSWORD})),
+            Some(json!({"email":"admin@example.test","password":PASSWORD})),
             &[("cookie", fresh_preauth), ("x-csrf-token", fresh_csrf)]
         )
         .await
@@ -432,7 +445,7 @@ async fn browser_security_redaction_and_throttling() {
         .header("host", "127.0.0.1:18080")
         .header("content-type", "application/json")
         .body(Body::from(
-            "{\"username\":\"bad\",\"password\":\"sensitive-invalid-json",
+            "{\"email\":\"bad\",\"password\":\"sensitive-invalid-json",
         ))
         .expect("request");
     let response = h.app.clone().oneshot(request).await.expect("router");
@@ -445,7 +458,7 @@ async fn browser_security_redaction_and_throttling() {
                 "POST",
                 "/api/endpoint/login",
                 None,
-                Some(json!({"username":"unknown","password":"wrong-password"}))
+                Some(json!({"email":"unknown@example.test","password":"wrong-password"}))
             )
             .await
             .0,
@@ -457,7 +470,7 @@ async fn browser_security_redaction_and_throttling() {
             "POST",
             "/api/endpoint/login",
             None,
-            Some(json!({"username":"unknown","password":"wrong-password"}))
+            Some(json!({"email":"unknown@example.test","password":"wrong-password"}))
         )
         .await
         .0,

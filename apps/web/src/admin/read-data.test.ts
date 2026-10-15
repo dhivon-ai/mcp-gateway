@@ -6,7 +6,8 @@ afterEach(() => vi.unstubAllGlobals());
 function fixture() {
   const users = Array.from({ length: 10001 }, (_, i) => ({
     id: `user-${i}`,
-    username: `user${i}`,
+    name: `User ${i}`,
+    email: `user${i}@example.test`,
     role: "user",
     active: true,
   }));

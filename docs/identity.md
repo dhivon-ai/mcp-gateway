@@ -4,16 +4,21 @@ The service has no default users or passwords. Set `DATABASE_URL` and
 `GATEWAY_PUBLIC_URL` (the externally visible HTTPS origin), then run:
 
 ```sh
-mcp-gateway-server bootstrap-admin --username admin --password-stdin
+mcp-gateway-server bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
 ```
 
 Supply the password through standard input, using a password manager or a
 terminal prompt; never place it in shell arguments/history. Bootstrap only works
 while the deployment has no users. Password creation/reset requires 12–128 bytes.
-Usernames are canonical lowercase ASCII; group names are trimmed. Passwords use
+Email is the only login identifier; Name is display-only. Emails are trimmed and
+ASCII-case-folded, unique, and limited to254bytes. Supported addresses use an
+unquoted ASCII dot-atom local part (up to64bytes) and hostname domain labels;
+quoted addresses, Unicode mailboxes and domain literals are unsupported. Names
+are trimmed Unicode, nonempty, at most200UTF-8 bytes and free of control characters;
+duplicate display names are allowed. Group names are trimmed. Passwords use
 salted Argon2id (19 MiB, two iterations, parallelism one).
 
-Native clients POST username/password to `/api/endpoint/login`. The response is a
+Native clients POST email/password to `/api/endpoint/login`. The response is a
 private endpoint session containing an opaque token, deployment ID, user and
 absolute expiry. The Mac stores it in Keychain. Browser clients first GET
 `/api/context` to establish an HttpOnly pre-login cookie and obtain its CSRF
@@ -23,7 +28,7 @@ HTTPS). Browser mutation requests require the session CSRF challenge.
 
 Sessions expire after 12 hours and polling never extends them. Only SHA-256 token
 hashes are stored centrally. Logout revokes one session; password reset and any
-account role/active edit revoke all target sessions. Disabled accounts cannot log
+account name/email/role/active edit revoke all target sessions. Disabled accounts cannot log
 in. The last active administrator cannot be demoted/disabled. Identity edits and
 policy changes serialize under the deployment revision lock, rechecking the
 administrator's live authority in the transaction.
@@ -36,20 +41,35 @@ Stale identity/group changes return 409 without overwriting concurrent edits.
 
 | Route                                | Behavior                                             |
 | ------------------------------------ | ---------------------------------------------------- |
-| GET/POST `/api/admin/users`          | List metadata / create with username, password, role |
-| PUT `/api/admin/users/{id}`          | Set role and active; revoke target sessions          |
+| GET/POST `/api/admin/users`          | List metadata / create with name, email, password, role |
+| PUT `/api/admin/users/{id}`          | Set name/email/role/active; revoke target sessions          |
 | PUT `/api/admin/users/{id}/password` | Reset password and revoke target sessions            |
 | GET/POST `/api/admin/groups`         | List / create name and memberIds                     |
 | PUT/DELETE `/api/admin/groups/{id}`  | Replace name/membership / delete                     |
 
 Unauthorized requests return 401, role/CSRF/origin rejection 403, malformed input
-400, duplicates/last-admin protection 409, throttling 429. Public errors are typed
+400, duplicate email400; other duplicates/last-admin protection409, throttling 429. Public errors are typed
 and redact JSON parser/database details. Responses never include password hashes.
 Events carry actor/target IDs and action names, without credentials or payloads.
-Login is bounded to five attempts per username/minute and 100 per actual peer
+Login is bounded to five attempts per canonical email/minute and 100 per actual peer
 IP/minute, with a bounded Argon2 verification pool. Forwarded IP headers are not
 trusted; a reverse proxy shares a conservative peer-IP limit.
 
 The configured Host/Origin must match exactly. HTTPS termination must retain the
 public Host header. HTTP is available only via the explicit loopback fixture
 switch and cannot target non-loopback hosts.
+
+## Pre-release identity deployment change
+
+BUG-005 replaces the earlier username contract. Bootstrap requires `--email`,
+`--name`, and `--password-stdin`; creation/edit APIs require distinct name/email.
+There is no username login or field alias. Use a fresh pre-release database.
+Migration0004 refuses a populated old users table explicitly and makes no data
+changes; preserve any older data separately instead of deleting it automatically.
+Stable user IDs remain unchanged through profile edits. Existing endpoint/cache
+formats from before this change are unsupported: logout with the creating binary
+and sign in to the fresh deployment. No running production database is migrated.
+
+An in-flight login rechecks its original email under the final row lock after
+password verification. An email edit cannot let an already-looked-up old address
+create a new session. Password reset/disable and last-admin protections remain.

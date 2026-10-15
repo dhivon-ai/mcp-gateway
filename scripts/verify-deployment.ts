@@ -183,11 +183,11 @@ async function request(
     ? null
     : (JSON.parse(response.bytes.toString()) as unknown);
 }
-async function login(base: string, username: string): Promise<string> {
+async function login(base: string, email: string): Promise<string> {
   return text(
     object(
       await request(base, "/api/endpoint/login", undefined, "POST", {
-        username,
+        email: `${email}@example.test`,
         password,
       }),
     ).token,
@@ -345,7 +345,7 @@ async function nativeJourney(base: string, admin: string) {
       generation = "";
     csrf = text((await local("/api/context")).csrfToken);
     const logged = await local("/api/auth/login", "POST", {
-      username: "alice",
+      email: "alice@example.test",
       password,
     });
     generation = text(object(logged.identity).generation);
@@ -525,8 +525,10 @@ try {
       "-T",
       "gateway",
       "bootstrap-admin",
-      "--username",
-      "admin",
+      "--email",
+      "admin@example.test",
+      "--name",
+      "Administrator",
       "--password-stdin",
     ],
     password,
@@ -543,10 +545,11 @@ try {
   assert.equal(asset.status, 200);
   assert(asset.bytes.length > 1000);
   const admin = await login(base, "admin");
-  for (const username of ["alice", "bob"]) {
+  for (const email of ["alice", "bob"]) {
     await request(base, "/api/admin/users", admin, "POST", {
       expectedRevision: await revision(base, admin),
-      username,
+      name: email,
+      email: `${email}@example.test`,
       password,
       role: "user",
     });

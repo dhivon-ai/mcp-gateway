@@ -19,9 +19,7 @@ export function targetLabel(target: GrantTarget, data: AdminData): string {
     case "all":
       return "All users";
     case "user":
-      return (
-        data.users.find((u) => u.id === target.id)?.username ?? "Unknown user"
-      );
+      return data.users.find((u) => u.id === target.id)?.name ?? "Unknown user";
     case "group":
       return (
         data.groups.find((g) => g.id === target.id)?.name ?? "Unknown group"
@@ -53,7 +51,10 @@ export function AssignmentEditor({
   const [revision] = useState(data.config.revision);
   const choices =
     kind === "user"
-      ? data.users.map((u) => ({ value: u.id, label: u.username }))
+      ? data.users.map((u) => ({
+          value: u.id,
+          label: `${u.name} (${u.email})`,
+        }))
       : data.groups.map((g) => ({ value: g.id, label: g.name }));
   async function submit() {
     const target: GrantTarget =

@@ -83,8 +83,9 @@ impl Fixture {
         let store = StateStore::new(root.clone(), memory.clone()).expect("private fixture store");
         let now = epoch().expect("epoch");
         let user = UserInfo {
+            name: "Fixture User".into(),
             id: Uuid::new_v4().to_string(),
-            username: "owned-fixture".into(),
+            email: "owned-fixture@example.test".into(),
             role: Role::User,
             active: true,
         };

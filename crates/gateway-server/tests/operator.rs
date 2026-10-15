@@ -62,8 +62,10 @@ async fn operator_commands_and_live_http_keep_credentials_private() {
             .args([
                 "--allow-loopback-http",
                 "bootstrap-admin",
-                "--username",
-                "operator",
+                "--email",
+                "operator@example.test",
+                "--name",
+                "Operator",
                 "--password-stdin",
             ])
             .stdin(Stdio::piped())
@@ -118,7 +120,7 @@ async fn operator_commands_and_live_http_keep_credentials_private() {
     assert!(ready, "Service health did not become ready");
     let response = http
         .post(format!("{origin}/api/endpoint/login"))
-        .json(&serde_json::json!({"username":"operator","password":PASSWORD}))
+        .json(&serde_json::json!({"email":"operator@example.test","password":PASSWORD}))
         .send()
         .await
         .expect("live login");

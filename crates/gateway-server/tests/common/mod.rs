@@ -118,6 +118,22 @@ impl Harness {
                 object.entry("expectedRevision").or_insert(json!(revision));
             }
         }
+        if method == "PUT"
+            && path.starts_with("/api/admin/users/")
+            && !path.ends_with("/password")
+            && let Some(Value::Object(ref mut object)) = value
+        {
+            let id =
+                Uuid::parse_str(path.rsplit('/').next().expect("fixture user ID")).expect("UUID");
+            let (email, name): (String, String) =
+                sqlx::query_as("SELECT email,name FROM users WHERE id=$1")
+                    .bind(id)
+                    .fetch_one(&self.state.pool)
+                    .await
+                    .expect("fixture profile");
+            object.entry("email").or_insert(json!(email));
+            object.entry("name").or_insert(json!(name));
+        }
         self.custom(method, path, token, value, &[]).await
     }
     pub async fn custom(
@@ -165,9 +181,14 @@ impl Harness {
         (status, headers, value)
     }
     pub async fn bootstrap(&self) -> EndpointSession {
-        gateway_server::identity::bootstrap(&self.state, "admin", PASSWORD.into())
-            .await
-            .expect("bootstrap");
+        gateway_server::identity::bootstrap(
+            &self.state,
+            "admin@example.test",
+            "admin",
+            PASSWORD.into(),
+        )
+        .await
+        .expect("bootstrap");
         self.login("admin", PASSWORD).await
     }
     pub async fn login(&self, name: &str, password: &str) -> EndpointSession {
@@ -176,7 +197,7 @@ impl Harness {
                 "POST",
                 "/api/endpoint/login",
                 None,
-                Some(json!({"username":name,"password":password})),
+                Some(json!({"email":format!("{name}@example.test"),"password":password})),
             )
             .await;
         assert_eq!(status, 200, "login response status");
@@ -188,7 +209,7 @@ impl Harness {
                 "POST",
                 "/api/admin/users",
                 Some(admin),
-                Some(json!({"username":name,"password":PASSWORD,"role":"user"})),
+                Some(json!({"name":name,"email":format!("{name}@example.test"),"password":PASSWORD,"role":"user"})),
             )
             .await;
         assert_eq!(status, 200);

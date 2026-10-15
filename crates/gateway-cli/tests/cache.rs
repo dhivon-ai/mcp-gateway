@@ -134,8 +134,9 @@ impl Fixture {
                 let session = EndpointSession {
                     token: "private-central-cache-fixture-token".into(),
                     user: UserInfo {
+                        name: "Fixture User".into(),
                         id: id.user_id.clone(),
-                        username: "cache-fixture-user".into(),
+                        email: "cache-fixture-user@example.test".into(),
                         role: Role::User,
                         active: true,
                     },
@@ -479,7 +480,7 @@ fn stale_revision_equal_revision_policy_changes_and_login_generation_are_rejecte
         Err(EndpointError::RevisionRegression)
     ));
     let mut conflicting = f.snapshot(4);
-    conflicting.user.username = "different-policy-same-revision".into();
+    conflicting.user.email = "different-policy-same-revision".into();
     assert!(matches!(
         f.cache
             .install(&f.native(), conflicting, f.clock.sample().expect("clock")),

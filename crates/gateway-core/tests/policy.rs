@@ -6,8 +6,9 @@ fn snapshot() -> ConfigSnapshot {
         schema_version: CONFIG_SCHEMA_VERSION,
         deployment_id: "org".into(),
         user: UserInfo {
+            name: "Fixture User".into(),
             id: "u1".into(),
-            username: "alice".into(),
+            email: "alice@example.test".into(),
             role: Role::User,
             active: true,
         },

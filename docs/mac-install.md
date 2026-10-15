@@ -18,8 +18,8 @@ cp mcp-gateway-0.1.0-macos-arm64/mcp-gateway "$HOME/.local/bin/mcp-gateway"
 ```
 
 Use the actual enterprise HTTPS origin. The CLI opens a loopback page in your
-browser; keep the command running while using management. Log in with the account
-created by an administrator. The operating system may ask for Keychain access.
+browser; keep the command running while using management. Log in with the email and password
+created by an administrator. Name is display-only. The operating system may ask for Keychain access.
 Passwords are not saved locally. For a provider requiring a registered callback,
 use `ui --server <origin> --port <registered-port>`; register
 `http://127.0.0.1:<registered-port>/oauth/callback` with the OAuth public client.

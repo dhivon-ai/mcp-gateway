@@ -36,7 +36,9 @@ enum Command {
     /// Bootstrap the first administrator in an empty deployment.
     BootstrapAdmin {
         #[arg(long)]
-        username: String,
+        email: String,
+        #[arg(long)]
+        name: String,
         /// Read password from standard input. Never pass it as a CLI argument.
         #[arg(long, required = true)]
         password_stdin: bool,
@@ -94,7 +96,8 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
     if let Some(Command::BootstrapAdmin {
-        username,
+        email,
+        name,
         password_stdin: _,
     }) = args.command
     {
@@ -103,11 +106,12 @@ async fn main() -> anyhow::Result<()> {
         std::io::stdin().take(1024).read_to_string(&mut password)?;
         let user = gateway_server::identity::bootstrap(
             &state,
-            &username,
+            &email,
+            &name,
             password.trim_end_matches(['\n', '\r']).into(),
         )
         .await?;
-        println!("Administrator created: {} ({})", user.username, user.id);
+        println!("Administrator created: {} ({})", user.email, user.id);
         state.pool.close().await;
         return Ok(());
     }

@@ -336,7 +336,7 @@ async fn local_login(base: &str, client: &reqwest::Client) -> (String, String, S
         .header("origin", base)
         .header("x-csrf-token", &csrf)
         .json(&LoginRequest {
-            username: "owned-fixture".into(),
+            email: "owned-fixture@example.test".into(),
             password: "private-fixture-password".into(),
         })
         .send()
@@ -452,8 +452,9 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             schema_version: 1,
             deployment_id: Uuid::new_v4().to_string(),
             user: UserInfo {
+                name: "Fixture User".into(),
                 id: Uuid::new_v4().to_string(),
-                username: "owned-fixture".into(),
+                email: "owned-fixture@example.test".into(),
                 role: gateway_core::Role::User,
                 active: true,
             },

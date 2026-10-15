@@ -853,8 +853,9 @@ mod tests {
                 StateStore::new(root.clone(), Arc::new(Memory::default())).expect("fixture store");
             let now = epoch().expect("fixture time");
             let user = UserInfo {
+                name: "Fixture User".into(),
                 id: Uuid::new_v4().to_string(),
-                username: "fixture".into(),
+                email: "fixture@example.test".into(),
                 role: Role::User,
                 active: true,
             };

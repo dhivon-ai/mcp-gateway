@@ -136,7 +136,8 @@ impl SyncEngine {
             identity.identity = None;
             identity.generation = None;
             identity.session_expires_at = None;
-            identity.username = None;
+            identity.email = None;
+            identity.name = None;
         }
         let state = self.state.lock().map_err(|_| EndpointError::Invalid)?;
         Ok(EndpointStatus {

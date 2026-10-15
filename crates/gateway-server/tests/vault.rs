@@ -139,7 +139,7 @@ async fn owned_write_only_secrets_and_encrypted_credential_versions() {
             "POST",
             "/api/auth/login",
             None,
-            Some(json!({"username":"alice","password":PASSWORD})),
+            Some(json!({"email":"alice@example.test","password":PASSWORD})),
             &[("cookie", preauth), ("x-csrf-token", csrf)],
         )
         .await;

@@ -72,7 +72,7 @@ accepts no production DSN. Run with the owned build-cache environment above:
 GATEWAY_BUILD_CACHE="$BUILD_CACHE" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" node scripts/admin-browser-fixture.ts
 ```
 
-The synthetic username is `admin`; the fixture-only password is
+The synthetic admin email is `admin@example.test`; the fixture-only password is
 `owned-browser-fixture-password`. This is not a deployment default. SIGINT cleans
 up its own child process, unique database and private files. Owner metadata permits
 exact recovery after interruption and contains no credentials.
@@ -152,3 +152,25 @@ malformed late rows and real PostgreSQL/API responses above the former limit.
 The final collection correction passes all 41 frontend tests and the added real
 PostgreSQL/API regression. Strict TypeScript, lint, formatting and embedded builds
 pass; previously verified layout/keyboard interactions are unchanged.
+
+
+## Email identity and display names (BUG-005)
+
+User creation requires Name, Email and Password. Name is display-only; Email is
+the unique sign-in identifier. Name/email can be edited independently, with the
+existing frozen revision and target-session revocation. Existing passwords are
+never shown or prefilled; Reset password remains a separate write-only action.
+Both central and Mac login forms use an email input and email/password request.
+The Users table shows separate Name and Email columns; membership selections and
+assignment options retain stable IDs and expose email to distinguish names.
+
+Actual compiled Rust websites on macOS27.0.1/in-appChromium: uppercase admin login,
+create Morgan Developer/morgan@example.test, edit to Morgan Display and a new
+email, duplicate-address rejection and explicit reload, then native Mac sign-in
+with the updated uppercase email showing Morgan Display. Desktop1280×720 and
+390×844 creation/Mac layouts have no page overflow; Escape returns focus. Required
+name/email/password controls and retained footer actions were observed. No relevant
+console errors or framework overlay. Browser plugin unavailable; the existing
+CUA in-app browser was used because the installed Playwright package has no browser
+binary. Screenshots are retained outside the repository. Fixture credentials are
+synthetic and creating-binary logout cleans owned Keychain state.

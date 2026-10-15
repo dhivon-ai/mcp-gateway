@@ -20,7 +20,8 @@ export type EndpointStatus = {
   identity: {
     state: string;
     generation: string | null;
-    username: string | null;
+    email: string | null;
+    name: string | null;
     sessionExpiresAt: number | null;
   };
   configuration: {
@@ -47,7 +48,8 @@ export function status(value: unknown): EndpointStatus {
     identity: {
       state: string(i.state, 64),
       generation: nullable(i.generation, (v) => string(v, 64)),
-      username: nullable(i.username, (v) => string(v, 64)),
+      email: nullable(i.email, (v) => string(v, 254)),
+      name: nullable(i.name, (v) => string(v, 200)),
       sessionExpiresAt: nullable(i.sessionExpiresAt, integer),
     },
     configuration: {

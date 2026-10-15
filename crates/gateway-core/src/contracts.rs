@@ -13,8 +13,9 @@ pub enum Role {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UserInfo {
+    pub name: String,
     pub id: String,
-    pub username: String,
+    pub email: String,
     pub role: Role,
     pub active: bool,
 }
@@ -30,8 +31,9 @@ pub struct GroupInfo {
 #[derive(Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UserCreate {
+    pub name: String,
     pub expected_revision: u32,
-    pub username: String,
+    pub email: String,
     pub password: String,
     pub role: Role,
 }
@@ -39,6 +41,8 @@ pub struct UserCreate {
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UserEdit {
+    pub name: String,
+    pub email: String,
     pub expected_revision: u32,
     pub role: Role,
     pub active: bool,
@@ -210,7 +214,7 @@ pub struct ConfigSnapshot {
 #[derive(Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct LoginRequest {
-    pub username: String,
+    pub email: String,
     pub password: String,
 }
 

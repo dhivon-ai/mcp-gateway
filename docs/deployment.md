@@ -50,7 +50,7 @@ gateway_compose up -d --wait postgres
 read -r -s -p 'New administrator password: ' gateway_admin_password
 printf '\n'
 printf '%s' "$gateway_admin_password" | gateway_compose run --rm --no-deps -T \
-  gateway bootstrap-admin --username admin --password-stdin
+  gateway bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
 unset gateway_admin_password
 gateway_compose up -d --wait gateway
 ```
@@ -85,7 +85,7 @@ Compose waits for a healthy database before starting the service. Health alone
 does not prove vault decryption; the recovery rehearsal below checks credential
 resolution too. Docker sends SIGINT for graceful Rust shutdown. No MCP command
 runs inside this central container. Its logs contain redacted events, never tool
-payloads/password/token values. Login throttling uses actual peer IP and username;
+payloads/password/token values. Login throttling uses actual peer IP and canonical email;
 clients behind a single reverse proxy share that peer's throttle bucket. Trusted
 forwarded-IP interpretation and audit export/retention are later work.
 

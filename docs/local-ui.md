@@ -3,7 +3,7 @@
 Run `mcp-gateway ui --server https://gateway.example.com`. The Rust CLI opens a
 loopback page and serves its embedded React/TypeScript/shadcn assets. No Node
 process is required by the installed application. Sign in with your enterprise
-username/password. The administrator website remains at the central origin.
+email/password. The administrator website remains at the central origin.
 
 ## User journey
 

@@ -478,7 +478,7 @@ async fn administrator_collections_exceed_ten_thousand_rows() {
         200
     );
     // Bulk fixture rows obey normal schema constraints; avoid hashing10,001 passwords.
-    sqlx::query("INSERT INTO users(id,username,password_hash,role) SELECT gen_random_uuid(),'fixture-user-'||n, password_hash,'user' FROM users CROSS JOIN generate_series(1,10001) n WHERE username='admin'")
+    sqlx::query("INSERT INTO users(id,email,name,password_hash,role) SELECT gen_random_uuid(),'fixture-user-'||n||'@example.test','Fixture user '||n,password_hash,'user' FROM users CROSS JOIN generate_series(1,10001) n WHERE email='admin@example.test'")
         .execute(&h.state.pool).await.expect("fixture users");
     sqlx::query("INSERT INTO groups(id,name) SELECT gen_random_uuid(),'Fixture group '||n FROM generate_series(1,10001) n")
         .execute(&h.state.pool).await.expect("fixture groups");
