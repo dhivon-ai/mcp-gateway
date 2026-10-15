@@ -101,3 +101,22 @@ drafting-spec -> drafting-plan -> planned -> in_progress -> ready_for_review
 - Use 48 KiB context pages and retainedContextToken after complete retrieval; clear it after context loss. Source-section hashes permit reuse while source freshness remains independently checked. Mutations return scheduler/validation for reuse.
 - Use composite record_verification without a separate start. Complete a direct-main phase against verified HEAD in one checkpoint. Integration may fast-forward and may retain only validated owned execution state. Build outputs use the owned ignored `.cadre/.build-cache/cadre/` subtree. Other untracked files remain errors.
 - Ordinary errors are limited to 8 KiB; request full diagnostic pages explicitly when needed.
+
+
+## Delivered repository baseline
+
+- mac-mvp is archived at .cadre/archive/mac-mvp with completed spec/plan, execution,
+  learning, revision, finding and approved-review provenance preserved. New work
+  uses new tracks; project context describes the delivered baseline and does not
+  reopen completed tasks or grant authority for deferred features.
+- Consult patterns/index.md and read full semantically applicable bodies before
+  seeding future tracks; retain source fingerprints and documented tradeoffs.
+- Use docs/testing.md for real isolated database/native/browser/release commands,
+  docs/release.md for actual acceptance evidence and docs/compatibility.md for
+  validated limits. A context refresh alone is not another application test run.
+- During execution, use runtime-returned owned build outputs. Preserve protected
+  fixture ownership and creating-binary Keychain cleanup; no broad deletion of
+  production or unrelated state. Read-only retained worker paths in archived
+  journals are provenance, not evidence of active workers.
+- This baseline update changes no approval mode, completion rule, receipt contract,
+  Autonomous finding/retry history or archived artifact. Existing rules above apply.

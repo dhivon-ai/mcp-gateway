@@ -23,7 +23,10 @@
     ],
     "operation": null
   },
-  "lastRefresh": null,
+  "lastRefresh": {
+    "refreshPath": "refreshes/refresh-20261015-mvp-baseline.md",
+    "commit": "op:refresh-3db8cc346c0bc402e13d729a68f15a66"
+  },
   "history": [
     {
       "action": "create",
@@ -35,6 +38,11 @@
         "mac-mvp"
       ],
       "commit": "op:archive-9d990b2c4b15cca47714c36635b73535"
+    },
+    {
+      "action": "refresh",
+      "commit": "op:refresh-3db8cc346c0bc402e13d729a68f15a66",
+      "refreshPath": "refreshes/refresh-20261015-mvp-baseline.md"
     }
   ]
 }

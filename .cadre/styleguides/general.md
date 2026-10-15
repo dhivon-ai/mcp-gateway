@@ -11,4 +11,14 @@
 
 ## Project-specific additions
 
-- None.
+- Preserve Rust safe-code linting and strict TypeScript; shared public contracts
+  use generated TS plus runtime decoding, never unvalidated network assertions.
+- Count wire limits as the backend does (including UTF-8 bytes); preserve literal
+  structured arrays/maps rather than lossy display conversions.
+- Use stable IDs for ownership; keep display names, canonical login identifiers,
+  central enablement and native availability as distinct concepts and types.
+- Model deadlines, generation/revision/receipt checks and publication/cleanup
+  ownership explicitly. Errors never claim a server write or credential publication
+  succeeded before confirmation; retries must not replay side effects.
+- Match persistence reader/writer invariants and capacity checks. Keep credentials
+  write-only in public flows, with fixed safe errors and redacted diagnostics.

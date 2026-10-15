@@ -1,44 +1,67 @@
 # Technology Stack
 
-## Runtime and languages
+## Delivered workspace
 
-- User-selected: Rust for the central backend, CLI, and local MCP gateway; TypeScript for frontend/application configuration; React for both browser interfaces.
-- Proposed: stable Rust with a pinned rust-toolchain.toml and declared minimum supported Rust version; Tokio for asynchronous runtime and process/network I/O.
-- Proposed: a supported Node.js LTS release and pnpm for frontend build tooling only. The packaged local application serves built assets from Rust and does not require a frontend dev server.
-- Platform priority: macOS endpoints first. Minimum OS version, Apple Silicon/Intel coverage, and distribution details remain feature-track decisions; Windows and Linux ports are later scope.
+Version 0.1.0 uses Rust 1.95.0 (edition 2024, declared rust-version 1.95), pinned in
+`rust-toolchain.toml`, with Cargo.lock and workspace `unsafe_code = forbid`.
 
-## Frameworks and libraries
+| Package | Responsibility |
+| --- | --- |
+| `crates/gateway-core` | Public Serde/ts-rs contracts, pure policy/lease validation, shared authenticated encryption. |
+| `crates/gateway-server` | `mcp-gateway-server`: central Axum APIs/admin assets, SQLx migrations, PostgreSQL identity/settings/vault. |
+| `crates/gateway-cli` | `mcp-gateway`: protected loopback UI, Mac Keychain/cache/sync, installation, OAuth and STDIO aggregation. |
+| `crates/gateway-fixtures` | Controlled SDK STDIO/HTTP/OAuth services and interoperability tests. |
+| `apps/web` | Separate central/local React applications sharing strict TypeScript/shadcn primitives and generated wire types. |
 
-- User-selected UI: React + strict TypeScript + shadcn/ui.
-- Proposed frontend build/style: Vite and Tailwind CSS, with shared shadcn components where useful. The official [shadcn Vite guide](https://ui.shadcn.com/docs/installation/vite) provides React/TypeScript integration.
-- Proposed Rust web services: Axum with Tokio/Tower for central APIs and the endpoint's loopback management server. [Axum documentation](https://docs.rs/axum/latest/axum/).
-- Proposed MCP implementation: the official rmcp SDK, using server-side STDIO and client-side child-process STDIO / Streamable HTTP transport features. [Official Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk). Verify the chosen release and supported protocol versions at implementation; do not track an unpinned main branch.
-- Proposed CLI/configuration/diagnostics: clap, serde, tracing, and an HTTP client compatible with the SDK's selected TLS backend; select and pin exact compatible releases in the foundation track.
-- Proposed persistence: SQLx with PostgreSQL for central durable state. [SQLx documentation](https://docs.rs/sqlx/latest/sqlx/).
-- Proposed password hashing: RustCrypto argon2 using Argon2id. [Crate documentation](https://docs.rs/argon2/latest/argon2/). Endpoint session/upstream secrets use macOS Keychain through a maintained Rust integration selected during the authentication track.
-- No SAML integration library is selected for the initial scope.
+## Pinned libraries and build tools
 
-## Data and infrastructure
+Cargo manifests/lockfile govern exact versions and features. Current dependencies
+include Tokio 1.53.3, Axum 0.8.9, SQLx 0.9.0 (PostgreSQL/rustls/migrate), official
+rmcp=3.5.1 (client/server/STDIO/child/StreamableHTTP/auth), reqwest 0.13.5 with rustls,
+clap 4.6.7, Serde/tracing, ts-rs 12.0.1, Argon2 0.6.0 and AES-GCM 0.11.1.
+OAuth uses oauth2=5.0.0. Mac adapters use security-framework=3.7.0, nix=0.31.3,
+rustix=1.1.5, sysctl=0.7.1 and libproc=0.14.11. Preserve explicit bounds, exact
+destinations, no-replay SDK settings and safe nonblocking descriptor adapters.
 
-- Proposed central database: PostgreSQL for users, groups, memberships, MCP definitions, assignments, and tool policy; migrations are versioned in the repository.
-- Proposed endpoint storage: versioned per-user non-secret configuration and enablement files plus macOS Keychain for secrets. A separate local database is not needed unless a later specification demonstrates a requirement.
-- Proposed initial deployment: self-hosted containerized central service with its built admin assets and PostgreSQL; document TLS termination, configuration, migration, and backup/restore.
-- Local execution: macOS Rust CLI, loopback UI server, isolated upstream child processes, and remote MCP client connections. MCP tool execution occurs through the local gateway.
-- Future hosted SaaS requires an explicit tenant/security/operations design; this setup does not claim production multi-tenancy.
+Node 24.19.0 LTS (`.node-version`) and pnpm 11.4.0 (`package.json`) build the website;
+end users need neither. React 19.3.0, TypeScript 6.0.3, Vite 8.3.4 and Tailwind 4.3.3
+are pinned. shadcn/Radix uses the radix-nova style, semantic CSS variables, Lucide
+icons and Geist font; `components.json` and pnpm-lock.yaml define the component
+setup. Vitest/Testing Library/jsdom, ESLint/TypeScript-aware rules and Prettier
+provide checks. Application/configuration source is TypeScript, not JavaScript.
 
-## Tooling
+## Data, security and protocol
 
-- Rust Cargo workspace, Cargo.lock, rustfmt, Clippy, and Rust unit/integration tests.
-- Proposed frontend pnpm workspace and pnpm-lock.yaml; Vite, TypeScript type checking, ESLint with React Hooks rules, and Prettier.
-- Proposed UI tests: Vitest + React Testing Library; browser integration tests with Playwright where relevant.
-- SDK-backed fixture MCP servers and contract/integration tests for transport aggregation and policy enforcement.
-- CI checks scoped to changed components, plus macOS runner verification for endpoint process, Keychain, packaging, and agent integration behavior.
-- No application scaffolding, dependency installation, or CI pipeline is generated by the Cadre create operation.
+PostgreSQL 18.6 stores ordinary config, stable IDs, global revisions, per-user
+settings and write-only encrypted credentials. Immutable forward SQLx migrations
+include explicit safe refusal of populated pre-email identity schemas. Argon2id,
+opaque 12h sessions, roles, CSRF/Host/Origin checks and canonical email implement auth.
+Server vault keys are external private files, separately backed up from PostgreSQL.
 
-## Version constraints
+Native sessions/upstream tokens/cache keys use Mac Keychain. Private user-scoped
+files hold authenticated encrypted snapshots and ordinary bounded metadata,
+atomic publication/cleanup journals and installation receipts. Darwin continuous
+clock/boot identity and protected watermarks bound the one-hour lease across
+same-boot restart and conservatively reject uncertainty. No offline mutation queue.
 
-- Pin Rust and frontend toolchains; commit application dependency lockfiles after scaffolding.
-- Choose compatible stable crate/package releases and explicit feature flags during implementation, checking official documentation and security advisories.
-- Enable strict TypeScript; JavaScript styleguide defaults remain supporting ECMAScript guidance inherited by TypeScript, not authorization to write application JavaScript.
-- Specify and test the MCP compatibility matrix, initially targeting standard STDIO and Streamable HTTP. [MCP transport specification](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports).
-- Exact Rust MSRV, Node/pnpm versions, PostgreSQL major, macOS minimum, CPU release targets, browser matrix, and MCP SDK/protocol versions are not pinned by documentation-only setup.
+Agent transport is STDIO over checked nonblocking FIFO or connected Unix stream
+pairs. Upstreams use local child STDIO or Streamable HTTP with none/bearer/public
+OAuth. Supported MCP profile is tools-only 2025-11-25; typed/raw SDK seams enforce
+capability and frame/pagination/resource limits. No legacy SSE/non-tool proxy.
+
+## Delivery and evidence
+
+`deploy/Dockerfile` embeds web assets into a Linux arm64 Rust service on a nonroot
+Debian bookworm runtime. Compose supplies private PostgreSQL, external keys,
+health and loopback/private HTTP behind HTTPS termination guidance. The PG image
+is version/digest pinned; build base tags may change, so record actual image IDs.
+`scripts/package-macos.sh` produces an unsigned arm64 embedded archive/checksum
+on the validated Mac with deployment target 27.0.1. Release `strip=false` preserves
+loadable proc-macro dylibs with the pinned toolchain on that Mac.
+
+Local evidence: 83 workspace Rust tests, 11 explicit real-PG cases, 44 frontend tests,
+quality/contracts/build checks, compiled browser flows and extracted all-auth MCP
+client suite pass. Actual container→Mac→Node STDIO, Keychain cleanup, restart,
+dump/fresh restore and wrong/matching-key recovery pass. CI configuration exists
+for Linux/Mac/web/database/deployment; no hosted run is claimed. See `docs/testing.md`,
+`docs/release.md` and `docs/compatibility.md` for commands and validated limits.

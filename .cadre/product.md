@@ -2,66 +2,85 @@
 
 ## Project context
 
-- Classification: `greenfield`
-- Evidence: On 2026-10-14, /Users/vishal/Projects/cadre-mcp-gateway was empty: no manifests, source, tests, repository guidance, Cadre state, or Git history. git rev-parse found no enclosing repository. Setup requires Git initialization at this exact root.
+MCP Gateway began as a greenfield repository on 2026-10-14. The self-hosted MVP
+`mac-mvp` is now implemented, cleanly reviewed, approved and archived under
+`.cadre/archive/mac-mvp/`. This context describes the delivered baseline, not a
+new feature commitment. Version 0.1.0 is locally built and unpublished.
 
-## Name and summary
+## Users and purpose
 
-MCP Gateway (repository: cadre-mcp-gateway) is an enterprise-managed gateway for coding agents. Administrators publish an MCP catalog and control who can access each server and which tools it exposes. Users authenticate and opt in through a React + TypeScript + shadcn/ui interface served locally by a Rust CLI. Coding agents connect to one local STDIO MCP server, which aggregates the user's permitted, enabled local and remote MCP servers. Deliver self-hosting and macOS first; support a hosted SaaS offering and SAML in later work.
+Enterprise administrators manage which MCP servers and tools coding agents can
+use. Developers sign in through a React/TypeScript/shadcn website served locally
+by a Rust CLI and explicitly opt in to assigned MCPs. Coding agents use one local
+STDIO gateway, aggregating permitted local STDIO and remote Streamable HTTP tools.
+One enterprise runs each self-hosted control-plane deployment.
 
-## Users and problems
+## Delivered behavior
 
-- Enterprise administrators need a central admin website to manage users, user groups, MCP definitions, assignments, and tool policies.
-- Developers need a simple way to log in, view their assigned MCP catalog, run a defined installation command, and enable or disable an MCP on their Mac.
-- Coding agents need a single STDIO entry point that exposes the developer's effective tools without individual upstream MCP configuration.
+- Administrators bootstrap explicitly, then manage users, groups/membership, MCP
+  definitions, additive user/group/all-user assignments and original-name tool
+  allowlists/denylists. New catalog definitions grant and enable nothing. Removing
+  the last grant clears enablement; reassignment requires another explicit opt-in.
+- Name is display-only. Unique canonical email/password is the sole login method
+  in both websites and APIs. User creation requires name/email/password; profile
+  edits preserve stable user IDs/ownership and revoke affected sessions. Passwords
+  remain write-only and Argon2id-hashed; sessions are revocable and expire by 12h.
+- Enablement and bearer-secret bindings are authoritative per user on the server.
+  The endpoint owns local installation and process/auth availability. Changes are
+  online, authenticated and revision-checked; conflicts require explicit reload.
+- The Mac serves protected loopback management via `mcp-gateway ui --server <url>`.
+  `mcp-gateway mcp` is the agent's sole STDIO entry; `status` is redacted and
+  `logout` clears scoped local state, with online revocation when reachable.
+- Each running process refreshes at startup/every 60s, with a 10s request bound.
+  Only a complete validated, durably installed snapshot renews the lease. The
+  authenticated encrypted local file is usable for at most 3,600s after validation,
+  further bounded by session/token lifetime. Exact expiry fails closed. Failure,
+  token refresh, restart or file copying cannot renew it; uncertainty requires sync.
+- Offline configuration, secret, installation and new OAuth changes are rejected,
+  without a queue. Logout remains available. Learned session rejection invalidates
+  immediately; unavailable connectivity can use only the unexpired existing lease.
+- Remote auth supports none, an owned per-user bearer secret, or the supported
+  preregistered public-client OAuth profile. The central per-user key/value store
+  encrypts secret values; users select their own stable secret IDs for bearer MCPs.
+  OAuth credentials are separately managed/encrypted per user/MCP/installation.
+  Native keys/tokens live in Keychain; ordinary central configuration is plaintext.
+- Optional structured installation commands execute as the Mac user only after an
+  explicit action. Failure never enables. A successful install with failed server
+  confirmation can retry enable separately; a receipt is not current enablement.
+- Discovery and dispatch enforce current assignment, opt-in, policy, identity,
+  lease and auth. Stable aliases route original tools; only supported tool MCP
+  capabilities are exposed. Calls are bounded and never automatically replayed.
 
-## Outcomes and success measures
+## Compatibility and delivery boundaries
 
-- A new deployment grants no MCP access by default. Adding an MCP to the catalog alone does not expose it to users or agents.
-- An administrator can assign an MCP to an individual user, a group, or all users within the enterprise.
-- An authenticated user sees the assigned catalog, explicitly installs when an installation command exists, and enables an MCP. A failed installation is reported and does not enable it.
-- A coding agent configured with only the gateway can discover and invoke permitted tools from both a local STDIO server and a remote server.
-- Both tool discovery and invocation enforce the MCP assignment, the user's enablement, and the administrator's tool policy. A direct invocation of a hidden or disallowed tool is rejected.
-- macOS CLI login, local browser UI, installation, upstream process lifecycle, and STDIO integration are verified through an end-to-end journey against a self-hosted deployment.
+Apple Silicon only; archive target/minimum validated macOS 27.0.1 (26A434).
+Self-hosted Linux arm64 service/PostgreSQL 18.6, actual Mac Keychain/process behavior,
+in-app Chromium desktop/390px, official rmcp 3.5.1/MCP 2025-11-25 tools and controlled
+OAuth fixtures are verified. Runbooks, Compose/health/TLS guidance, embedded arm64
+archive/checksum, restart, fresh backup/restore and independent-key recovery exist.
 
-## Scope boundaries
+The email identity change explicitly requires fresh prerelease databases; a
+populated older username schema is refused without deleting data. No legacy
+account/API/cache compatibility is promised. Names never authenticate.
 
-Initial delivery:
-- Self-hosted central Rust service and React + TypeScript + shadcn/ui admin website, initially serving one enterprise per deployment.
-- Rust CLI for macOS that starts a loopback web server for login and MCP management; the CLI also offers a separate agent-facing STDIO gateway mode.
-- Username/password authentication and identity-bound configuration loading. Admin and ordinary user permissions are enforced at API boundaries.
-- Administrator-defined local STDIO MCP commands, remote MCP endpoints, and optional installation commands executed on the user's Mac after an explicit action.
-- Assignments to users, groups, or all enterprise users; user enable/disable controls; MCP-level tool allowlist or denylist policies.
-- Proposed policy baseline for this setup: assignments are additive grants across user, group, and all-users targets. Absence of a grant denies access. User enablement cannot widen an admin grant. An allowlist exposes only selected tools, including denying newly discovered tools until selected; a denylist excludes selected tools and permits other discovered tools for an otherwise eligible MCP.
-- Proposed initial remote transport: Streamable HTTP. The gateway's agent-facing transport remains STDIO. Compatibility requirements will be specified before implementation.
-- Keep control-plane configuration separate from endpoint execution and local credentials so later SaaS and SAML work can extend the design.
-
-Later scope:
-- Hosted multi-enterprise SaaS, its tenant isolation, provisioning, billing, and operational design.
-- SAML federation and related enterprise identity-provider configuration.
-- Windows and Linux endpoint support, further authentication methods, and legacy remote MCP transport adapters.
-
-Not committed by setup:
-- A complete proxy for every MCP capability beyond tool discovery and invocation; resources, prompts, subscriptions, and other surfaces need an explicit feature specification.
-- Enterprise-wide performance targets, compliance certifications, high availability, or arbitrary endpoint software sandboxing.
+SAML, SaaS multi-tenancy, Intel/Windows/Linux endpoints, signing/notarization/public
+publication, legacy HTTP+SSE and non-tool MCP features remain later work. Do not
+claim arbitrary provider/commercial-agent/Safari/Firefox/older-Mac compatibility,
+hosted CI execution, actual machine sleep/reboot, HA, compliance certification or
+enterprise-scale performance. Cancellation cannot undo side effects; the OS and
+Keychain are trusted. See `docs/compatibility.md` and `docs/release.md`.
 
 ## Domain language
 
-- Control plane: the central service and admin website that own identity, catalog definitions, and administrator policy.
-- Local gateway: the Rust process used by the coding agent as its one STDIO MCP server and by users for local management.
-- Upstream MCP: a local child process or remote MCP endpoint aggregated by the gateway.
-- Assignment: an administrator's access grant to a user, group, or all enterprise users; it does not automatically install or enable the MCP.
-- Enablement: the user's local opt-in to an assigned MCP.
-- Tool policy: an administrator-selected allowlist or denylist for an upstream MCP's tool identifiers.
-- Effective tools: discovered upstream tools that satisfy assignment, local enablement, and tool policy.
-- Installation command: an optional administrator-defined command that runs on the user's Mac; it is distinct from the upstream's runtime command.
+- Control plane: central identity, policy, settings and encrypted secret owner.
+- Local gateway: endpoint installation/auth/process owner and agent STDIO server.
+- Assignment: additive administrator grant; never installation or enablement.
+- Enablement: centrally confirmed per-user opt-in, distinct from native readiness.
+- Effective tool: original upstream tool passing every current authorization gate.
+- Policy lease: protected bounded snapshot, never a perpetual offline identity.
 
-## Open questions
+## Future decisions
 
-Resolve these in the relevant feature track before implementing dependent behavior:
-- Minimum supported macOS version, Apple Silicon and Intel release coverage, distribution channel, signing, and notarization.
-- Policy refresh/revocation timing, offline behavior, cached configuration validity, and handling of already-running calls when access is revoked.
-- Remote MCP authentication and secret ownership: per-user credentials, administrator-managed credentials, and which auth schemes must ship initially.
-- Exact CLI commands, server discovery/configuration, login session lifetime, logout/re-login behavior, and headless use.
-- Tool-name collision mapping, upstream schema changes, supported MCP versions and coding agents, and treatment of non-tool capabilities.
-- Administrator bootstrap, account recovery, audit retention, and initial expected deployment size.
+New tracks must explicitly scope deployment hardening/scale, real providers/agents,
+extra platforms/browsers, signed distribution, SAML or SaaS. Preserve the delivered
+security and synchronization contracts unless an approved revision changes them.

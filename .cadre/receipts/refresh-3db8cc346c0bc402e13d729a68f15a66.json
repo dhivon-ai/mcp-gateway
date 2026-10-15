@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "operationId": "refresh-3db8cc346c0bc402e13d729a68f15a66",
+  "kind": "refresh",
+  "status": "completed",
+  "approvalDigest": "d0e2934564050c56541f285066850a6e159620d0804ed9391be57807a9682d4a",
+  "baseCommit": "c4875e261f481775cbac4134200b0100939e56b7",
+  "artifacts": [
+    {
+      "path": ".cadre/.gitignore",
+      "sha256": "df85675758b7363ee66be34ecc8c4fa10776c6922982fb70ee6c55422a1119e0"
+    },
+    {
+      "path": ".cadre/guidelines.md",
+      "sha256": "978a631dd04cfdc85c8de6401b808d961ec646becb2f5abf45be2eea55bece84"
+    },
+    {
+      "path": ".cadre/product.md",
+      "sha256": "00ca73efeb4f327a17f919e897ac290b767c2176a223be87a9d84007a87dd8a0"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "d876a95573bae10350949fef3935d104cae87bcab47288010fcbd1fbd7e12f90"
+    },
+    {
+      "path": ".cadre/refreshes/refresh-20261015-mvp-baseline.md",
+      "sha256": "d2103dc074d008b618fa84ef5a61a1f6758e0da65bf6008a843787a42f4a5e46"
+    },
+    {
+      "path": ".cadre/styleguides/general.md",
+      "sha256": "8b81537f4c7c5e2624c148d670b58baa933e49e27263efa4b7ff8611383ea821"
+    },
+    {
+      "path": ".cadre/tech-stack.md",
+      "sha256": "f357aa8cb92560ed0af2660c989d00a12aec53484f0bf52bf4308586bee6458a"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "ed655a86c7a6b8b65fa3f52799bbfc4317ce781363054d5cc59db93b8074d75c"
+    },
+    {
+      "path": ".cadre/workflow.md",
+      "sha256": "1ba1d00392d5ad5ecceb4b4881ccdb7cf49237bfafdd6feb26eb082e0720333e"
+    }
+  ]
+}
