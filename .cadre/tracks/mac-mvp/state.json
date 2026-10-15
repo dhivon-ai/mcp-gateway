@@ -3,8 +3,8 @@
   "trackId": "mac-mvp",
   "title": "macOS enterprise MCP Gateway MVP",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "completed",
+  "checkpoint": "completed",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -66,6 +66,23 @@
         "kind": "persisted-mode",
         "originExecutionId": "2026-10-14T09-21-15-303Z",
         "operation": "op:review-7acbf29e8624bb9c5f8c04f9358e4c80"
+      }
+    },
+    {
+      "cycle": 3,
+      "reviewedAt": "2026-10-15T03:26:09.405Z",
+      "outcome": "clean",
+      "executionId": "2026-10-15T02-56-18-620Z",
+      "planRevision": 4,
+      "graphDigest": "335ed6b478f80b57b1059e72907abf94b50e1faf579093659440f721da13be45",
+      "reviewedHead": "941f7d0c45588a0dbde586941fc6d3d8c9f714b0",
+      "commitRange": "4991f838b32bce062fc9cdae6e1df9dd779831c3..941f7d0c45588a0dbde586941fc6d3d8c9f714b0",
+      "reviewEvidence": "Separate cumulative review of 4991f838b32bce062fc9cdae6e1df9dd779831c3..941f7d0c45588a0dbde586941fc6d3d8c9f714b0, revised spec2/plan4 AC001–013 and NFR001–008, completed execution2026-10-15T02-56-18-620Z. No unresolved findings. Prior four findings remain resolved with stable IDs/attempt history: metadata writer/read parity plus preflight128/129; backend-valid bounded strings and unbounded admin collections; coherent revision-bracketed reads; lossless structured command editing. Verified unchanged reviewed policy/cache/runtime/OAuth/vault/configuration/store/browser-read/command source by exact Git bytes, and inspected changed email/name migration/contracts/auth/bootstrap/UI/native/callers/tests. Email is sole canonical login, Name display-only, passwords write-only; final locked email fence blocks concurrent stale-address login. Safe immutable migration refuses populated legacy identity without deleting data, fresh pre-release schema documented. Current83 Rust workspace/11realPG/44frontend tests, strictTS/lint/format/build/contracts/Clippy pass. Compiled actualMac IAB desktop1280x720/narrow390x844 create/edit/emaillogin/duplicate400/keyboard/focus/console pass. Current arm64 archive SHA2560e4facd8cd28ac5f98a816a1fc38acf01f703ce526036e1c3b28e143f54e8166, imageIDsha256:9e27cdba89cac2e8d1da7eac363febe687b3305a67b5876212d48d6733fa2d7c; finalextracted officialrmcp4auth/sameMac/offline/reconnect/signals/owneddescendants40.47s and currentfreshCompose→MacUI/login/install/enable→NodeoneSTDIOexactcall→disabledenial, actualKeychaincleanup, restart/dump/freshrestore/copiedsession401/wrongkey503/matchingkeyrecover/redactedlogs pass. Exact source/currentpackagebinary/runbook/checkfile identities and ownedfixture/stack/volumeabsence verified; docs/release.md and acceptance.md record evidence. Signing/publication/SAML/SaaS/extraOS/browsers/providers/commercialagents/actualsleep-reboot/hostedCI limits remain explicit; no waived findings or production mutation. This is prepared review evidence only; explicit human final completion approval remains pending.",
+      "approvalConfirmation": {
+        "status": "approved",
+        "proposalDigest": "f672dfb5e96e76c2f19b9d7854bb44549f407fcd115707134ccd0e3295075e31",
+        "confirmedAt": "2026-10-15T03:28:06.102Z",
+        "method": "explicit-apply"
       }
     }
   ],
@@ -146,6 +163,10 @@
     {
       "action": "implement",
       "commit": "op:implement-ac144417533895e4e46f28ec7b16f455"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-c010374d38798a2dc06aebfaf34c82a0"
     }
   ],
   "autonomousReview": {
@@ -154,7 +175,7 @@
     "authorizedAt": "2026-10-14T09:21:15.303Z",
     "initialBaseCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
     "specCommit": "op:revise-2f01f41fd4e5574165e2f0a52b18de07",
-    "checkpoint": "reviewing",
+    "checkpoint": "completed",
     "findings": [
       {
         "id": "endpoint-metadata-capacity-corruption",
@@ -189,6 +210,8 @@
           "2026-10-14T23-00-57-037Z"
         ]
       }
-    ]
+    ],
+    "reviewedExecutionId": "2026-10-15T02-56-18-620Z",
+    "reviewedHead": "941f7d0c45588a0dbde586941fc6d3d8c9f714b0"
   }
 }

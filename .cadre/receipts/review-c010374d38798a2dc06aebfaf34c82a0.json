@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-c010374d38798a2dc06aebfaf34c82a0",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "f672dfb5e96e76c2f19b9d7854bb44549f407fcd115707134ccd0e3295075e31",
+  "baseCommit": "07e9c46724bdb70de19fb27b06f333c1afa4046c",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "557a26ab6ac9b7e46f5086bea57403e1d19eee73d5e1d85ee31c15d1cdaed32f"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/state.json",
+      "sha256": "ad7f89caeef3c5fc40005c6a0e44e3428b58746ad3c9689c0d7d7458c7c92308"
+    }
+  ]
+}
