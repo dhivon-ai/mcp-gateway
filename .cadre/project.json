@@ -28,6 +28,13 @@
     {
       "action": "create",
       "commit": "op:create-377522b6ca706ce062f7d131548ece4e"
+    },
+    {
+      "action": "archive",
+      "selectedTracks": [
+        "mac-mvp"
+      ],
+      "commit": "op:archive-9d990b2c4b15cca47714c36635b73535"
     }
   ]
 }

@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "operationId": "archive-9d990b2c4b15cca47714c36635b73535",
+  "kind": "archive",
+  "status": "completed",
+  "approvalDigest": "a96e6ed48ef3ff59a96cba9a770c0448591fe3f8efa651bbe71165b8d793f522",
+  "baseCommit": "42e27c246d7869a94ed67098eb3da4bc6a395532",
+  "artifacts": [
+    {
+      "path": ".cadre/archive/mac-mvp/bugs/review-1.md",
+      "sha256": "cbc8c808447657fdae246b3718c9e9b80660772761d66d23307a6c7674b89b23"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/bugs/review-2.md",
+      "sha256": "a59c2738223f3d3e94dd66f6f4d684e9e7abbca49f667a484932f77ed876f212"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/dependency-context.json",
+      "sha256": "628613c06bafadf64b099196c105d7164ca421af58947e602ded04211458a1a3"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/executions/execution-2026-10-14T09-21-15-303Z.json",
+      "sha256": "2bff90869d98c43736a19a2e3ffabfd715e3984d7e06f554f389ee47578c2a4b"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/executions/execution-2026-10-14T23-00-57-037Z.json",
+      "sha256": "76d5b3741c0421e90b9479361bd3e07b18b37fbca77fb6764178a41be1c8de7a"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/executions/execution-2026-10-14T23-41-00-967Z.json",
+      "sha256": "8c0fc0460ecba27b033f955df67435bb0251c3e9fe85664c898e4a881396118f"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/executions/execution-2026-10-15T02-56-18-620Z.json",
+      "sha256": "6244c41aa76b04976a0628a61301e7ed4179339a14236a3e3f7c204cdb27bc69"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/learning.md",
+      "sha256": "084e2839384a3dd3a2a4cadd732dadcf874155a93a4662ab28f6c8031f954c08"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/plan.md",
+      "sha256": "8534793c54dabb644061b30d87a6ac1e740c4dc4801a6ca846ae8e2761b36798"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/reviews/loop-1.json",
+      "sha256": "3ebe7524eed61c96b337d168aa1f93ae9c9b2febfb6daa9685abd82e40928b4f"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/reviews/loop-2.json",
+      "sha256": "f12fa99a486a51e2af5429969bd89900fee2d6ba26e8767cae53651bc3528143"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/revisions/revision-2.md",
+      "sha256": "525721f240b8c6cd4d784ff6d477458ef73c8d01083dadfa9ecf9786a5595b86"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/spec.md",
+      "sha256": "3418197b4de7b8c3daf04f39c72635def566f16873fa76b678a0fa2fe5ef20e7"
+    },
+    {
+      "path": ".cadre/archive/mac-mvp/state.json",
+      "sha256": "ef7d552fc5d845f69801e26600ea0b3e1ea25ad14b760ba96c009f6119011889"
+    },
+    {
+      "path": ".cadre/patterns/authorization-leases.md",
+      "sha256": "a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"
+    },
+    {
+      "path": ".cadre/patterns/browser-contract-consistency.md",
+      "sha256": "85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"
+    },
+    {
+      "path": ".cadre/patterns/credential-publication.md",
+      "sha256": "28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"
+    },
+    {
+      "path": ".cadre/patterns/index.md",
+      "sha256": "5591a2904c79eb4489fec54dc3aa0be9f22212fe3117461e39aee8b2f8d2d0da"
+    },
+    {
+      "path": ".cadre/patterns/isolated-release-verification.md",
+      "sha256": "3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"
+    },
+    {
+      "path": ".cadre/patterns/owned-mcp-transports.md",
+      "sha256": "d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "1a9c7dcf7088d668fa1f2d2d6e8c33246dea13295d4dbe573e083504faa04000"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "ed655a86c7a6b8b65fa3f52799bbfc4317ce781363054d5cc59db93b8074d75c"
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/bugs/review-1.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/bugs/review-2.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/dependency-context.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/executions/execution-2026-10-14T09-21-15-303Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/executions/execution-2026-10-14T23-00-57-037Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/executions/execution-2026-10-14T23-41-00-967Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/executions/execution-2026-10-15T02-56-18-620Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/learning.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/plan.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/reviews/loop-1.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/reviews/loop-2.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/revisions/revision-2.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/spec.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/mac-mvp/state.json",
+      "sha256": null
+    }
+  ]
+}

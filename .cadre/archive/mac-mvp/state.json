@@ -3,8 +3,8 @@
   "trackId": "mac-mvp",
   "title": "macOS enterprise MCP Gateway MVP",
   "type": "feature",
-  "status": "completed",
-  "checkpoint": "completed",
+  "status": "archived",
+  "checkpoint": "archived",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -167,6 +167,10 @@
     {
       "action": "review",
       "commit": "op:review-c010374d38798a2dc06aebfaf34c82a0"
+    },
+    {
+      "action": "archive",
+      "commit": "op:archive-9d990b2c4b15cca47714c36635b73535"
     }
   ],
   "autonomousReview": {
