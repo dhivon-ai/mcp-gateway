@@ -430,3 +430,68 @@ Complete current approved scope/plan, P1–P14 learning and current handoffs con
 ### Phase completion
 
 All implementation nodes complete under original persisted policy-v2 Autonomous. No human approval or clean-review result claimed; cumulative review now decides findings against originalbaseline through52c288b. Bookkeeping preserves producthead and all phase history. Final explicit human clean-completion approval remains.
+
+## Phase 16: Email identity and display names
+
+### Inputs and decisions
+
+Full approved spec2/plan4/project guidance and P1–P15 learning/handoffs consumed;
+contextReady with no stale memory. Explicit owner decisions: email-only sign-in,
+Name is display-only, no backward compatibility because the system is not live.
+Direct canonical main; no workers/worktrees. Preserve all original policy, lease,
+credential ownership, role/CSRF/revision and cleanup invariants.
+
+### Task observations
+
+- T16.1/T16.2 `fabb614` implements canonical bounded ASCII email plus separate
+  bounded Unicode display name through immutable migration, Rust/generated TS,
+  bootstrap/create/edit/auth/native status and both compiled websites. Profile
+  edits revoke sessions while stable user IDs retain ownership. Migration refuses
+  populated old accounts without deleting data; fresh pre-release DB required.
+- A final locked login query rechecks the originally requested canonical email
+  after password verification. Deterministic real-PG lock interleaving proves an
+  old email cannot mint a session after a concurrent rename. Canonical duplicates
+  return clear400 validation feedback; username/display-name login is rejected.
+- Current83 workspaceRust/11 explicitly executed realPG/44frontend tests and
+  strictTS/lint/format/build/contracts/alltargetClippy pass. ActualMac27.0.1 arm64
+  Keychain/native/cache/process tests pass. CompiledIAB1280×720/390×844 create/edit,
+  normalized central/native login, duplicate400, requiredfields, Escape/focus/footer,
+  no pageoverflow and relevantconsoleerrors pass. Four screenshots retained in
+  external task visualization directory; exact browserfixtures cleaned normally.
+- T16.3 `941f7d0` records current archiveSHA256
+  `0e4facd8cd28ac5f98a816a1fc38acf01f703ce526036e1c3b28e143f54e8166`
+  and imageID `sha256:9e27cdba89cac2e8d1da7eac363febe687b3305a67b5876212d48d6733fa2d7c`.
+  Finalextracted officialrmcp local+none/bearer/OAuth/sameMac/offline/reconnect/
+  protocol/signals/descendants suite40.47s passes. FreshCompose→packagedMacUI/
+  login/install/enable→NodeoneSTDIOexactcall→disabledenial, actualKeychaincleanup,
+  restart/dump/freshrestore/session401/wrongkey503/matchingkeyrecover/redactedlogs
+  pass. Current executable and packagedREADME/COMPAT exactbytes, MachOarm64/minOS
+  27.0.1/systemlibs/checkfile/doclinks/diff and exactfixture/stack/volumeabsence pass.
+
+### Corrections and limits
+
+Fixture tokens derived directly from email initially contained invalid @; fixed
+only fixture opaque-token generation, preserving production validation. Duplicate
+alert exact-text locator missed combined text nodes; freshAX/regex confirmed actual
+message. No new dependency, provider, production data, signing/publication or
+existing agentconfig mutation. Current execution owns assets/archive/logs; original
+runtime-owned Cargo cache reused. Mac27.0.1/IAB/controlledOAuth/officialrmcp limits
+remain; SAML/SaaS/signing/olderMac/commercialagents/hostedCI remain deferred or
+unvalidated. Human verification/approval is not claimed: T16.4 and phase completion
+use inherited policy-v2 Autonomous; P17/cumulative review/final explicit approval
+remain.
+
+## Phase 17: Track-level User Manual Verification
+
+Full current approved spec2/plan4/project guidance and P1–P16 learning/handoffs
+consumed, contextReady/no stale memory. T17.1 verifies integrated canonical
+941f7d0c45588a0dbde586941fc6d3d8c9f714b0 against AC001–013. Current83Rust/11realPG/
+44frontend/quality/contracts/build, compiled name-email browser and native
+Keychain/lease/security/vault/OAuth evidence pass. Finalextracted archive40.47s
+and currentcontainer→Mac→NodeSTDIO/install/settings/restart/dump/freshrestore/
+sessioninvalidation/wrong-matchingkey/redactedlogs/creatingbinaryKeychaincleanup
+pass. Source/artifact/docs/checkfile identities, solemain/no productdirt/stashes/
+worktrees/generatedfixtures verified. No human verification/approval claimed:
+inherited policy-v2 Autonomous authorizes automated barrier only. Preserve product
+head; implementation bookkeeping then separate cumulative review and one explicit
+human clean-completion approval remain.

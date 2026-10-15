@@ -3,8 +3,8 @@
   "trackId": "mac-mvp",
   "title": "macOS enterprise MCP Gateway MVP",
   "type": "feature",
-  "status": "in_progress",
-  "checkpoint": "ready",
+  "status": "ready_for_review",
+  "checkpoint": "ready_for_review",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -15,14 +15,14 @@
   "artifactProgress": [],
   "operation": null,
   "lastExecution": {
-    "executionId": "2026-10-14T23-41-00-967Z",
-    "journal": "executions/execution-2026-10-14T23-41-00-967Z.json",
+    "executionId": "2026-10-15T02-56-18-620Z",
+    "journal": "executions/execution-2026-10-15T02-56-18-620Z.json",
     "approvalMode": "autonomous",
     "approvalPolicyVersion": 2,
-    "planRevision": 3,
-    "graphDigest": "b892a1c88d4a023c03563182c8499a4b37510c1cc1e5a97dabdda891e1c4c431",
-    "headCommit": "52c288b70ad0d8839aea8b3f12952ecd3e0cb26d",
-    "completedAt": "2026-10-14T23:46:07.297Z"
+    "planRevision": 4,
+    "graphDigest": "335ed6b478f80b57b1059e72907abf94b50e1faf579093659440f721da13be45",
+    "headCommit": "941f7d0c45588a0dbde586941fc6d3d8c9f714b0",
+    "completedAt": "2026-10-15T03:24:17.812Z"
   },
   "reviewCycles": [
     {
@@ -142,6 +142,10 @@
           }
         ]
       }
+    },
+    {
+      "action": "implement",
+      "commit": "op:implement-ac144417533895e4e46f28ec7b16f455"
     }
   ],
   "autonomousReview": {
@@ -150,7 +154,7 @@
     "authorizedAt": "2026-10-14T09:21:15.303Z",
     "initialBaseCommit": "4991f838b32bce062fc9cdae6e1df9dd779831c3",
     "specCommit": "op:revise-2f01f41fd4e5574165e2f0a52b18de07",
-    "checkpoint": "remediating",
+    "checkpoint": "reviewing",
     "findings": [
       {
         "id": "endpoint-metadata-capacity-corruption",

@@ -439,28 +439,28 @@ Verify the complete canonical MVP and all remediation against unchanged scope be
 
 User management requires display name/email/password and email is the sole sign-in identity (BUG-005, FR-025/AC-013).
 
-- [ ] T16.1 Implement email/name persistence, contracts and authentication
+- [x] T16.1 Implement email/name persistence, contracts and authentication <!-- commit: fabb61438e083dc031892291d6ad0ea0931e5661 -->
   - Task dependencies: none
   - Commit group: email-profile-identity
   - Scope: Add immutable forward migration for fresh pre-release identity schema with explicit safe rejection of populated old accounts. Replace username wire/storage/login fields with canonical email and separate display name. Validate/uniquely constrain normalized email and bounded display names; bootstrap/create/edit/login/session/native status all carry consistent fields. Preserve role/revision/CSRF/last-admin checks, password secrecy, session revocation and stable identity ownership. Update fixtures/code generation; no legacy login fallback.
   - Verification: RealPG identity/migration/CRUD/normalized login/duplicate concurrent writes/name edits/stale revision/role/password reset/session revocation and ownership tests; current Rust/workspace/native/security/contracts checks pass.
   - Handoff: Explicit identity/email normalization and deployment compatibility contract, migration and API/native evidence.
-- [ ] T16.2 Implement and verify both email-based websites
+- [x] T16.2 Implement and verify both email-based websites <!-- commit: fabb61438e083dc031892291d6ad0ea0931e5661 -->
   - Task dependencies: T16.1
   - Commit group: email-profile-identity
   - Scope: Admin create/edit name/email/password and name/email listings; both login screens use email/password. Display names in account/group/access surfaces with email for disambiguation. Keep write-only/reset and coherent revision reads/frozen editors, accessible feedback/focus and responsive shadcn composition. Update strict decoders/generated contracts and behavioral tests; close BUG-005 only with actual evidence.
   - Verification: Frontend tests/strictTS/lint/format/build; actual compiled Mac/central browser create/edit/login/duplicate/stale/password flows at desktop/narrow widths, keyboard and no relevant console errors. No display-name/username sign-in.
   - Handoff: Browser screenshots/evidence, field semantics and contract/security regression proof.
-- [ ] T16.3 Rebuild and verify the email-identity MVP artifacts
+- [x] T16.3 Rebuild and verify the email-identity MVP artifacts <!-- commit: 941f7d0c45588a0dbde586941fc6d3d8c9f714b0 -->
   - Task dependencies: T16.2
   - Commit group: email-identity-release
   - Scope: Update bootstrap/operator/Mac/agent/API/compatibility/release runbooks and bug record. Rebuild image/arm64 embedded archive/checksum. Run full relevant Rust/frontend/realPG checks and current package oneSTDIO/nativeKeychain/fourauth/deployment/restart/freshrestore/keyrecovery journey. Clean exact owned fixtures; no production data deletion, publication or signing.
   - Verification: All AC001–013 current evidence, archive/source/hash identity, full relevant checks and disposable actual deployment-to-Mac-to-agent/restore proof. Explicit prerelease freshdatabase/no legacycompatibility documented.
   - Handoff: Final artifacts, exact checksums/platform limits and cumulative acceptance evidence.
-- [ ] T16.4 User Manual Verification
+- [x] T16.4 User Manual Verification <!-- commit: 941f7d0c45588a0dbde586941fc6d3d8c9f714b0 -->
   - Verification: Verify BUG-005/AC013 plus original security/policy/lease/credential/agent journeys under inherited Autonomous authority; record actual evidence without human approval claims.
 
-- Phase completion commit: pending
+- Phase completion commit: `941f7d0c45588a0dbde586941fc6d3d8c9f714b0`
 
 ## Phase 17: Track-level User Manual Verification
 
@@ -468,9 +468,9 @@ User management requires display name/email/password and email is the sole sign-
 
 Verify the full integrated revised MVP before cumulative review and explicit final completion approval.
 
-- [ ] T17.1 User Manual Verification
+- [x] T17.1 User Manual Verification <!-- commit: 941f7d0c45588a0dbde586941fc6d3d8c9f714b0 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `941f7d0c45588a0dbde586941fc6d3d8c9f714b0`
 
 ## Approval
 
