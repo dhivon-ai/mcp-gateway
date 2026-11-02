@@ -31,11 +31,11 @@ distribution remain [roadmap candidates](roadmap.md).
 Review cycle 1, BUG-007, adds the owner-selected Apache-2.0 source license and
 Dhivon AI copyright/ownership, without changing third-party licenses.
 
-| Item | Notice-only intermediate identity |
-| --- | --- |
-| Archive SHA-256 | `95b9aa68baaecbd19ca97c9a3d9b18d56e09d4e6063a29d90771877f5078b2d6` |
-| Extracted executable SHA-256 | `b789e155ce8251e9cfc5b13fe8abeb23010782a3abf64b1b83413b4aba960b22` |
-| Service image ID | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
+| Item                         | Notice-only intermediate identity                                         |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Archive SHA-256              | `95b9aa68baaecbd19ca97c9a3d9b18d56e09d4e6063a29d90771877f5078b2d6`        |
+| Extracted executable SHA-256 | `b789e155ce8251e9cfc5b13fe8abeb23010782a3abf64b1b83413b4aba960b22`        |
+| Service image ID             | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
 
 The archive and runtime image carry project LICENSE/NOTICE and the unchanged
 full Manrope OFL at the [documented locations](licensing.md). The static website
@@ -69,14 +69,14 @@ above terminates TLS through nginx 1.30.6, pinned to
 A second TLS listener exposes the controlled MCP/OAuth fixture. Both publish only
 loopback ports. Certificate and hostname verification remain enabled.
 
-| Item | Current identity |
-| --- | --- |
-| Mac archive SHA-256 | `e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799` |
-| Extracted executable SHA-256 | `f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7` |
-| Service image ID, unchanged | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
-| Simulated control plane | `https://localhost:57518` |
-| Simulated MCP/issuer | `https://localhost:57519` |
-| Actual native callback | `http://127.0.0.1:57521/oauth/callback` |
+| Item                         | Current identity                                                          |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Mac archive SHA-256          | `e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799`        |
+| Extracted executable SHA-256 | `f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7`        |
+| Service image ID, unchanged  | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
+| Simulated control plane      | `https://localhost:57518`                                                 |
+| Simulated MCP/issuer         | `https://localhost:57519`                                                 |
+| Actual native callback       | `http://127.0.0.1:57521/oauth/callback`                                   |
 
 The extracted Mac client signed in and synchronized over HTTPS. The authorization
 request used the actual management port, S256 PKCE, state, configured public client
@@ -117,6 +117,44 @@ evidence only: public DNS/hosting certificates, real-user provider consent and
 named external-provider registration compatibility remain unverified. The
 localhost ports above were temporary and are now closed after fixture cleanup.
 Use the [reproducible HTTPS rehearsal](https-oauth-rehearsal.md) for a new run.
+
+## Rehearsal cleanup remediation — 2026-11-02
+
+Review cycle 2, BUG-008, changes the verification harness and recovery runbook.
+The Mac executable, archive and service image retain the current identities above;
+Rust application, embedded UI and license source bytes are unchanged. Exact archive
+and image notice comparisons pass again. The earlier HTTPS/native OAuth acceptance
+remains evidence for those unchanged artifacts; this cleanup cycle installs no
+new certificate trust and makes no new external-provider compatibility claim.
+
+The pinned Node 24.19.0 process-level suite passes all 11 tests, including its
+parent test, in 149.68 seconds. It uses the actual Docker service/PostgreSQL and
+extracted Mac CLI with real isolated native credential ownership. Its ten scenarios
+cover SIGINT/SIGTERM after resource startup and native login, successful completion,
+ordinary workflow failure, failed diagnostics, incomplete stack cleanup, incomplete
+native logout, and the original HTTPS entry point interrupted during PostgreSQL
+startup. Repeated signals and an interrupt-ignoring child exercise bounded teardown.
+
+The original entry point now exits 143 after SIGTERM and writes truthful cleanup
+evidence. After successful cleanup, independent assertions find no owned child,
+container, network, volume or key-generation container; native identity, credential
+accounts and pending cleanup are empty. An unrelated process survives. Diagnostic
+failure still permits native and Docker cleanup while recording a failed run.
+
+Injected stack and logout failures retain the creating binary and exact ownership
+record. Native failure also retains central resources for recovery. The recovery
+command rejects a still-active supervisor and changed Compose inputs. After input
+reconciliation, actual logout/teardown and a second recovery invocation pass;
+previous failed attempts and the failed verification outcome remain recorded.
+Private per-run records and consolidated `cleanup-test-results.json` are retained
+under execution `2026-11-02T09-16-20-231Z` in the owned build cache.
+
+Strict script TypeScript, formatting, static-site type/build and generated guide
+link checks cover the changed harness/runbook. The focused probes use loopback
+HTTP for native cleanup and stop the HTTPS entry point before TLS/native sign-in.
+The full HTTPS/browser/OAuth journey was not repeated in this cleanup cycle.
+Manual certificate-trust ownership and the earlier public-hosting/provider limits
+remain explicit in the [cleanup and recovery instructions](https-oauth-rehearsal.md#interruption-cleanup-and-recovery).
 
 ## Verified user journey and recovery
 

@@ -1,22 +1,13 @@
 /** Isolated Docker TLS → actual Mac → browser loopback OAuth rehearsal. */
 import assert from "node:assert/strict";
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { type ChildProcess } from "node:child_process";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  openSync,
-  readFileSync,
-  realpathSync,
-  writeFileSync,
-} from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import { request as httpsRequest } from "node:https";
 import { createServer } from "node:net";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
-import { setTimeout as pause } from "node:timers/promises";
+import { Rehearsal } from "./rehearsal-lifecycle.ts";
 
 const cache = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE;
 const archive = process.env.DHIVON_MCP_GATEWAY_TEST_CLI;
@@ -32,53 +23,22 @@ assert.equal(
   "This rehearsal verifies the real Mac client",
 );
 const root = resolve(import.meta.dirname, "..");
-const directory = mkdtempSync(join(realpathSync(cache), "https-oauth-"));
-const project = `gw-https-${randomUUID().replaceAll("-", "")}`;
-const cli = join(directory, "dhivon-mcp-gateway");
-copyFileSync(archive, cli); // retain the creating binary until verified Keychain cleanup
-const native = join(directory, "native");
-mkdirSync(native, { mode: 0o700 });
-const state = realpathSync(native);
+const rehearsal = Rehearsal.create(cache, archive);
+rehearsal.supervise();
+const { directory } = rehearsal;
+console.log(`Ownership record: ${directory}/ownership.json`);
+const { project, cli, state } = rehearsal.journal;
 const common = ["--allow-fixture-http", "--fixture-state-path", state];
+const child = (binary: string, args: string[]) => rehearsal.child(binary, args);
+const stop = (p: ChildProcess) => rehearsal.stop(p);
+const pause = (ms: number) => rehearsal.wait(ms);
 const image = "dhivon-mcp-gateway-server:0.1.0";
 const proxyImage =
   "nginx:1.30.6-alpine@sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949";
-const log = openSync(join(directory, "private.log"), "wx", 0o600);
 const password = randomBytes(32).toString("hex");
 const ca = readFileSync(join(tls, "ca.pem"));
-const children: ChildProcess[] = [];
-function run(args: string[], input?: string) {
-  const r = spawnSync("docker", args, {
-    input,
-    timeout: 180_000,
-    maxBuffer: 8 * 1024 * 1024,
-  });
-  if (r.stderr) writeFileSync(log, r.stderr);
-  assert.equal(
-    r.status,
-    0,
-    "Owned Docker operation failed; inspect private.log",
-  );
-  return r.stdout;
-}
-function child(binary: string, args: string[]) {
-  const p = spawn(binary, args, { stdio: ["pipe", "pipe", log] });
-  children.push(p);
-  p.on("error", () => {}); // readiness/exit checks report fixed errors
-  return p;
-}
-async function stop(p: ChildProcess) {
-  if (p.exitCode !== null || p.signalCode !== null) return;
-  p.kill("SIGINT");
-  await Promise.race([
-    new Promise<void>((done) => p.once("exit", () => done())),
-    pause(5000),
-  ]);
-  assert(
-    p.exitCode !== null || p.signalCode !== null,
-    "Owned child remains; retain recovery directory",
-  );
-}
+const run = (args: string[], input?: string) =>
+  rehearsal.command("docker", args, { input });
 async function port() {
   const s = createServer();
   await new Promise<void>((done, fail) => {
@@ -107,6 +67,7 @@ async function wire(
       url,
       {
         method,
+        signal: rehearsal.signal,
         ca,
         headers: {
           ...(token ? { authorization: `Bearer ${token}` } : {}),
@@ -177,23 +138,21 @@ writeFileSync(
     },
   }),
 ); // JSON is a YAML subset
-function compose(args: string[], input?: string) {
-  return run(
-    [
-      "compose",
-      "--env-file",
-      env,
-      "-p",
-      project,
-      "-f",
-      join(root, "deploy/compose.yaml"),
-      "-f",
-      override,
-      ...args,
-    ],
-    input,
-  );
-}
+copyFileSync(
+  join(root, "deploy/compose.yaml"),
+  join(directory, "compose.yaml"),
+);
+rehearsal.journal.details = {
+  central,
+  upstream,
+  callback,
+  image,
+  proxyImage,
+  provider: "controlled fixture, not an external provider",
+};
+rehearsal.seal(["compose.yaml", "tls.yaml", "deployment.env", "nginx.conf"]);
+const compose = (args: string[], input?: string) =>
+  rehearsal.compose(args, { input });
 let cookie = "",
   csrf = "",
   generation = "",
@@ -202,7 +161,7 @@ let cookie = "",
 async function local(path: string, method = "GET", body?: unknown) {
   const r = await fetch(localOrigin + path, {
     method,
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.any([rehearsal.signal, AbortSignal.timeout(30_000)]),
     headers: {
       cookie,
       origin: localOrigin,
@@ -228,7 +187,9 @@ async function startUi() {
   cookie = "";
   for (let i = 0; i < 100; i++) {
     try {
-      const r = await fetch(localOrigin, { signal: AbortSignal.timeout(1000) });
+      const r = await fetch(localOrigin, {
+        signal: AbortSignal.any([rehearsal.signal, AbortSignal.timeout(1000)]),
+      });
       if (r.ok) {
         cookie = r.headers.get("set-cookie")?.split(";")[0] ?? "";
         break;
@@ -243,8 +204,12 @@ async function startUi() {
 }
 const mcp = randomUUID();
 try {
-  run([
+  await run([
     "run",
+    "--name",
+    `${project}-keygen`,
+    "--label",
+    `dhivon.rehearsal=${project}`,
     "--rm",
     "--user",
     `${process.getuid?.()}:${process.getgid?.()}`,
@@ -255,8 +220,8 @@ try {
     "--output",
     "/keys/vault-keys.json",
   ]);
-  compose(["up", "-d", "--wait", "postgres"]);
-  compose(
+  await compose(["up", "-d", "--wait", "postgres"]);
+  await compose(
     [
       "run",
       "--rm",
@@ -282,7 +247,7 @@ try {
     "--public-url",
     upstream,
   ]);
-  compose(["up", "-d", "--wait", "dhivon", "tls"]);
+  await compose(["up", "-d", "--wait", "dhivon", "tls"]);
   assert.equal((await wire(central + "/healthz")).status, 200);
   assert.equal((await wire(upstream + "/healthz")).status, 200);
   async function api(
@@ -363,7 +328,10 @@ try {
       iss: "https://unrelated.invalid",
     }),
   ]) {
-    const r = await fetch(`${callback}?${query}`, { redirect: "manual" });
+    const r = await fetch(`${callback}?${query}`, {
+      redirect: "manual",
+      signal: AbortSignal.any([rehearsal.signal, AbortSignal.timeout(10_000)]),
+    });
     assert.equal(
       r.status,
       400,
@@ -423,24 +391,48 @@ try {
   const gateway = child(cli, ["mcp", ...common]);
   assert(gateway.stdin && gateway.stdout);
   const lines = createInterface({ input: gateway.stdout });
-  const pending = new Map<number, (reply: Record<string, unknown>) => void>();
+  const pending = new Map<
+    number,
+    {
+      done: (reply: Record<string, unknown>) => void;
+    }
+  >();
   let id = 0;
   lines.on("line", (line) => {
-    const r = object(JSON.parse(line) as unknown);
-    if (typeof r.id === "number") pending.get(r.id)?.(r);
+    try {
+      const r = object(JSON.parse(line) as unknown);
+      if (typeof r.id === "number") pending.get(r.id)?.done(r);
+    } catch {
+      rehearsal.abort.abort(new Error("Malformed agent response"));
+    }
   });
   async function rpc(method: string, params: unknown) {
     const requestId = ++id;
     return new Promise<Record<string, unknown>>((done, fail) => {
       const timer = setTimeout(() => {
-        pending.delete(requestId);
+        settle();
         fail(new Error("Agent deadline"));
       }, 30_000);
-      pending.set(requestId, (reply) => {
+      const settle = () => {
         clearTimeout(timer);
         pending.delete(requestId);
-        done(reply);
+        rehearsal.signal.removeEventListener("abort", cancel);
+      };
+      const cancel = () => {
+        settle();
+        fail(new Error("Agent interrupted"));
+      };
+      rehearsal.signal.addEventListener("abort", cancel, { once: true });
+      pending.set(requestId, {
+        done: (reply) => {
+          settle();
+          done(reply);
+        },
       });
+      if (rehearsal.signal.aborted) {
+        cancel();
+        return;
+      }
       gateway.stdin!.write(
         JSON.stringify({ jsonrpc: "2.0", id: requestId, method, params }) +
           "\n",
@@ -512,53 +504,49 @@ try {
     "PASS: token refresh and disconnect revoke subsequent agent use.",
   );
   succeeded = true;
-} finally {
-  // Capture startup failures before removing this generated stack.
-  const diagnostics = compose(["logs", "--no-color", "tls", "dhivon"]);
-  writeFileSync(log, diagnostics);
-  for (const p of children.reverse()) await stop(p);
-  if (existsSync(join(state, "identity.json"))) {
-    const logout = spawnSync(cli, ["logout", ...common], {
-      timeout: 30_000,
-      stdio: ["ignore", log, log],
-    });
-    assert.equal(
-      logout.status,
-      0,
-      "Creating CLI logout; retain directory on failure",
-    );
-    const metadata = object(
-      JSON.parse(readFileSync(join(state, "identity.json"), "utf8")) as unknown,
-    );
-    assert.equal(metadata.active, null);
-    assert.deepEqual(metadata.credentialAccounts, []);
-    assert.deepEqual(metadata.pendingCleanup, []);
-  }
-  compose(["down", "--volumes", "--remove-orphans"]);
-  const captured = readFileSync(join(directory, "private.log"), "utf8");
-  assert(
-    !captured.includes(password),
-    "Private fixture password appeared in logs",
+} catch {
+  console.error(
+    "Rehearsal failed or interrupted; inspect retained private evidence.",
   );
+  process.exitCode = 1;
+} finally {
+  rehearsal.journal.workflowSucceeded = succeeded;
+  rehearsal.save();
+  const clean = await rehearsal.cleanup();
+  const result = object(
+    JSON.parse(readFileSync(join(directory, "result.json"), "utf8")) as unknown,
+  );
+  const redacted = !readFileSync(
+    join(directory, "private.log"),
+    "utf8",
+  ).includes(password);
+  if (!redacted) {
+    rehearsal.journal.workflowSucceeded = false;
+    rehearsal.save();
+  }
   writeFileSync(
     join(directory, "result.json"),
     JSON.stringify(
       {
-        succeeded,
+        ...result,
+        succeeded: result.succeeded === true && redacted,
         central,
         upstream,
         callback,
-        project,
         image,
         proxyImage,
-        nativeCredentialsCleared: true,
-        stacksRemoved: true,
+        logsRedacted: redacted,
         provider: "controlled fixture, not an external provider",
       },
       null,
       2,
     ),
+    { mode: 0o600 },
   );
+  if (!clean || !redacted || !rehearsal.journal.cleanup.diagnostics?.ok)
+    process.exitCode = 1;
+  if (rehearsal.journal.interrupted)
+    process.exitCode = rehearsal.journal.interrupted === "SIGINT" ? 130 : 143;
   console.log(
     `Rehearsal evidence retained at ${directory}; remove temporary certificate trust separately.`,
   );
