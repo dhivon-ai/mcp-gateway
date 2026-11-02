@@ -28,7 +28,7 @@ baseline, and the local archive is unsigned and unpublished.
 
 The approved `dhivon-brand-site-docs` track is completing the Dhivon rename,
 consistent branding across both management interfaces, a public product website
-and this documentation set. Its acceptance requires current builds, browser
+and this documentation set. The [current technical evidence](dhivon-release.md) records builds, browser
 checks and a fresh artifact/deployment rehearsal. The site and documentation must
 explain the access model and lead a reader through a first permitted tool call.
 

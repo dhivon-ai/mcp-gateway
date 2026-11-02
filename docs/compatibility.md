@@ -48,3 +48,6 @@ provides no old-name aliases, compatibility reads or data-conversion procedure.
 Existing unrelated databases, files and Keychain entries are left under their
 owner's control. Follow [deployment](deployment.md) and [Mac setup](mac-install.md)
 for a fresh installation.
+
+Current renamed artifact identities and verification are recorded in
+[Dhivon release evidence](dhivon-release.md).

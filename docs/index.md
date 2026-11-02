@@ -13,7 +13,8 @@ Read [why the gateway exists and how it works](architecture.md), review
 - [Identity](identity.md) explains accounts, email sign-in, roles and sessions.
 - [Vault operations](vault.md) covers encrypted user secrets, external keys and rotation.
 - [Compatibility](compatibility.md) lists the supported profile and tested limits.
-- [Release evidence](release.md) and [acceptance coverage](acceptance.md) preserve
+- [Current Dhivon release evidence](dhivon-release.md) records the renamed artifacts.
+- [Historical release evidence](release.md) and [acceptance coverage](acceptance.md) preserve
   the original MVP's dated verification records.
 
 ## Administrators

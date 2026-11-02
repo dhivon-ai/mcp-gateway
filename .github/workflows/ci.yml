@@ -39,6 +39,9 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm --filter @dhivon/mcp-gateway-site typecheck
+      - run: pnpm exec prettier --check apps/site
+      - run: pnpm site:build
   database:
     runs-on: ubuntu-24.04
     services:

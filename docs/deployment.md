@@ -197,6 +197,6 @@ Traffic is the isolated internal HTTP proxy hop with the exact public Host;
 this does not claim publicly issued TLS or a real identity provider test.
 
 Verified release results, archive checksum and exact platform evidence are
-recorded in [release evidence](release.md). Primary operational references:
+recorded in [Dhivon release evidence](dhivon-release.md). Primary operational references:
 [Compose health/start order](https://docs.docker.com/compose/how-tos/startup-order)
 and [Caddy reverse proxy](https://caddyserver.com/docs/quick-starts/reverse-proxy).

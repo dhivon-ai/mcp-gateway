@@ -22,7 +22,8 @@ remote tools run at their configured upstream service.
 
 The current endpoint targets Apple Silicon. Locally built archives are unsigned
 and unpublished. Review [compatibility](docs/compatibility.md) before planning a
-deployment. The [MVP release report](docs/release.md) records the original
+deployment. The [Dhivon release report](docs/dhivon-release.md) records current verification.
+The [MVP release report](docs/release.md) records the original
 delivery's artifact identity and evidence.
 
 ## Why a gateway

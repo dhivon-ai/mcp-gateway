@@ -15,7 +15,8 @@ import { resolve, join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
 
 const cache = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE;
-if (!cache) throw new Error("Use the execution-owned DHIVON_MCP_GATEWAY_BUILD_CACHE");
+if (!cache)
+  throw new Error("Use the execution-owned DHIVON_MCP_GATEWAY_BUILD_CACHE");
 const root = resolve(import.meta.dirname, "..");
 const directory = join(cache, `local-browser-${randomUUID()}`);
 mkdirSync(directory, { mode: 0o700 });
@@ -72,10 +73,11 @@ const common = [
 ];
 const cli = join(directory, "dhivon-mcp-gateway");
 copyFileSync(
-  join(
-    process.env.CARGO_TARGET_DIR ?? join(cache, "cargo"),
-    "debug/dhivon-mcp-gateway",
-  ),
+  process.env.DHIVON_MCP_GATEWAY_TEST_CLI ??
+    join(
+      process.env.CARGO_TARGET_DIR ?? join(cache, "cargo"),
+      "debug/dhivon-mcp-gateway",
+    ),
   cli,
 );
 const fixture = join(
