@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "trackId": "dhivon-brand-site-docs",
+  "title": "Dhivon MCP Gateway rebrand, product website and documentation",
+  "type": "feature",
+  "status": "planned",
+  "checkpoint": "ready",
+  "revision": 1,
+  "dependencies": [],
+  "commits": {
+    "spec": "op:track-d88c236c69ec6e974f85b9c0f99098fa",
+    "plan": "op:track-d88c236c69ec6e974f85b9c0f99098fa",
+    "dependencyContext": "op:track-d88c236c69ec6e974f85b9c0f99098fa"
+  },
+  "artifactProgress": [],
+  "operation": null,
+  "lastExecution": null,
+  "reviewCycles": [],
+  "history": [
+    {
+      "action": "track",
+      "commit": "op:track-d88c236c69ec6e974f85b9c0f99098fa"
+    }
+  ]
+}
