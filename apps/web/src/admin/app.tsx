@@ -40,7 +40,8 @@ function Brand() {
     <div className="brand">
       <GatewayMark />
       <div>
-        <strong>MCP Gateway</strong>
+        <strong className="brand-product">Dhivon MCP Gateway</strong>
+        <p className="brand-company">A product of Dhivon AI</p>
         <p>Administration</p>
       </div>
     </div>

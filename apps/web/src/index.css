@@ -1,13 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
+@import "../../../assets/brand/theme.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-heading: var(--font-sans);
-  --font-sans: "Geist Variable", sans-serif;
+  --font-sans: var(--dhivon-font);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,34 +50,34 @@
 
 :root {
   --background: oklch(1 0 0);
-  --foreground: #111923;
+  --foreground: var(--dhivon-ink);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #124d3e;
+  --primary: var(--dhivon-navy);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: #f5f8f8;
-  --muted-foreground: #677078;
+  --muted: var(--dhivon-surface);
+  --muted-foreground: var(--dhivon-muted);
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: #dce3e6;
-  --input: #dce3e6;
-  --ring: #124d3e;
+  --border: var(--dhivon-border);
+  --input: var(--dhivon-border);
+  --ring: var(--dhivon-navy);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
   --radius: 0.5rem;
-  --sidebar: #f2f6f6;
+  --sidebar: var(--dhivon-surface);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: #e0ece9;
+  --sidebar-accent: #e5edf5;
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
@@ -86,7 +86,7 @@
 /* Shared product geometry and chrome typography extracted from the accepted references. */
 :root {
   --warning: #efb721;
-  --eligibility: #349752;
+  --eligibility: var(--dhivon-success);
   --overlay: rgb(17 25 35 / 24%);
 }
 body {
@@ -253,7 +253,7 @@ p {
   gap: 18px;
   padding-inline: 14px;
 }
-.brand > svg {
+.brand > .gateway-mark {
   width: 40px;
   height: 40px;
   color: var(--primary);
@@ -778,7 +778,7 @@ a:focus-visible {
   gap: 18px;
   padding-inline: 16px;
 }
-.local-sidebar .brand > svg {
+.local-sidebar .brand > .gateway-mark {
   width: 56px;
   height: 56px;
   color: var(--foreground);
@@ -1181,7 +1181,7 @@ a:focus-visible {
   .local-sidebar .brand strong {
     font-size: 23px;
   }
-  .local-sidebar .brand > svg {
+  .local-sidebar .brand > .gateway-mark {
     width: 40px;
     height: 40px;
   }
@@ -1416,4 +1416,97 @@ a:focus-visible {
   .secret-editor .editor-body {
     padding-inline: 20px;
   }
+}
+
+/* Dhivon shared chrome uses navy for navigation and emerald for the brand module. */
+body {
+  font-family: var(--dhivon-font);
+  color: var(--dhivon-ink);
+}
+.brand .brand-product {
+  display: block;
+  font-size: 18px;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+.brand .brand-company {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+.admin-sidebar,
+.local-sidebar {
+  background: var(--dhivon-navy);
+  color: white;
+  border-right-color: var(--dhivon-navy);
+}
+.admin-sidebar .brand p,
+.local-sidebar .brand p,
+.admin-sidebar .account p,
+.local-sidebar .account p {
+  color: #c5d5e5;
+}
+.admin-sidebar .nav-link,
+.local-sidebar .nav-link,
+.admin-sidebar .account > button,
+.local-sidebar .account > button {
+  color: #e1eaf3;
+}
+.admin-sidebar .nav-link.selected,
+.local-sidebar .nav-link.selected {
+  color: white;
+  background: #234464;
+  box-shadow: inset 3px 0 0 var(--dhivon-emerald);
+}
+.admin-sidebar .nav-link:hover,
+.local-sidebar .nav-link:hover,
+.admin-sidebar .account > button:hover,
+.local-sidebar .account > button:hover {
+  color: white;
+  background: #234464;
+}
+.admin-sidebar :focus-visible,
+.local-sidebar :focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+.brand .gateway-mark {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+}
+.brand .gateway-mark-light {
+  display: block;
+}
+.brand .gateway-mark-dark {
+  display: none;
+}
+.admin-sidebar .gateway-mark-light,
+.local-sidebar .gateway-mark-light {
+  display: none;
+}
+.admin-sidebar .gateway-mark-dark,
+.local-sidebar .gateway-mark-dark {
+  display: block;
+}
+.sign-in {
+  padding-block: 24px;
+}
+.sign-in h1 {
+  margin-top: 12px;
+}
+
+.brand > div {
+  min-width: 0;
+}
+.brand .brand-company {
+  font-size: 11px;
+  letter-spacing: 0;
+}
+.brand img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }

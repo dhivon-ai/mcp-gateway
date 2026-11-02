@@ -5,6 +5,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json apps/web/package.json
 RUN pnpm install --frozen-lockfile
 COPY apps/web apps/web
+COPY assets/brand assets/brand
 ENV DHIVON_MCP_GATEWAY_BUILD_CACHE=/build
 RUN pnpm build
 
