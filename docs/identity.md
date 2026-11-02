@@ -39,13 +39,13 @@ All user/group writes also require the deployment's `expectedRevision` from
 `GET /api/admin/configuration`, including a JSON body on group deletion.
 Stale identity/group changes return 409 without overwriting concurrent edits.
 
-| Route                                | Behavior                                             |
-| ------------------------------------ | ---------------------------------------------------- |
+| Route                                | Behavior                                                |
+| ------------------------------------ | ------------------------------------------------------- |
 | GET/POST `/api/admin/users`          | List metadata / create with name, email, password, role |
-| PUT `/api/admin/users/{id}`          | Set name/email/role/active; revoke target sessions          |
-| PUT `/api/admin/users/{id}/password` | Reset password and revoke target sessions            |
-| GET/POST `/api/admin/groups`         | List / create name and memberIds                     |
-| PUT/DELETE `/api/admin/groups/{id}`  | Replace name/membership / delete                     |
+| PUT `/api/admin/users/{id}`          | Set name/email/role/active; revoke target sessions      |
+| PUT `/api/admin/users/{id}/password` | Reset password and revoke target sessions               |
+| GET/POST `/api/admin/groups`         | List / create name and memberIds                        |
+| PUT/DELETE `/api/admin/groups/{id}`  | Replace name/membership / delete                        |
 
 Unauthorized requests return 401, role/CSRF/origin rejection 403, malformed input
 400, duplicate email400; other duplicates/last-admin protection409, throttling 429. Public errors are typed
@@ -59,16 +59,14 @@ The configured Host/Origin must match exactly. HTTPS termination must retain the
 public Host header. HTTP is available only via the explicit loopback fixture
 switch and cannot target non-loopback hosts.
 
-## Pre-release identity deployment change
+## Fresh identity setup
 
-BUG-005 replaces the earlier username contract. Bootstrap requires `--email`,
-`--name`, and `--password-stdin`; creation/edit APIs require distinct name/email.
-There is no username login or field alias. Use a fresh pre-release database.
-Migration0004 refuses a populated old users table explicitly and makes no data
-changes; preserve any older data separately instead of deleting it automatically.
-Stable user IDs remain unchanged through profile edits. Existing endpoint/cache
-formats from before this change are unsupported: logout with the creating binary
-and sign in to the fresh deployment. No running production database is migrated.
+New Dhivon deployments use a fresh database and separate native state namespace.
+Bootstrap requires `--email`, `--name` and `--password-stdin`. Creation/edit APIs
+use distinct display name and email fields. Existing populated historical
+username schemas are refused safely during schema initialization. The current
+setup starts from the documented fresh deployment and email sign-in path.
+Stable user IDs remain unchanged through ordinary profile edits.
 
 An in-flight login rechecks its original email under the final row lock after
 password verification. An email edit cannot let an already-looked-up old address

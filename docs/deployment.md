@@ -22,7 +22,7 @@ own deployment rather than assuming byte-identical builds.
 Use a private deployment directory outside Git. The commands below use Bash and
 an ordinary Unix operator account. The service UID/GID match the owner of its
 0600 key file; do not use UID 0. Substitute your actual hostname before running.
-No default account or password exists.
+No default account or password exists. Use a fresh database and the Dhivon package names for a new installation.
 
 ```sh
 gateway_deploy="$HOME/.config/dhivon-mcp-gateway-server"
@@ -103,6 +103,25 @@ select owned secrets for bearer auth, complete OAuth public-client registration
 using [OAuth setup](oauth.md), explicitly install/enable, then configure one
 STDIO agent using [agent configuration](agent-configuration.md). Ordinary central
 configuration remains plaintext; only secret material is application-encrypted.
+
+## Configuration reference
+
+| Setting                                            | Where it is consumed | Meaning                                                                                      |
+| -------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                     | Service process      | PostgreSQL connection string; Compose constructs it from the private password                |
+| `DHIVON_MCP_GATEWAY_BIND`                          | Service process      | Listen address, default `127.0.0.1:8080`; the image uses `0.0.0.0:8080` inside its container |
+| `DHIVON_MCP_GATEWAY_PUBLIC_URL`                    | Service and Compose  | Exact externally visible HTTPS origin used for Host/Origin validation                        |
+| `DHIVON_MCP_GATEWAY_VAULT_KEY_FILE`                | Service process      | Private key-ring path; Compose sets the mounted container path                               |
+| `DHIVON_MCP_GATEWAY_KEY_FILE`                      | Compose              | Absolute host path to the owner-only key file mounted read-only                              |
+| `DHIVON_MCP_GATEWAY_IMAGE`                         | Compose              | Service image tag or operator-approved digest                                                |
+| `DHIVON_MCP_GATEWAY_PORT`                          | Compose              | Host loopback port forwarded to container port 8080                                          |
+| `DHIVON_MCP_GATEWAY_UID`, `DHIVON_MCP_GATEWAY_GID` | Compose              | Unprivileged runtime identity that can read the key file                                     |
+| `POSTGRES_PASSWORD`                                | Compose/PostgreSQL   | Private database password supplied through the protected environment file                    |
+
+The application Compose service is `dhivon`. Its private PostgreSQL user and
+database are both named `dhivon`. Development tests use the separate
+`dhivon_mcp_gateway_test` fixture described in [testing](testing.md).
+Build-only output and asset variables are documented in [contributing](contributing.md).
 
 ## Backup and restore
 

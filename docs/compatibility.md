@@ -1,16 +1,16 @@
 # Compatibility and release limits
 
-| Surface | Validated baseline |
-| --- | --- |
-| Endpoint | Apple Silicon arm64, macOS 27.0.1 (26A434); deployment target 27.0.1. Older releases/Intel/Windows/Linux endpoints are not shipped. |
-| Native toolchain | Rust/cargo 1.95.0, edition 2024; macOS Keychain and continuous native clock/process APIs exercised on the actual Mac. |
-| Website build | Node 24.19.0 LTS, pnpm 11.4.0, React 19.3.0, TypeScript 6.0.3, Vite 8.3.4, shadcn/Radix/Tailwind with committed lockfile. |
-| Browser | Codex in-app Chromium on the validated Mac; desktop/laptop/390px flows. Safari/Firefox not independently validated. |
-| Control plane | Rust/Axum/SQLx, PostgreSQL 18.6; self-hosted one enterprise per deployment. Linux arm64 container on Docker29.8.2/OrbStack and Compose5.5.0; fresh deployment/restore is recorded in release evidence. |
-| MCP | Official rmcp 3.5.1 client/server, protocol 2025-11-25, STDIO (native pipes and Node-style Unix stream socket pairs) and Streamable HTTP. Tools/list, ordinary tools/call and list-change notifications only. |
-| Remote authentication | None, owned per-user bearer secret, or preregistered public OAuth client with the supported discovery/PKCE/resource/issuer/refresh profile. Controlled providers only; see OAuth runbook. |
-| Client/agent | Standard official rmcp client spawning only the CLI `mcp` entry. Commercial agent adapters are examples, not verified integrations. |
-| Distribution | Local arm64 archive/checksum with embedded assets; not Developer ID signed, notarized or publicly published. |
+| Surface               | Validated baseline                                                                                                                                                                                            |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Endpoint              | Apple Silicon arm64, macOS 27.0.1 (26A434); deployment target 27.0.1. Older releases/Intel/Windows/Linux endpoints are not shipped.                                                                           |
+| Native toolchain      | Rust/cargo 1.95.0, edition 2024; macOS Keychain and continuous native clock/process APIs exercised on the actual Mac.                                                                                         |
+| Website build         | Node 24.19.0 LTS, pnpm 11.4.0, React 19.3.0, TypeScript 6.0.3, Vite 8.3.4, shadcn/Radix/Tailwind with committed lockfile.                                                                                     |
+| Browser               | Codex in-app Chromium on the validated Mac; desktop/laptop/390px flows. Safari/Firefox not independently validated.                                                                                           |
+| Control plane         | Rust/Axum/SQLx, PostgreSQL 18.6; self-hosted one enterprise per deployment. Linux arm64 container on Docker29.8.2/OrbStack and Compose5.5.0; fresh deployment/restore is recorded in release evidence.        |
+| MCP                   | Official rmcp 3.5.1 client/server, protocol 2025-11-25, STDIO (native pipes and Node-style Unix stream socket pairs) and Streamable HTTP. Tools/list, ordinary tools/call and list-change notifications only. |
+| Remote authentication | None, owned per-user bearer secret, or preregistered public OAuth client with the supported discovery/PKCE/resource/issuer/refresh profile. Controlled providers only; see OAuth runbook.                     |
+| Client/agent          | Standard official rmcp client spawning only the CLI `mcp` entry. Commercial agent adapters are examples, not verified integrations.                                                                           |
+| Distribution          | Local arm64 archive/checksum with embedded assets; not Developer ID signed, notarized or publicly published.                                                                                                  |
 
 No SAML, SaaS multi-tenancy, legacy HTTP+SSE, provider-specific grants, confidential
 OAuth clients, resources, prompts, subscriptions, sampling, elicitation or tasks
@@ -38,8 +38,13 @@ dot-atom mailbox with a hostname domain. Quoted/Unicode mailboxes and domain
 literals are unsupported. Display names are trimmed nonempty Unicode, at most
 200 UTF-8 bytes, and never authenticate. Profile edits revoke affected sessions.
 
-This pre-release requires a fresh database for the email identity schema. Migration
-0004 explicitly refuses populated older username schemas without deleting data.
-Preserve any old database separately and create a fresh deployment; no legacy
-account/API/cache compatibility is provided. Log out with the creating older CLI
-before switching packages, then sign in to the new deployment with email.
+## Fresh installation
+
+Dhivon installations use a fresh database, native state directory and Keychain
+namespace. Use the new package and executable names throughout setup. Schema
+initialization runs automatically on the fresh database. Historical populated
+username schemas are refused safely by the initialization checks. The rename
+provides no old-name aliases, compatibility reads or data-conversion procedure.
+Existing unrelated databases, files and Keychain entries are left under their
+owner's control. Follow [deployment](deployment.md) and [Mac setup](mac-install.md)
+for a fresh installation.

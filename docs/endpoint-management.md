@@ -1,6 +1,6 @@
 # Native endpoint management
 
-`dhivon-mcp-gateway ui --server https://control-plane.example` starts the protected loopback API, native configuration refresh and owned installer lifecycle. Ctrl-C and SIGTERM request graceful shutdown. `ui`, `status` and `logout` accept `--fixture-state-path <existing absolute owner-only directory>` only with `--allow-fixture-http`, for isolated native tests without changing HOME or production state. The real default Keychain uses a separate `com.dhivon.mcp-gateway.fixture.*` service derived from that canonical fixture path; normal operation retains its production service. Fixture logout runs through the creating CLI binary so Keychain access control remains enforced. Normal commands use production state. `--no-open`, `--port` and the explicit loopback-only `--allow-fixture-http` option retain their identity semantics. `mcp` still refuses safely until the P4 runtime exists; this group adds no protocol output, shell scripts, coding-agent configuration changes or browser screens.
+`dhivon-mcp-gateway ui --server https://control-plane.example` starts the protected loopback API, native configuration refresh and owned installer lifecycle. Ctrl-C and SIGTERM request graceful shutdown. `ui`, `status` and `logout` accept `--fixture-state-path <existing absolute owner-only directory>` only with `--allow-fixture-http`, for isolated native tests without changing HOME or production state. The real default Keychain uses a separate `com.dhivon.mcp-gateway.fixture.*` service derived from that canonical fixture path; normal operation retains its production service. Fixture logout runs through the creating CLI binary so Keychain access control remains enforced. Normal commands use production state. `--no-open`, `--port` and the explicit loopback-only `--allow-fixture-http` option retain their identity semantics. `mcp` serves the agent-facing STDIO gateway described in [gateway aggregation](gateway-aggregation.md).
 
 ## Browser contract
 
@@ -8,17 +8,17 @@ The exact Host/Origin, cross-site Fetch metadata rejection, HttpOnly SameSite=St
 
 All new mutations use the JSON envelope `{ "expectedGeneration": "<displayed generation>", "input": <typed input> }`. Reads below require `X-Endpoint-Generation`. Browser logout also requires that header: it checks and clears the expected generation under one state lock and revokes only that old native principal. Logout cancellation is scoped to that generation; process exit cancels all jobs owned by that process. Login is an explicit identity transition, using the existing email/password request.
 
-| Local route | Method / input | Metadata response |
-| --- | --- | --- |
-| `/api/catalog` | GET | `LocalCatalog`, effective policy, auth requirement, stable selected secret reference, installed and availability metadata |
-| `/api/settings/{mcpId}` | PUT `SettingsUpdate` | confirmed `LocalCatalog` |
-| `/api/secrets` | GET / POST `SecretWrite` | secret metadata list / `SecretMutationOutcome` |
-| `/api/secrets/{secretId}` | PUT `SecretWrite` / DELETE `VersionInput` | `SecretMutationOutcome` |
-| `/api/secrets/{secretId}/key` | PUT `SecretRename` | `SecretMutationOutcome` |
-| `/api/mcps/{mcpId}/install` | POST `InstallRequest` | 202 `InstallProgress` |
-| `/api/installations/{jobId}` | GET | `InstallProgress` |
-| `/api/installations/{jobId}/cancel` | POST `input: null` | cancellation requested; poll progress for completion |
-| `/api/installations/{jobId}/enable` | POST `SettingsUpdate` with `enabled: true` | confirmed `LocalCatalog`; no installer rerun |
+| Local route                         | Method / input                             | Metadata response                                                                                                         |
+| ----------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `/api/catalog`                      | GET                                        | `LocalCatalog`, effective policy, auth requirement, stable selected secret reference, installed and availability metadata |
+| `/api/settings/{mcpId}`             | PUT `SettingsUpdate`                       | confirmed `LocalCatalog`                                                                                                  |
+| `/api/secrets`                      | GET / POST `SecretWrite`                   | secret metadata list / `SecretMutationOutcome`                                                                            |
+| `/api/secrets/{secretId}`           | PUT `SecretWrite` / DELETE `VersionInput`  | `SecretMutationOutcome`                                                                                                   |
+| `/api/secrets/{secretId}/key`       | PUT `SecretRename`                         | `SecretMutationOutcome`                                                                                                   |
+| `/api/mcps/{mcpId}/install`         | POST `InstallRequest`                      | 202 `InstallProgress`                                                                                                     |
+| `/api/installations/{jobId}`        | GET                                        | `InstallProgress`                                                                                                         |
+| `/api/installations/{jobId}/cancel` | POST `input: null`                         | cancellation requested; poll progress for completion                                                                      |
+| `/api/installations/{jobId}/enable` | POST `SettingsUpdate` with `enabled: true` | confirmed `LocalCatalog`; no installer rerun                                                                              |
 
 Paths accept bounded identifier segments only. JSON bodies are bounded to 128 KiB so the central 16 KiB secret-value limit also accommodates JSON escaping. Parse failures return fixed errors. Vault values are accepted only as write inputs; responses deserialize strict metadata types. No credential-read/OAuth/endpoint-token endpoint is proxied. Commands, args, environment values and full native snapshots never appear in browser responses or generated local metadata DTOs. The earlier central `ConfigSnapshot` contract remains native; local errors return `LocalApiError.current` as catalog metadata instead of its runtime configuration.
 
@@ -48,6 +48,6 @@ Apple [waitid implementation](https://github.com/apple-oss-distributions/xnu/blo
 
 ## Verification boundary
 
-Focused fixture tests cover central outage/refusal/conflicts, strict write-only vault responses, durable settings publication failure, generation interleavings, protected loopback requests and redaction. Actual macOS 27.0.1 arm64 tests execute uniquely owned Python fixture processes with literal shell-looking arguments, explicit env/cwd, successful and failed exits, TERM-ignoring grandchildren, cancellation, Drop/abort and cleanup. Expiry, clock uncertainty, revocation and shortened install limits use deterministic time while executing real Mac children. These are not claims of an actual 300-second wait, machine sleep/reboot, older macOS compatibility or completed browser/P4/P5 runtime behavior.
+Focused fixture tests cover central outage/refusal/conflicts, strict write-only vault responses, durable settings publication failure, generation interleavings, protected loopback requests and redaction. Actual macOS 27.0.1 arm64 tests execute uniquely owned Python fixture processes with literal shell-looking arguments, explicit env/cwd, successful and failed exits, TERM-ignoring grandchildren, cancellation, Drop/abort and cleanup. Expiry, clock uncertainty, revocation and shortened install limits use deterministic time while executing real Mac children. The actual 300-second wait, machine sleep/reboot and older macOS compatibility remain outside that evidence. Browser and integrated runtime coverage are documented in the local UI, aggregation and release guides.
 
 The initial signal fixture attempted Keychain deletion from its separate parent test binary; macOS access control refused it. The creating CLI logout is now used instead, with fixture-specific services and journals preserved on cleanup failure. Three orphaned entries from that failed approach were recovered only after matching the exact owned creator ACL, common generated account namespace and failed-test interval; exact service/account deletions were verified absent with metadata-only queries. No credential values were inspected or production session selection changed.

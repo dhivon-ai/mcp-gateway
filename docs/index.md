@@ -3,6 +3,9 @@
 Dhivon MCP Gateway is a self-hosted Dhivon AI product. Start with the
 [quickstart](quickstart.md) for the path from deployment to a permitted tool call.
 
+Read [why the gateway exists and how it works](architecture.md), review
+[security and trust boundaries](security.md), or see the [product roadmap](roadmap.md).
+
 ## Operators
 
 - [Deployment and recovery](deployment.md) covers image builds, private keys,
@@ -24,6 +27,8 @@ Dhivon MCP Gateway is a self-hosted Dhivon AI product. Start with the
 - [OAuth registration](oauth.md) specifies discovery, public clients, callback
   registration and refresh behavior.
 
+- [Troubleshooting](troubleshooting.md) gives symptom, diagnosis, recovery and expected outcomes.
+
 ## Developers
 
 - [Mac installation](mac-install.md) covers archive verification, login and the
@@ -34,6 +39,9 @@ Dhivon MCP Gateway is a self-hosted Dhivon AI product. Start with the
 - [Native credentials](remote-credentials.md) explains readiness, ownership and recovery.
 
 ## Architecture and contributors
+
+- [Architecture](architecture.md) explains component ownership and tool execution locations.
+- [Contributing](contributing.md) covers toolchains, build output, checks and release evidence.
 
 - [Wire and policy contracts](contracts.md) describes Rust-generated TypeScript and validation.
 - [Gateway aggregation](gateway-aggregation.md) covers discovery, aliases,
