@@ -6,11 +6,11 @@ Read this seed at each root phase. Later phases read the learning from every dec
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":2,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
+{"schemaVersion":1,"specRevision":1,"planRevision":3,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 1
-- Plan revision: 2
+- Plan revision: 3
 
 | Pattern | Relevance to this track | Constraints to carry forward |
 | --- | --- | --- |
@@ -160,3 +160,24 @@ retain unverified public hosting and named external-provider compatibility.
 Git confirms no product drift since that verified commit; 2c272be is Cadre-only
 checkpoint bookkeeping. This approval completes the Track-mode implementation
 verification gate; clean review/completion remains a separate lifecycle decision.
+
+## Review cycle 2 — Interrupted rehearsal cleanup
+
+Reviewed 69ba295..2c272be and completion-only changes through 9f5bf22. Prior
+licensing requirements pass actual artifact byte checks; the owner-selected
+Docker HTTPS/native OAuth scenario and refresh fix retain their evidence and
+public-provider limits. Eight focused credential/rejection tests pass; no new
+runtime defect was confirmed.
+
+A signal probe of the actual HTTPS script exited -15 after SIGTERM, retained a
+PostgreSQL container and volume, and wrote no result record. The probe stopped
+before native login and installed no trust. Exact generated resources were then
+removed and their absence verified. BUG-008 proposes supervised idempotent
+cleanup and durable ownership/recovery before effects. No fix is implemented.
+
+Patterns were reassessed for spec1/plan3. Isolated release verification requires
+scoped ownership, creating-binary logout and retained failure recovery. Credential
+publication and authorization leases constrain late cleanup and native identity
+isolation. Owned transports govern child shutdown; browser consistency remains
+applicable to retained product flows. All five pattern hashes remain unchanged
+and current. Preserve completed P1–P9 and their historical evidence.
