@@ -24,6 +24,8 @@ pub mod store;
 pub mod sync;
 pub mod upstream_credentials;
 pub mod upstream_http;
+#[cfg(target_os = "macos")]
+pub mod vault;
 pub mod wire;
 
 #[derive(Debug, thiserror::Error)]
