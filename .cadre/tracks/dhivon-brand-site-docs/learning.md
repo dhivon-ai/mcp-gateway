@@ -262,3 +262,48 @@ removal. Authorization leases and browser contract consistency remain constraint
 on unchanged product behavior. All approved pattern bytes/hashes remain current;
 no dependency or specification scope changed. Implement only after this review's
 exact bug/plan/learning/dependency/state proposal is approved and reconciled.
+
+## Phase 12 — Fail-closed child ownership and exclusive recovery
+
+Product9aba60c2341b3154f70a27ad04422bb812feef4a resolves BUG-009/BUG-010.
+The actual ChildProcess handle/PID is retained before fallible identity capture or
+persistence. Explicit intent/spawned/exited/not_spawned states distinguish proven
+absence from uncertainty. Unknown ownership remains recovery_required and denies
+native logout/stack removal. Cleanup also drains newly created cleanup-command
+handles before logout and after teardown; the diagnostic-registration regression
+proves a live interrupt-ignoring child is stopped, not merely omitted from results.
+
+A permanent cleanup.lock inode carries an OS flock held by Node's descriptor.
+A bounded Python3 stdlib helper acquires on the shared open file description;
+its exit retains Node's lock. Closing the descriptor/process exit releases it,
+without stale-owner unlink/recreate or owner-byte parsing. Empty/partial bytes
+cannot strand recovery, and an old release cannot remove a successor's lock.
+Recover acquires before reading the journal and holds ownership through all final
+evidence writes. Python3 is required only for verification/recovery scripts on
+the validated Mac/local filesystem; product/runtime dependencies are unchanged.
+
+Combined pinned Node24.19.0 process verification passes25/25 in163.60s. Original
+actual Docker/PostgreSQL/extracted-Mac scenarios pass; new cases cover identity/
+persistence failure, signal during registration, failed diagnostic child capture,
+ambiguous intent, simultaneous stale contenders, empty/held-lock forced exits,
+successor-safe release, full-recovery journal freshness, missing Python and partial
+lock bytes. A final focused14/14 pass10.87s after aligning the private probe env
+variable to the product prefix. Strict script/site TS, scoped formatting, static
+build,34-page link/anchor crawl, Git checks and actual archive/image/site project/
+Manrope notice-byte checks pass. Final source hashes and both verification input
+sets are retained in the current execution-owned recovery-artifact-identities.json.
+
+All34 normal generated scopes are clean. Four deliberately ambiguous no-effect
+intent fixtures retain failed journals as expected; none spawned that synthetic
+intent, created native credentials or started Docker resources. Exact resource
+checks confirm no generated containers/networks/volumes or native credentials
+remain. Product CLI f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7,
+archive e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799
+and service image sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07
+match prior verified artifacts. No Rust/UI/license or product OAuth-policy changes,
+new OS trust or new public-provider claims. Prior full HTTPS/browser acceptance
+remains evidence for unchanged product inputs; it was not repeated in this phase.
+
+P12 phase verification uses persisted Track mode. Next is explicit P13 final human
+verification of product9aba60c and these results, then execution_finish and ordinary
+review. Preserve every completed P1–P11 phase and prior approval/history unchanged.
