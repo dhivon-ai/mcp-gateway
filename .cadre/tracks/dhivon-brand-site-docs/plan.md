@@ -156,22 +156,22 @@ Verify the complete rebrand, both application surfaces, the public website, docu
 BUG-007 is addressed in a later implementation, adding the owner-approved
 Apache-2.0 Dhivon AI source licensing and original third-party notices to deliverables.
 
-- [ ] T7.1 Add project licensing and include notices in delivery outputs
+- [x] T7.1 Add project licensing and include notices in delivery outputs <!-- commit: 327d97881634dba4cb17ad6e6afb0b959e5d1e5a -->
   - Task dependencies: none
   - Commit group: distribution-notices
   - Scope: Implement the retained Apache-2.0/Dhivon AI licensing decision: official root LICENSE, copyright NOTICE, README attribution and Cargo/npm metadata. The earlier d16c28a source update was reverted before review transition. Include root LICENSE/NOTICE and full Manrope copyright/OFL notices in the Mac archive and container at human-readable locations. Publish accessible project license/ownership notices with the static site without relicensing third-party assets.
   - Verification: Compare emitted project and third-party license bytes with canonical source, inspect the extracted archive, runtime image and built static output, and check accessible notice URLs.
   - Handoff: Exact notice locations, source hashes and verified output manifests.
-- [ ] T7.2 Verify release notice coverage and refresh artifact evidence
+- [x] T7.2 Verify release notice coverage and refresh artifact evidence <!-- commit: 327d97881634dba4cb17ad6e6afb0b959e5d1e5a -->
   - Task dependencies: T7.1
   - Commit group: distribution-notices
   - Scope: Add focused artifact-notice checks to existing release verification entry points. Rebuild affected outputs and update current release identities while preserving historical evidence.
   - Verification: Run focused release/notice checks, formatter/type/build checks and affected browser delivery checks. Verify archive checksums and container notice files.
   - Handoff: Artifact/checksum/image identities, notice assertions and any remaining limits.
-- [ ] T7.3 User Manual Verification
+- [x] T7.3 User Manual Verification <!-- commit: 327d97881634dba4cb17ad6e6afb0b959e5d1e5a -->
   - Verification: Inspect Apache-2.0 Dhivon AI ownership and third-party notices in actual deliverables against BUG-007.
 
-- Phase completion commit: pending
+- Phase completion commit: `327d97881634dba4cb17ad6e6afb0b959e5d1e5a`
 
 ## Phase 8: Hosted control plane and native OAuth verification
 
@@ -183,16 +183,16 @@ BUG-006 has named deployment/provider evidence for the intended HTTPS control-pl
 and local loopback callback topology. Implementation is deferred and requires
 the actual operator-selected target, origin and provider configuration.
 
-- [ ] T8.1 Verify the approved hosted origin and real native OAuth flow
+- [x] T8.1 Verify the approved hosted origin and real native OAuth flow <!-- commit: 3d6eecb60106ba74a5126ee0b4a277ccec3e85d9 -->
   - Task dependencies: none
   - Commit group: hosted-oauth-evidence
   - Scope: Obtain the actual operator-approved hosting target, HTTPS origin and supported provider registration before deployment or external authentication work. Verify the hosted control plane with a local client and its actual loopback callback port. Clarify the OAuth guide with the hosted-control-plane/native-callback distinction and provider/port requirements. Record registration constraints, code/state/PKCE checks, persisted credentials, explicit enablement, tool use, refresh and disconnect. Keep credentials out of repository evidence.
   - Verification: Validate DNS/certificate and control-plane health/authenticated sync from the developer machine. Complete provider consent in that machine's browser and verify callback, tool call and disconnect using the configured deployment. If external prerequisites are unavailable, preserve the precise blocker and make no compatibility claim.
   - Handoff: Approved origin/provider profile, tested versions/ports, redacted results and cleanup ownership.
-- [ ] T8.2 User Manual Verification
+- [x] T8.2 User Manual Verification <!-- commit: 3d6eecb60106ba74a5126ee0b4a277ccec3e85d9 -->
   - Verification: Review the actual HTTPS deployment and native loopback OAuth evidence against BUG-006.
 
-- Phase completion commit: pending
+- Phase completion commit: `3d6eecb60106ba74a5126ee0b4a277ccec3e85d9`
 
 ## Phase 9: Track-level User Manual Verification
 
@@ -201,10 +201,10 @@ the actual operator-selected target, origin and provider configuration.
 The owner verifies the original completed delivery plus the later BUG-006 and
 BUG-007 remediation outcomes and recorded limits.
 
-- [ ] T9.1 User Manual Verification
+- [x] T9.1 User Manual Verification <!-- commit: 3d6eecb60106ba74a5126ee0b4a277ccec3e85d9 -->
   - Verification: Review final artifact notices, deployed HTTPS/native OAuth evidence and retained original acceptance coverage under the selected future execution mode.
 
-- Phase completion commit: pending
+- Phase completion commit: `3d6eecb60106ba74a5126ee0b4a277ccec3e85d9`
 
 ## Approval
 

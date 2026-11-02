@@ -3,8 +3,8 @@
   "trackId": "dhivon-brand-site-docs",
   "title": "Dhivon MCP Gateway rebrand, product website and documentation",
   "type": "feature",
-  "status": "in_progress",
-  "checkpoint": "executing",
+  "status": "ready_for_review",
+  "checkpoint": "ready_for_review",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -13,34 +13,16 @@
     "dependencyContext": "op:review-f96e204b94f538048104ee21fbd6d2e2"
   },
   "artifactProgress": [],
-  "operation": {
-    "action": "implement",
-    "checkpoint": "approved",
-    "baseCommit": "69ba2958579a4f592d2814f49f6afc5104d51754",
-    "expectedCommit": "cadre(implement): start dhivon-brand-site-docs",
-    "approvedArtifacts": [
-      "executions/execution-2026-11-02T08-03-09-159Z.json",
-      "state.json"
-    ],
-    "artifactProgress": [],
-    "approvedAt": "2026-11-02T08:03:09.159Z",
+  "operation": null,
+  "lastExecution": {
     "executionId": "2026-11-02T08-03-09-159Z",
     "journal": "executions/execution-2026-11-02T08-03-09-159Z.json",
-    "mode": "parallel",
     "approvalMode": "track",
     "approvalPolicyVersion": 2,
+    "planRevision": 2,
     "graphDigest": "e869a839f6ede9e9ba57613a5557bdb250a1de8120e631e954b96e4a178e28e3",
-    "planRevision": 2
-  },
-  "lastExecution": {
-    "executionId": "2026-11-02T06-39-45-854Z",
-    "journal": "executions/execution-2026-11-02T06-39-45-854Z.json",
-    "approvalMode": "track",
-    "approvalPolicyVersion": 2,
-    "planRevision": 1,
-    "graphDigest": "6c318bd83a156af22eb865ebfca4f6a5d38a4eaa28df0ca292da574687ec28c7",
-    "headCommit": "eae1965b5154e701f2974c79d2b3d370d9aebc42",
-    "completedAt": "2026-11-02T07:30:09.764Z"
+    "headCommit": "2c272be1bc9e0af5225ec20bf2bb875178d865bc",
+    "completedAt": "2026-11-02T08:56:20.798Z"
   },
   "reviewCycles": [
     {
@@ -68,6 +50,10 @@
     {
       "action": "review",
       "commit": "op:review-f96e204b94f538048104ee21fbd6d2e2"
+    },
+    {
+      "action": "implement",
+      "commit": "op:implement-edef515cb2c65bcb07dc3845aef4fe9b"
     }
   ]
 }

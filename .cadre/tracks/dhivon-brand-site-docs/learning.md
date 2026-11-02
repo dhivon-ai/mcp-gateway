@@ -150,3 +150,13 @@ absent and its leaf now fails validation. Generated private certificate keys wer
 removed. Public DNS/hosting certificates, real-user consent and named external
 providers remain outside this controlled evidence. Final P9 requires explicit
 human verification under Track mode; no final approval has been recorded.
+
+## Phase 9 — Final track-level user verification
+
+The owner explicitly replied “approve” to the final verification proposal for
+product3d6eecb, including licensing/distribution notices, the Docker HTTPS/native
+OAuth flow and refresh fix, passing checks and cleanup. The presented limits
+retain unverified public hosting and named external-provider compatibility.
+Git confirms no product drift since that verified commit; 2c272be is Cadre-only
+checkpoint bookkeeping. This approval completes the Track-mode implementation
+verification gate; clean review/completion remains a separate lifecycle decision.
