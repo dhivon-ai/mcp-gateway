@@ -22,4 +22,25 @@ Root phases read this seed; later phases read each declared dependency phase's l
 
 ## Phase observations
 
-Pending execution.
+
+## Phase 1: Single-key store
+
+At 2357e8a, T1.1/T1.2 proved that an in-place password update with a stable account can return retired bytes to a running reader. Atomically updating both the random account UUID and the 32-byte value selects the durably staged encrypted index. The native two-process replay test, record substitution and orphan recovery tests passed in a private real Keychain scope; CLI Clippy passed. Integration must preserve this protected index and exact scoped cleanup.
+
+## Phase 2: Endpoint cutover
+
+At dec44aa, authenticated configuration and recoverable secret bytes are independent of their expiry, revision and rejection evidence. Real Mac and PostgreSQL OAuth tests exercised the encrypted path. An interrupted migration must distinguish an unfinished copy from an old client's completed logout. Verify both legacy ownership and source before fencing; the explicit creator handoff invalidates all staged authority first. Locked Keychain reads can trigger macOS dialogs. The separately invoked lock test announces its disposable password; the test Keychain and search-list entry were confirmed absent after verification.
+
+## Phase 3: Packaged verification
+
+Verified on Apple Silicon macOS 27.0.1 (26A434), Rust 1.95.0, Node 24.19.0 and pnpm 11.4.0. Package SHA-256: beda2ba6861193834404d1305425269b2ed419edb0979eea1dd996fb4f04021a. Product verification commit: 43bae33. The locked workspace suite, formatting, Clippy, build, generated contracts, site and archive notice checks passed. All 11 real PostgreSQL tests passed; the OAuth consent/refresh/failure/disconnect test also ran against the new native store. The lifecycle/ownership suite passed 25/25 including its early HTTPS startup termination case with untrusted disposable test certificates. No changes to OS certificate trust.
+
+- AC-001: Extracted Rust CLI exercised simultaneous UI/STDIO, real bearer and OAuth calls, with metadata-only counts (one master, zero legacy; zero after fixture retirement). Recursive fixture scan found no known bearer, tokens, MCP name or server URL. Container-to-package journey installed, enabled, called, then denied after disablement.
+- AC-002: Live two-process full-directory rollback test; scope/ciphertext substitution, stale generation, exact expiry and clock regressions; extracted cold offline restart.
+- AC-003: Damaged bearer denied offline, repaired by one authenticated response, still subject to rejection and original lease. The running extracted UI repaired a truncated policy. Failed offline sign-in left the damaged identity untouched; successful new sign-in restored it. Missing master, stale rebuild witness and isolated locked-Keychain read denial were exercised.
+- AC-004: Old executable built from the planning baseline produced the signed-out installation for the package upgrade. Real-Keychain cutoff tests retained an existing pending-save byte sequence, interrupted copy/fence/retirement, ran signed-out creator handoff, and rejected old logout replay. Standalone OAuth/database regression exercised actual issued responses and CAS recovery. Live readers cannot consume a prepared import. Physical power loss, public OAuth providers and restoring the OS Keychain itself were not simulated.
+- AC-005: Canonical guides, package/archive and static site verified. The test-only isolated Keychain was removed and its search-list absence checked; future manual tests announce the disposable password before creating it.
+
+## Phase 4: Track verification
+
+The user approved the AC-001 through AC-005 verification evidence for 43bae33. At handoff, product HEAD was unchanged and the packaged archive matched its recorded SHA-256.

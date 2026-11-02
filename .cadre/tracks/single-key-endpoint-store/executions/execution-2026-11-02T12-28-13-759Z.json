@@ -1,0 +1,394 @@
+{
+  "executionContract": "cohesive-v1",
+  "schemaVersion": 1,
+  "executionId": "2026-11-02T12-28-13-759Z",
+  "trackId": "single-key-endpoint-store",
+  "status": "completed",
+  "checkpoint": "completed",
+  "requestedMode": "parallel",
+  "effectiveMode": "parallel",
+  "approvalMode": "track",
+  "approvalPolicyVersion": 2,
+  "maxWorkers": 3,
+  "planRevision": 1,
+  "planCommit": "1d5aa125ee6b7643192f3dd5fe8bf58e2ef0dbff",
+  "planSource": ".cadre/tracks/single-key-endpoint-store/plan.md",
+  "graphDigest": "6f5d1f25f17bd1574e9d083d3574db88a0733e5a866a862e90c05f9bc5c1e3b4",
+  "baseCommit": "1d5aa125ee6b7643192f3dd5fe8bf58e2ef0dbff",
+  "startedAt": "2026-11-02T12:28:13.759Z",
+  "completedAt": "2026-11-02T13:09:26.646Z",
+  "headCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+  "nodes": {
+    "P1": {
+      "id": "P1",
+      "kind": "phase",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2357e8a5f153046d5be65f108027a004988b254a",
+      "mergeCommit": "2357e8a5f153046d5be65f108027a004988b254a",
+      "verification": "Actual isolated macOS Keychain processes observed current keys across atomic account/value changes and rejected a restored directory. Scoped record tamper, unfinished file publication, redaction and cleanup pass. Locked CLI Clippy passed.",
+      "approval": "Approved spec and plan, track-mode execution.",
+      "blocker": null
+    },
+    "T1.1": {
+      "commitGroup": "single-key-store",
+      "id": "T1.1",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2357e8a5f153046d5be65f108027a004988b254a",
+      "mergeCommit": null,
+      "verification": "Actual isolated macOS Keychain processes observed current keys across atomic account/value changes and rejected a restored directory. Scoped record tamper, unfinished file publication, redaction and cleanup pass. Locked CLI Clippy passed.",
+      "approval": "Approved spec and plan, track-mode execution.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Rename the single Keychain account and update its value together to commit a new encrypted index."
+        ],
+        "failedApproaches": [
+          "Same-account SecItemUpdate returned a retired key in a warmed reader; direct legacy API also returned stale data."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate the store with endpoint identity, sync, installation and OAuth.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/src/vault.rs",
+            "sha256": "eb555b698d73e11b5ea5eaf9099f7be24a5e6bb7fe5b2bc40b06aae72090d7d2"
+          },
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/tests/master_key.rs",
+            "sha256": "09911c56d43ea4af3fa26ae07c64c64bc9fa4ab642b1830fb325b85214018109"
+          }
+        ]
+      }
+    },
+    "T1.2": {
+      "commitGroup": "single-key-store",
+      "id": "T1.2",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2357e8a5f153046d5be65f108027a004988b254a",
+      "mergeCommit": null,
+      "verification": "Actual isolated macOS Keychain processes observed current keys across atomic account/value changes and rejected a restored directory. Scoped record tamper, unfinished file publication, redaction and cleanup pass. Locked CLI Clippy passed.",
+      "approval": "Approved spec and plan, track-mode execution.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Rename the single Keychain account and update its value together to commit a new encrypted index."
+        ],
+        "failedApproaches": [
+          "Same-account SecItemUpdate returned a retired key in a warmed reader; direct legacy API also returned stale data."
+        ],
+        "openQuestions": [],
+        "nextAction": "Integrate the store with endpoint identity, sync, installation and OAuth.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/src/vault.rs",
+            "sha256": "eb555b698d73e11b5ea5eaf9099f7be24a5e6bb7fe5b2bc40b06aae72090d7d2"
+          },
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/tests/master_key.rs",
+            "sha256": "09911c56d43ea4af3fa26ae07c64c64bc9fa4ab642b1830fb325b85214018109"
+          }
+        ]
+      }
+    },
+    "T1.3": {
+      "id": "T1.3",
+      "kind": "manual-verification",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1",
+        "T1.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2357e8a5f153046d5be65f108027a004988b254a",
+      "mergeCommit": null,
+      "verification": "Actual isolated macOS Keychain processes observed current keys across atomic account/value changes and rejected a restored directory. Scoped record tamper, unfinished file publication, redaction and cleanup pass. Locked CLI Clippy passed.",
+      "approval": "Approved spec and plan, track-mode execution.",
+      "blocker": null
+    },
+    "P2": {
+      "id": "P2",
+      "kind": "phase",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "dec44aa3e23005dbccecc2eca15373615a1a1f44",
+      "mergeCommit": "dec44aa3e23005dbccecc2eca15373615a1a1f44",
+      "verification": "Integrated product and scoped cleanup at verified HEAD.",
+      "approval": "Persisted Track approval mode and approved implementation plan.",
+      "blocker": null
+    },
+    "T2.1": {
+      "commitGroup": "endpoint-cutover",
+      "id": "T2.1",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "dec44aa3e23005dbccecc2eca15373615a1a1f44",
+      "mergeCommit": null,
+      "verification": "Actual Mac UI and STDIO calls and offline restart passed. PostgreSQL/native OAuth consent, failed-save recovery, refresh coordination and disconnect passed. Workspace Clippy passed.",
+      "approval": "Persisted Track approval mode and approved implementation plan.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Select the v2 manifest with a single rotating Keychain account; preserve scopes and expiry floors.",
+          "Fence and verify the imported store, then retire only the recorded v1 namespace; provide signed-out creator handoff."
+        ],
+        "failedApproaches": [
+          "A real locked legacy Keychain can present a system dialog. The dedicated lock check is an explicit manual test and announces the disposable password before creation."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify the packaged binary, recovery scripts, and guides.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/src/cutover.rs",
+            "sha256": "3a7625a460cfff7f0429e463a1e18e534c6b729fed9b059741ffae506b3406ad"
+          }
+        ]
+      }
+    },
+    "T2.2": {
+      "commitGroup": "endpoint-cutover",
+      "id": "T2.2",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "dec44aa3e23005dbccecc2eca15373615a1a1f44",
+      "mergeCommit": null,
+      "verification": "Checked corruption, offline then online repair, exact expiry/rejection, interrupted v1 migration, handoff after old logout, missing master, independent HTTP login, live-process replay and locked real Keychain denial.",
+      "approval": "Persisted Track approval mode and approved implementation plan.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Select the v2 manifest with a single rotating Keychain account; preserve scopes and expiry floors.",
+          "Fence and verify the imported store, then retire only the recorded v1 namespace; provide signed-out creator handoff."
+        ],
+        "failedApproaches": [
+          "A real locked legacy Keychain can present a system dialog. The dedicated lock check is an explicit manual test and announces the disposable password before creation."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify the packaged binary, recovery scripts, and guides.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/src/cutover.rs",
+            "sha256": "3a7625a460cfff7f0429e463a1e18e534c6b729fed9b059741ffae506b3406ad"
+          }
+        ]
+      }
+    },
+    "T2.3": {
+      "id": "T2.3",
+      "kind": "manual-verification",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1",
+        "T2.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "dec44aa3e23005dbccecc2eca15373615a1a1f44",
+      "mergeCommit": null,
+      "verification": "Native integration, explicit locked-Keychain check, fault-injected cutover, authenticated repair and PostgreSQL OAuth verified.",
+      "approval": "Persisted Track approval mode and approved implementation plan.",
+      "blocker": null
+    },
+    "P3": {
+      "id": "P3",
+      "kind": "phase",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "verification": "Apple Silicon macOS 27.0.1; locked Rust workspace tests/build/Clippy/format and contracts; real PostgreSQL plus OAuth regression; Node 24.19.0, extracted package upgrade/tamper/offline/cleanup; container deployment and restore; 25/25 cleanup and recovery tests; site build and notices.",
+      "approval": "Persisted Track mode; phase verification is autonomous, final human verification is pending.",
+      "blocker": null
+    },
+    "T3.1": {
+      "commitGroup": "verification-and-guides",
+      "id": "T3.1",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": null,
+      "verification": "Apple Silicon macOS 27.0.1; locked Rust workspace tests/build/Clippy/format and contracts; real PostgreSQL plus OAuth regression; Node 24.19.0, extracted package upgrade/tamper/offline/cleanup; container deployment and restore; 25/25 cleanup and recovery tests; site build and notices.",
+      "approval": "Persisted Track mode; phase verification is autonomous, final human verification is pending.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Gate ordinary readers on completion of a prepared upgrade. Let the immutable creating CLI verify and retire its fixture master."
+        ],
+        "failedApproaches": [
+          "An early HTTPS entry-point stop test initially lacked its disposable public TLS fixture; supplied certificates without trusting them and reran all 25 successfully."
+        ],
+        "openQuestions": [],
+        "nextAction": "Present the verified track to the user for final manual approval.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/tests/gateway.rs",
+            "sha256": "490cb845ea89f6667b7c15437157c00d5811b1fc5592dbdd8c91b359dc63c9d4"
+          }
+        ]
+      }
+    },
+    "T3.2": {
+      "commitGroup": "verification-and-guides",
+      "id": "T3.2",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": null,
+      "verification": "Canonical setup, identity, cache, OAuth and credential guides updated; built site and verified notices; immutable CLI scopes confirm zero remaining items at retirement.",
+      "approval": "Persisted Track mode; phase verification is autonomous, final human verification is pending.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Gate ordinary readers on completion of a prepared upgrade. Let the immutable creating CLI verify and retire its fixture master."
+        ],
+        "failedApproaches": [
+          "An early HTTPS entry-point stop test initially lacked its disposable public TLS fixture; supplied certificates without trusting them and reran all 25 successfully."
+        ],
+        "openQuestions": [],
+        "nextAction": "Present the verified track to the user for final manual approval.",
+        "sources": [
+          {
+            "path": "docs/endpoint-identity.md",
+            "sha256": "ed342fbcaac3d3c0f5b297aaaf10c4192513ee3bee24dcdcb9a3ddcf89c3c4c6"
+          }
+        ]
+      }
+    },
+    "T3.3": {
+      "id": "T3.3",
+      "kind": "manual-verification",
+      "phaseId": "P3",
+      "dependencies": [
+        "P2",
+        "T3.1",
+        "T3.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": null,
+      "verification": "Apple Silicon macOS 27.0.1; locked Rust workspace tests/build/Clippy/format and contracts; real PostgreSQL plus OAuth regression; Node 24.19.0, extracted package upgrade/tamper/offline/cleanup; container deployment and restore; 25/25 cleanup and recovery tests; site build and notices.",
+      "approval": "Persisted Track mode; phase verification is autonomous, final human verification is pending.",
+      "blocker": null
+    },
+    "P4": {
+      "id": "P4",
+      "kind": "phase",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "verification": "Approved AC-001 through AC-005 verification evidence recorded in learning.md. Product HEAD unchanged; Apple Silicon archive checksum independently rechecked.",
+      "approval": "Explicit user approval (“approve”) in response to final track verification of 43bae33.",
+      "blocker": null
+    },
+    "T4.1": {
+      "id": "T4.1",
+      "kind": "manual-verification",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "43bae33639e41bd0154486fc3436df6945c092be",
+      "mergeCommit": null,
+      "verification": "Approved AC-001 through AC-005 verification evidence recorded in learning.md. Product HEAD unchanged; Apple Silicon archive checksum independently rechecked.",
+      "approval": "Explicit user approval (“approve”) in response to final track verification of 43bae33.",
+      "blocker": null
+    }
+  }
+}
