@@ -98,12 +98,3 @@ Open http://127.0.0.1:4173. The site renders the canonical Markdown guides in
 `DHIVON_MCP_GATEWAY_BUILD_CACHE` to Cadre's owned output during execution.
 The default static output is `apps/site/dist/`. Management UI builds remain
 under the existing `pnpm build` command.
-
-## License and ownership
-
-Dhivon MCP Gateway is a product of Dhivon AI.
-
-Copyright 2026 Dhivon AI. The project's own code is licensed under
-[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution.
-Third-party components retain their respective licenses, including the
-[Manrope SIL Open Font License](assets/brand/fonts/OFL.txt).
