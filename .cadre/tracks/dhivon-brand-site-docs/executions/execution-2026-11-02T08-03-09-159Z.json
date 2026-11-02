@@ -1,0 +1,929 @@
+{
+  "executionContract": "cohesive-v1",
+  "schemaVersion": 1,
+  "executionId": "2026-11-02T08-03-09-159Z",
+  "trackId": "dhivon-brand-site-docs",
+  "status": "in_progress",
+  "checkpoint": "P9:running",
+  "requestedMode": "parallel",
+  "effectiveMode": "parallel",
+  "approvalMode": "track",
+  "approvalPolicyVersion": 2,
+  "maxWorkers": 1,
+  "planRevision": 2,
+  "planCommit": "69ba2958579a4f592d2814f49f6afc5104d51754",
+  "planSource": ".cadre/tracks/dhivon-brand-site-docs/plan.md",
+  "graphDigest": "e869a839f6ede9e9ba57613a5557bdb250a1de8120e631e954b96e4a178e28e3",
+  "baseCommit": "69ba2958579a4f592d2814f49f6afc5104d51754",
+  "startedAt": "2026-11-02T08:03:09.159Z",
+  "completedAt": null,
+  "headCommit": null,
+  "nodes": {
+    "P1": {
+      "id": "P1",
+      "kind": "phase",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3ca90793f24df65b376e2b3930f7c4babf248351",
+      "mergeCommit": "3ca90793f24df65b376e2b3930f7c4babf248351",
+      "verification": "Product identity and brand groups integrated, worker worktree removed and phase learning recorded.",
+      "approval": "Persisted track mode under implement invocation.",
+      "blocker": null
+    },
+    "T1.1": {
+      "commitGroup": "product-identifiers",
+      "id": "T1.1",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "757d8b169cedc6578742c8a99e10fea45b24e1d1",
+      "mergeCommit": null,
+      "verification": "Locked workspace check/build, embedded frontend build, CLI version/help, frozen pnpm install, generated-contract comparison, formatting and 44 frontend tests pass. Native cache/identity tests pass. Fresh Compose config/start pass. Full native gateway and PostgreSQL/OAuth suites are still undergoing revalidation after fixture-name correction and stable-binary retry; no release acceptance claimed.",
+      "approval": "Persisted track mode under approved specification and implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Clean Dhivon CLI/package/env/cookie/Keychain namespaces; no compatibility alias. Keep pinned third-party lock versions. Preserve dated release and design evidence."
+        ],
+        "failedApproaches": [
+          "Offline lock regeneration changed two transitive packages, restored original pins.",
+          "First PostgreSQL run rejected old fixture guard, corrected guard.",
+          "Initial native gateway run overlapped executable rebuild, retain failed fixture journal for safe cleanup and retry."
+        ],
+        "openQuestions": [
+          "Full native end-to-end retry result pending."
+        ],
+        "nextAction": "Integrate shared brand assets, then continue UI/docs and final release verification.",
+        "sources": [
+          {
+            "path": "Cargo.toml",
+            "sha256": "2a7b428c563f2b3ea2a264253d73d2d09849fea7a88041005b10ffd05addcca2"
+          },
+          {
+            "path": "deploy/compose.yaml",
+            "sha256": "19cc38275ac2eb2aba010438917a0a67162b9dabd37147d9b6d13073501e21a0"
+          }
+        ]
+      }
+    },
+    "T1.2": {
+      "commitGroup": "product-identifiers",
+      "id": "T1.2",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "757d8b169cedc6578742c8a99e10fea45b24e1d1",
+      "mergeCommit": null,
+      "verification": "Locked workspace check/build, embedded frontend build, CLI version/help, frozen pnpm install, generated-contract comparison, formatting and 44 frontend tests pass. Native cache/identity tests pass. Fresh Compose config/start pass. Full native gateway and PostgreSQL/OAuth suites are still undergoing revalidation after fixture-name correction and stable-binary retry; no release acceptance claimed.",
+      "approval": "Persisted track mode under approved specification and implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Clean Dhivon CLI/package/env/cookie/Keychain namespaces; no compatibility alias. Keep pinned third-party lock versions. Preserve dated release and design evidence."
+        ],
+        "failedApproaches": [
+          "Offline lock regeneration changed two transitive packages, restored original pins.",
+          "First PostgreSQL run rejected old fixture guard, corrected guard.",
+          "Initial native gateway run overlapped executable rebuild, retain failed fixture journal for safe cleanup and retry."
+        ],
+        "openQuestions": [
+          "Full native end-to-end retry result pending."
+        ],
+        "nextAction": "Integrate shared brand assets, then continue UI/docs and final release verification.",
+        "sources": [
+          {
+            "path": "Cargo.toml",
+            "sha256": "2a7b428c563f2b3ea2a264253d73d2d09849fea7a88041005b10ffd05addcca2"
+          },
+          {
+            "path": "deploy/compose.yaml",
+            "sha256": "19cc38275ac2eb2aba010438917a0a67162b9dabd37147d9b6d13073501e21a0"
+          }
+        ]
+      }
+    },
+    "T1.3": {
+      "commitGroup": "brand-assets",
+      "id": "T1.3",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/tasks/P1--t1-3",
+      "branch": "cadre/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/task-t1-3",
+      "workerCommit": "bb057261035dadea4a830e5ef66e9a092bae6ce0",
+      "mergeCommit": "3ca90793f24df65b376e2b3930f7c4babf248351",
+      "verification": "Integrated T1.3 into its registered parent worktree.",
+      "approval": "Persisted track mode under approved plan and implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Shared assets/brand directory, local Manrope, emerald accent and dark semantic success."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Integrate approved assets then consume from admin/local/site.",
+        "sources": [
+          {
+            "path": "assets/brand/theme.css",
+            "sha256": "ff37f80f1d0a630209b43d2ac1d3bf8b0795689e58ce37983a4ad87484e0c961"
+          }
+        ]
+      }
+    },
+    "T1.4": {
+      "id": "T1.4",
+      "kind": "manual-verification",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1",
+        "T1.2",
+        "T1.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3ca90793f24df65b376e2b3930f7c4babf248351",
+      "mergeCommit": null,
+      "verification": "Reviewed concrete rename audit, help/version, fresh deployment config, official brand provenance/geometry and contrast plus both packers. Build, contract and frontend checks pass. Full native gateway retry passes; final release verification remains P5.",
+      "approval": "Persisted track mode permits agent phase verification.",
+      "blocker": null
+    },
+    "P2": {
+      "id": "P2",
+      "kind": "phase",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "d531666dc87e3c56fba248a4f7fb5b0846393b33",
+      "mergeCommit": "d531666dc87e3c56fba248a4f7fb5b0846393b33",
+      "verification": "Reviewed both compiled role-specific UIs, desktop/390px behavior, actual local installation and confirmed enable/disable, admin editor focus, asset loading and console. Shared frontend checks pass. Learning records failed SVG inline attempt and stable-input retry evidence. Final packaged acceptance remains P5.",
+      "approval": "Persisted track mode allows agent phase verification.",
+      "blocker": null
+    },
+    "T2.1": {
+      "commitGroup": "admin-brand",
+      "id": "T2.1",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "03a0ae79e333cae95b3260ca8e3419df797d254b",
+      "mergeCommit": null,
+      "verification": "44 frontend tests, type/production embedded build and lint pass. Actual compiled admin login/catalog/editor, Escape focus return and desktop/390px layout checked in IAB. Manrope loaded locally, both SVG assets decode, no document overflow or relevant console errors. Fixed CSP-blocked data URI by external SVG imports.",
+      "approval": "Persisted track mode.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Navy sidebar with white mark, emerald selected-nav accent, local Manrope and navy actions. Keep semantic component tokens."
+        ],
+        "failedApproaches": [
+          "Vite inlined SVG was blocked by existing CSP. Use ?no-inline."
+        ],
+        "openQuestions": [],
+        "nextAction": "Apply product/parent identity to local Mac shell and verify compiled local flows.",
+        "sources": [
+          {
+            "path": "apps/web/src/index.css",
+            "sha256": "bb956d0c2267921c871f48ced9798907a1f3e923d83a4332e132965ec16941d3"
+          }
+        ]
+      }
+    },
+    "T2.2": {
+      "commitGroup": "local-brand",
+      "id": "T2.2",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "2d2b662d1885b44b389687c545ebddb32a49b08a",
+      "mergeCommit": null,
+      "verification": "Compiled local sign-in, assigned catalog, status, install feedback and explicit server-confirmed enable tested in IAB desktop/390px. No document overflow or console errors. 44 frontend tests pass. Local Manrope replaces unused Geist dependency. Sequential extended native OAuth retry passes in 30.93 seconds.",
+      "approval": "Persisted track mode.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Reuse shared branding and preserve distinct This Mac role. Native credential tests run sequentially with immutable binaries."
+        ],
+        "failedApproaches": [
+          "Parallel native full checks caused long latency and expired fixture connection. Sequential OAuth retry passes."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete browser disable check and phase verification, then final packaged release rehearsal.",
+        "sources": [
+          {
+            "path": "apps/web/src/local/app.tsx",
+            "sha256": "f25d2a530d8990c1835c11d6861cf9d923501c674cbd3f305c622ff324e452e0"
+          }
+        ]
+      }
+    },
+    "T2.3": {
+      "id": "T2.3",
+      "kind": "manual-verification",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1",
+        "T2.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "d531666dc87e3c56fba248a4f7fb5b0846393b33",
+      "mergeCommit": null,
+      "verification": "Reviewed both compiled role-specific UIs, desktop/390px behavior, actual local installation and confirmed enable/disable, admin editor focus, asset loading and console. Shared frontend checks pass. Learning records failed SVG inline attempt and stable-input retry evidence. Final packaged acceptance remains P5.",
+      "approval": "Persisted track mode allows agent phase verification.",
+      "blocker": null
+    },
+    "P3": {
+      "id": "P3",
+      "kind": "phase",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3c5d4f3b65fffa45674c054ee1a6c0ee7905cbbd",
+      "mergeCommit": "3c5d4f3b65fffa45674c054ee1a6c0ee7905cbbd",
+      "verification": "Reviewed role entry points, concrete grant/enable/call/disable walkthrough, source-aligned deployment commands, detailed references and roadmap status. Link/syntax checks and actual extracted Mac/container/recovery rehearsal pass. Learning recorded.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "T3.1": {
+      "commitGroup": "getting-started",
+      "id": "T3.1",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/tasks/P3--t3-1",
+      "branch": "cadre/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/task-t3-1",
+      "workerCommit": "3a927a3643fa8b435d8c197230ccef2361d5309c",
+      "mergeCommit": "d531666dc87e3c56fba248a4f7fb5b0846393b33",
+      "verification": "Integrated T3.1 into its registered parent worktree.",
+      "approval": "Persisted track mode. Coordinator reviewed six-file diff and authorized commit.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Canonical Markdown guides and one controlled echo walkthrough. Preserve historical release evidence."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Integrate guides and complete reference/troubleshooting/roadmap.",
+        "sources": [
+          {
+            "path": "docs/quickstart.md",
+            "sha256": "856c7e69c44adde5436c6276d0bbcab45ae3f2b5605bec7bca9a3f93a0793a6d"
+          }
+        ]
+      }
+    },
+    "T3.2": {
+      "commitGroup": "operations-docs",
+      "id": "T3.2",
+      "kind": "task",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1",
+        "T3.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/tasks/P3--t3-2",
+      "branch": "cadre/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/task-t3-2",
+      "workerCommit": "3c5d4f3b65fffa45674c054ee1a6c0ee7905cbbd",
+      "mergeCommit": "3c5d4f3b65fffa45674c054ee1a6c0ee7905cbbd",
+      "verification": "Integrated T3.2 into its registered parent worktree.",
+      "approval": "Persisted track mode and coordinator scope review.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Role-based docs link detailed canonical references. Fresh-install instructions use actual Dhivon service/database. Roadmap candidates have outcomes and evidence criteria with no dates."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Integrate references and launch public site.",
+        "sources": [
+          {
+            "path": "docs/architecture.md",
+            "sha256": "10a595f3bc0a4905def26089a4b3ac3590e434fa694411861c1d1f5c8a65970f"
+          },
+          {
+            "path": "docs/roadmap.md",
+            "sha256": "738c2c60a994396ee1bedf55c5474b465c1cc0dfae827e4d2978491ecb23f56b"
+          }
+        ]
+      }
+    },
+    "T3.3": {
+      "id": "T3.3",
+      "kind": "manual-verification",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1",
+        "T3.1",
+        "T3.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3c5d4f3b65fffa45674c054ee1a6c0ee7905cbbd",
+      "mergeCommit": null,
+      "verification": "Reviewed role entry points, concrete grant/enable/call/disable walkthrough, source-aligned deployment commands, detailed references and roadmap status. Link/syntax checks and actual extracted Mac/container/recovery rehearsal pass. Learning recorded.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "P4": {
+      "id": "P4",
+      "kind": "phase",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "mergeCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "verification": "Reviewed rendered independent site against selected concepts and approved AC-003. Reader can understand purpose, policy and execution, then reach first-call guides, compatibility and roadmap. IAB desktop/mobile/navigation checks, build/typecheck and link crawl pass; phase learning persisted and worker removed.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "T4.1": {
+      "commitGroup": "public-site",
+      "id": "T4.1",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/tasks/P4--t4-1",
+      "branch": "cadre/dhivon-brand-site-docs/2026-11-02T06-39-45-854Z/task-t4-1",
+      "workerCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "mergeCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "verification": "Static build and strict typecheck pass. 31 guide pages generated. IAB confirms desktop/mobile homepage, working quickstart/roadmap navigation and refresh, local font/mark loading, no console errors or document overflow. Story explains centralized grants, developer opt-in, one STDIO entry and local/remote execution, with echo grant→enable→call→disable example.",
+      "approval": "Persisted track mode.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Public site is a separate static workspace, renders canonical Markdown, uses approved assets and explicit architecture/control example."
+        ],
+        "failedApproaches": [
+          "Corrected stale identity anchor during whole-site crawl."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete public-site phase and final release verification.",
+        "sources": [
+          {
+            "path": "apps/site/build.ts",
+            "sha256": "39f7587f8ec0ce490173ed314f177dc93259f7c4c668fcb696bafa047eff7d08"
+          },
+          {
+            "path": "apps/site/style.css",
+            "sha256": "711aa8b7b02088dbc5fd88850a82b02c3590ca88b399eb723551c1c22fb25daa"
+          }
+        ]
+      }
+    },
+    "T4.2": {
+      "commitGroup": "public-site",
+      "id": "T4.2",
+      "kind": "task",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P3",
+        "T4.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "mergeCommit": null,
+      "verification": "Static build and strict typecheck pass. 31 guide pages generated. IAB confirms desktop/mobile homepage, working quickstart/roadmap navigation and refresh, local font/mark loading, no console errors or document overflow. Story explains centralized grants, developer opt-in, one STDIO entry and local/remote execution, with echo grant→enable→call→disable example.",
+      "approval": "Persisted track mode.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Public site is a separate static workspace, renders canonical Markdown, uses approved assets and explicit architecture/control example."
+        ],
+        "failedApproaches": [
+          "Corrected stale identity anchor during whole-site crawl."
+        ],
+        "openQuestions": [],
+        "nextAction": "Complete public-site phase and final release verification.",
+        "sources": [
+          {
+            "path": "apps/site/build.ts",
+            "sha256": "39f7587f8ec0ce490173ed314f177dc93259f7c4c668fcb696bafa047eff7d08"
+          },
+          {
+            "path": "apps/site/style.css",
+            "sha256": "711aa8b7b02088dbc5fd88850a82b02c3590ca88b399eb723551c1c22fb25daa"
+          }
+        ]
+      }
+    },
+    "T4.3": {
+      "id": "T4.3",
+      "kind": "manual-verification",
+      "phaseId": "P4",
+      "dependencies": [
+        "P1",
+        "P3",
+        "T4.1",
+        "T4.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "4a3ccc03f1334237204fc8ba23b328bf414241bc",
+      "mergeCommit": null,
+      "verification": "Reviewed rendered independent site against selected concepts and approved AC-003. Reader can understand purpose, policy and execution, then reach first-call guides, compatibility and roadmap. IAB desktop/mobile/navigation checks, build/typecheck and link crawl pass; phase learning persisted and worker removed.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "P5": {
+      "id": "P5",
+      "kind": "phase",
+      "phaseId": "P5",
+      "dependencies": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fe930285c9c18bafbab36a72635b600aba47c7b5",
+      "mergeCommit": "fe930285c9c18bafbab36a72635b600aba47c7b5",
+      "verification": "All AC-001 through AC-006 technical evidence reviewed and mapped in current release guide. Final packaged/website/admin/local and recovery checks pass, with historical evidence and supported limits retained. Phase learning recorded.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "T5.1": {
+      "commitGroup": "release-verification",
+      "id": "T5.1",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fe930285c9c18bafbab36a72635b600aba47c7b5",
+      "mergeCommit": null,
+      "verification": "83 workspace Rust tests, 11 isolated PostgreSQL cases, 44 frontend tests pass. Rust fmt/all-target Clippy, frontend lint/type/format/build, generated contracts, frozen install and static site strict type/format/build pass. IAB desktop/390px admin/local/public flows and actual packaged local assets pass. 32 site pages have zero internal link/anchor failures. Final Mac archive checksum verified, executable identical to tested extracted binary. Packaged all-auth agent suite passes (32.03s). Final container→Mac→Node STDIO/install/enable→disable denial, restart, dump/fresh restore, independent wrong/matching key recovery and secret log scan pass. Exact identities recorded in docs/dhivon-release.md. Created fixture cleanup confirmed.",
+      "approval": "Persisted track mode under approved spec and implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Retain dated MVP reports and publish current Dhivon artifact identities separately.",
+          "Keep native checks on immutable binaries and assets. Add packaged-browser override to existing fixture.",
+          "Use source audit exceptions only for third-party/standard protocol names, generic domain terms and immutable history."
+        ],
+        "failedApproaches": [
+          "Early concurrent rebuilds invalidated native verification and stale font chunks. Repeated with stable inputs and sequential native checks.",
+          "Initial link crawl found one stale identity anchor, fixed canonical source."
+        ],
+        "openQuestions": [],
+        "nextAction": "Obtain human track-level verification, finish Cadre bookkeeping, then ordinary review. Follow with approved project-context refresh and checkout/hosting administration.",
+        "sources": [
+          {
+            "path": "docs/dhivon-release.md",
+            "sha256": "27b13237d947860db71974e188c557f0a61ee46a82300df30b9efd7b1fb183a5"
+          }
+        ]
+      }
+    },
+    "T5.2": {
+      "commitGroup": "release-verification",
+      "id": "T5.2",
+      "kind": "task",
+      "phaseId": "P5",
+      "dependencies": [
+        "P2",
+        "P3",
+        "P4",
+        "T5.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fe930285c9c18bafbab36a72635b600aba47c7b5",
+      "mergeCommit": null,
+      "verification": "83 workspace Rust tests, 11 isolated PostgreSQL cases, 44 frontend tests pass. Rust fmt/all-target Clippy, frontend lint/type/format/build, generated contracts, frozen install and static site strict type/format/build pass. IAB desktop/390px admin/local/public flows and actual packaged local assets pass. 32 site pages have zero internal link/anchor failures. Final Mac archive checksum verified, executable identical to tested extracted binary. Packaged all-auth agent suite passes (32.03s). Final container→Mac→Node STDIO/install/enable→disable denial, restart, dump/fresh restore, independent wrong/matching key recovery and secret log scan pass. Exact identities recorded in docs/dhivon-release.md. Created fixture cleanup confirmed.",
+      "approval": "Persisted track mode under approved spec and implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Retain dated MVP reports and publish current Dhivon artifact identities separately.",
+          "Keep native checks on immutable binaries and assets. Add packaged-browser override to existing fixture.",
+          "Use source audit exceptions only for third-party/standard protocol names, generic domain terms and immutable history."
+        ],
+        "failedApproaches": [
+          "Early concurrent rebuilds invalidated native verification and stale font chunks. Repeated with stable inputs and sequential native checks.",
+          "Initial link crawl found one stale identity anchor, fixed canonical source."
+        ],
+        "openQuestions": [],
+        "nextAction": "Obtain human track-level verification, finish Cadre bookkeeping, then ordinary review. Follow with approved project-context refresh and checkout/hosting administration.",
+        "sources": [
+          {
+            "path": "docs/dhivon-release.md",
+            "sha256": "27b13237d947860db71974e188c557f0a61ee46a82300df30b9efd7b1fb183a5"
+          }
+        ]
+      }
+    },
+    "T5.3": {
+      "id": "T5.3",
+      "kind": "manual-verification",
+      "phaseId": "P5",
+      "dependencies": [
+        "P2",
+        "P3",
+        "P4",
+        "T5.1",
+        "T5.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "fe930285c9c18bafbab36a72635b600aba47c7b5",
+      "mergeCommit": null,
+      "verification": "All AC-001 through AC-006 technical evidence reviewed and mapped in current release guide. Final packaged/website/admin/local and recovery checks pass, with historical evidence and supported limits retained. Phase learning recorded.",
+      "approval": "Persisted track mode.",
+      "blocker": null
+    },
+    "P6": {
+      "id": "P6",
+      "kind": "phase",
+      "phaseId": "P6",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "eae1965",
+      "mergeCommit": "eae1965",
+      "verification": "User explicitly approved the previously presented implementation and technical verification at product fe93028 and checkpoint eae1965. User additionally requested logging public hosted website URL as a review follow-up. Prior 83 Rust, 11 PostgreSQL, 44 frontend, browser, static link, packaged-agent and recovery evidence remains current.",
+      "approval": "Explicit user approval in this message: Approve but while doing review Log one bug like instead of 127.0.0.1 it should be hosted url.",
+      "blocker": null
+    },
+    "T6.1": {
+      "id": "T6.1",
+      "kind": "manual-verification",
+      "phaseId": "P6",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "eae1965",
+      "mergeCommit": null,
+      "verification": "User explicitly approved the previously presented implementation and technical verification at product fe93028 and checkpoint eae1965. User additionally requested logging public hosted website URL as a review follow-up. Prior 83 Rust, 11 PostgreSQL, 44 frontend, browser, static link, packaged-agent and recovery evidence remains current.",
+      "approval": "Explicit user approval in this message: Approve but while doing review Log one bug like instead of 127.0.0.1 it should be hosted url.",
+      "blocker": null
+    },
+    "P7": {
+      "id": "P7",
+      "kind": "phase",
+      "phaseId": "P7",
+      "dependencies": [
+        "P6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "327d97881634dba4cb17ad6e6afb0b959e5d1e5a",
+      "mergeCommit": "327d97881634dba4cb17ad6e6afb0b959e5d1e5a",
+      "verification": "Both distribution-notices group tasks and phase verification complete against product327d978. Actual current artifact and browser/deployment checks pass; phase learning and fingerprints recorded. No worker worktrees.",
+      "approval": "Persisted track mode permits agent phase completion.",
+      "blocker": null
+    },
+    "T7.1": {
+      "commitGroup": "distribution-notices",
+      "id": "T7.1",
+      "kind": "task",
+      "phaseId": "P7",
+      "dependencies": [
+        "P6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "327d97881634dba4cb17ad6e6afb0b959e5d1e5a",
+      "mergeCommit": null,
+      "verification": "Apache-2.0/Dhivon AI metadata verified for all four Cargo packages and npm manifests. Exact LICENSE/NOTICE/Manrope OFL bytes match in rebuilt Mac archive, nonroot runtime image and static site. Browser footer→licensing→Apache text works, desktop1280/mobile390 no overflow or relevant console errors. Strict site TypeScript, script TypeScript, format, frozen install and shell syntax pass.",
+      "approval": "Persisted track mode under the approved review remediation plan and current implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Project source is Apache-2.0, copyright 2026 Dhivon AI. Third-party OFL preserved unchanged.",
+          "Readable notices at archive root plus licenses/Manrope-OFL.txt, container /usr/share/doc/dhivon-mcp-gateway, website LICENSE.txt/NOTICE.txt/brand/fonts/OFL.txt."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Continue hosted HTTPS/native OAuth simulation.",
+        "sources": [
+          {
+            "path": "NOTICE",
+            "sha256": "cde1b552a892484570235bc8bf924359afdc7ca45fb206ed9e9e2c8b4444fd11"
+          }
+        ]
+      }
+    },
+    "T7.2": {
+      "commitGroup": "distribution-notices",
+      "id": "T7.2",
+      "kind": "task",
+      "phaseId": "P7",
+      "dependencies": [
+        "P6",
+        "T7.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "327d97881634dba4cb17ad6e6afb0b959e5d1e5a",
+      "mergeCommit": null,
+      "verification": "Actual previous archive fails new notice checker; rebuilt archive/image/site pass exact-byte coverage. Archive SHA25695b9aa68baaecbd19ca97c9a3d9b18d56e09d4e6063a29d90771877f5078b2d6, tested binary b789e155ce8251e9cfc5b13fe8abeb23010782a3abf64b1b83413b4aba960b22, image sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07. Extracted all-auth gateway test passes34.28s; actual Docker/Mac/Node STDIO login/install/enable/call/disable plus restart/fresh restore/wrong-matching keys/redacted logs and cleanup pass. 33 static pages no broken internal links/anchors. Historical artifact identities retained.",
+      "approval": "Persisted track mode under the approved review remediation plan and current implement invocation.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Automated notice checks wired into package-macos, deployment rehearsal and website CI.",
+          "Repeat initial Node26 invocation with checked official Node24.19.0 archive and exact final binary equality."
+        ],
+        "failedApproaches": [
+          "Initial local command used system Node26; final relevant checks repeated under pinned Node24.19.0."
+        ],
+        "openQuestions": [],
+        "nextAction": "Verify notice phase barrier then simulate HTTPS control plane with controlled OAuth provider.",
+        "sources": [
+          {
+            "path": "scripts/check-notices.ts",
+            "sha256": "54ac7e00be3511b344fb542ef1ec934a5060bd422cc47d1b60950bc73c67b971"
+          },
+          {
+            "path": "docs/dhivon-release.md",
+            "sha256": "a3158f76c81935d45b1ff997611b60e5262af04a9c5ae151b0ee8344b86d07e7"
+          }
+        ]
+      }
+    },
+    "T7.3": {
+      "id": "T7.3",
+      "kind": "manual-verification",
+      "phaseId": "P7",
+      "dependencies": [
+        "P6",
+        "T7.1",
+        "T7.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "327d97881634dba4cb17ad6e6afb0b959e5d1e5a",
+      "mergeCommit": null,
+      "verification": "Inspected actual archive and nonroot runtime image notice files and website licensing/footer/text outputs. Apache ownership, unchanged full OFL and exact-byte regression checks satisfy BUG-007; current release evidence retains original artifact identities.",
+      "approval": "Persisted track mode permits agent phase verification.",
+      "blocker": null
+    },
+    "P8": {
+      "id": "P8",
+      "kind": "phase",
+      "phaseId": "P8",
+      "dependencies": [
+        "P6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3d6eecb60106ba74a5126ee0b4a277ccec3e85d9",
+      "mergeCommit": "3d6eecb60106ba74a5126ee0b4a277ccec3e85d9",
+      "verification": "Hosted-oauth-evidence group and phase verification complete at3d6eecb. Learning/provenance recorded. All exact owned resources cleaned; no workers. Final human track verification remains.",
+      "approval": "Persisted track mode permits agent phase completion.",
+      "blocker": null
+    },
+    "T8.1": {
+      "commitGroup": "hosted-oauth-evidence",
+      "id": "T8.1",
+      "kind": "task",
+      "phaseId": "P8",
+      "dependencies": [
+        "P6"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3d6eecb60106ba74a5126ee0b4a277ccec3e85d9",
+      "mergeCommit": null,
+      "verification": "Actual service image+PostgreSQL behind pinned nginx TLS, controlled HTTPS MCP/issuer and extracted Mac tested. Safari completed actual 127.0.0.1:57521/oauth/callback with no certificate-warning bypass. Native HTTPS sign-in/sync, exact callback/client/resource/S256PKCE, forged state/issuer rejection, consent-before-enable, management restart persistence, explicit enable, Node STDIO echo, expired rejected token refresh version1→2, disconnect and subsequent denial pass. Fixed a verified resolver regression that blocked refresh by republishing a rejected expired token. 83 workspace tests, CLI all-target Clippy/fmt, strict script TS/format, final packaged gateway47.13s and current notice checks pass. Archivee66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799; binaryf36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7. Temporary trust removal exited0 after operator authorization, certificate absent and leaf verification fails; exact stack resources and native credentials cleared. 34 site pages link/anchor crawl and new OAuth guide browser navigation pass.",
+      "approval": "Persisted track mode and current implement invocation. Owner explicitly selected a Docker HTTPS simulation instead of public hosting, and approved temporary one-day user-domain SSL trust restricted to localhost with cleanup.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Use owner-selected isolated HTTPS Docker simulation; no public DNS/real-user provider claim.",
+          "Validate online expired OAuth record and use existing version/lease refresh before publication of the rejected old binding; preserve generation, offline, rejection and no-replay rules.",
+          "Browser completion uses Safari's native macOS trust; Chromium rejected constrained test CA and no warnings were bypassed."
+        ],
+        "failedApproaches": [
+          "Initial nginx startup raced service DNS; added service-health dependency.",
+          "Initial browser authorization window expired after Chromium rejected constrained CA; cleanup verified, fresh Safari flow succeeded.",
+          "Baseline packaged resolver failed refresh after provider rejected expired access token; final actual scenario passes after scoped resolver fix."
+        ],
+        "openQuestions": [
+          "Public hosting certificates, real identity-provider consent and named external registration compatibility remain unverified beyond this owner-selected simulation."
+        ],
+        "nextAction": "Obtain explicit human final track-level manual verification, then execution_finish and ordinary review.",
+        "sources": [
+          {
+            "path": "crates/dhivon-mcp-gateway-cli/src/remote_credentials.rs",
+            "sha256": "bb7014e7ab187f4bc169f6e9aa404b83a1d9f0422c2d09e3b769b1c4458eec6c"
+          },
+          {
+            "path": "scripts/verify-https-oauth.ts",
+            "sha256": "4eadf759dc4333b1c520c21e0fca1bd132fb174cd9b0abf3e905d115eb8dc2f7"
+          },
+          {
+            "path": "docs/dhivon-release.md",
+            "sha256": "2fae1db97d7a2cf5986a2e8053bd4714e49cd8ec54f7239bd4b3218d29f8056d"
+          }
+        ]
+      }
+    },
+    "T8.2": {
+      "id": "T8.2",
+      "kind": "manual-verification",
+      "phaseId": "P8",
+      "dependencies": [
+        "P6",
+        "T8.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "3d6eecb60106ba74a5126ee0b4a277ccec3e85d9",
+      "mergeCommit": null,
+      "verification": "Reviewed actual browser callback and complete final Docker HTTPS/native evidence, including rejection-preserving refresh regression, explicit enable/call/disconnect, protected persistence, trust/Keychain/stack cleanup, current artifacts and honest external-provider limits. BUG-006 scenario passes for the owner-selected simulated deployment.",
+      "approval": "Persisted track mode permits agent phase verification; owner selected Docker HTTPS simulation.",
+      "blocker": null
+    },
+    "P9": {
+      "id": "P9",
+      "kind": "phase",
+      "phaseId": "P9",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8"
+      ],
+      "status": "running",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": null,
+      "mergeCommit": null,
+      "verification": null,
+      "approval": null,
+      "blocker": null
+    },
+    "T9.1": {
+      "id": "T9.1",
+      "kind": "manual-verification",
+      "phaseId": "P9",
+      "dependencies": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5",
+        "P6",
+        "P7",
+        "P8"
+      ],
+      "status": "pending",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": null,
+      "mergeCommit": null,
+      "verification": null,
+      "approval": null,
+      "blocker": null
+    }
+  }
+}

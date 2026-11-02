@@ -95,3 +95,58 @@ Credential publication, native leases and owned transports govern real-provider
 OAuth validation and protected loopback/native behavior. Browser contract
 consistency remains relevant to any visible ownership/notice surfaces.
 All original pattern content hashes remain current.
+
+## Phase 7 — Project licensing and distribution notices
+
+The owner-approved Apache-2.0/Dhivon AI source decision and delivery notices are
+implemented in 327d978. Original third-party OFL bytes are unchanged. Actual
+archive, runtime image and static output pass source-byte comparisons; the older
+archive fails the new check. Packaging, deployment rehearsal and website CI now
+verify emitted notices. The site exposes a readable ownership guide and full text.
+
+Pinned Node24.19.0 checks replace an initial system Node26 invocation. Site/script
+TypeScript, frozen install, format and shell syntax pass. All four Cargo packages
+report Apache-2.0/Dhivon AI. The 33-page site crawl finds no broken links/anchors.
+IAB licensing navigation/text delivery and 1280px/390px no-overflow/console checks
+pass. The extracted all-auth agent suite passes34.28s; final archive executable
+matches the tested immutable binary. Actual notice-bearing container/Mac/Node
+call/disable, restart, fresh restore, independent keys and redacted-log cleanup
+rehearsal passes. Exact current and historical identities are in docs/dhivon-release.md.
+
+For P8 the owner selected an isolated Docker HTTPS simulation instead of a public
+deployment, then explicitly approved temporary user-domain SSL trust restricted
+to localhost for the generated one-day CA, with trust/certificate cleanup. Keep
+certificate validation enabled. Label controlled-provider evidence accurately.
+
+## Phase 8 — Docker HTTPS and actual native OAuth
+
+The owner selected a Docker HTTPS simulation instead of public hosting. Product
+3d6eecb delivers a reproducible private Compose/nginx TLS rehearsal and an HTTPS
+advertised-origin option confined to the loopback-only fixture. Production TLS
+and hostname verification remain unchanged. The extracted Mac signed in/synced
+over HTTPS; Safari followed the HTTPS authorization redirect to the actual native
+127.0.0.1 listener and displayed OAuth connected without a certificate warning.
+Chromium rejected the constrained temporary CA; no warning was bypassed.
+
+The initial expiry test found a real resolver defect: publishing the centrally
+returned expired token hit its scoped rejection marker before reaching refresh.
+The fix validates that record and uses existing version/lease-checked refresh
+before old-token publication. Actual final evidence includes an old-token
+rejection, credential version1→2, permitted tool call, disconnect and subsequent
+denial, with no automatic replay. Consent alone never enables; management restart
+preserves credentials. State/issuer negatives preserve the live flow.
+
+The initial nginx startup needed a health dependency. An expired browser window
+was cleaned and replaced with a fresh Safari flow. Discovery polling accommodates
+scheduled reconciliation without replaying tool calls. All83 Rust tests, CLI
+all-target Clippy/fmt, strict script TS/format, extracted all-auth suite47.13s,
+current archive/image/site notice checks and 34-page links/anchors pass. Final
+archive/executable and unchanged service-image identities are in docs/dhivon-release.md.
+
+Creating binaries confirmed empty native credentials/cleanup lists. Exact private
+Compose resources were removed. The owner authorized temporary localhost-only
+SSL trust and the OS cleanup dialog. Trust removal exited0, the certificate is
+absent and its leaf now fails validation. Generated private certificate keys were
+removed. Public DNS/hosting certificates, real-user consent and named external
+providers remain outside this controlled evidence. Final P9 requires explicit
+human verification under Track mode; no final approval has been recorded.
