@@ -95,3 +95,8 @@ the packaged local APIs, explicitly installs/enables, spawns the sole STDIO entr
 through Node socket pairs, invokes the exact namespaced echo tool, then confirms
 disable blocks the next dispatch. Its immutable creating-binary copy performs
 Keychain logout and verifies empty cleanup metadata before removing private state.
+
+For a Docker-hosted HTTPS control plane, HTTPS MCP/OAuth fixture and actual native
+loopback callback, follow the [HTTPS OAuth rehearsal](https-oauth-rehearsal.md).
+It preserves certificate verification, requires explicit temporary localhost trust
+and cleanup, and labels controlled-provider evidence separately from public hosting.

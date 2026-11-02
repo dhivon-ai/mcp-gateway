@@ -729,7 +729,10 @@ fn credential_version(credential: &UpstreamCredential) -> u32 {
         }
     }
 }
-fn validate_credential(scope: &CredentialScope, credential: &UpstreamCredential) -> Result<()> {
+pub(crate) fn validate_credential(
+    scope: &CredentialScope,
+    credential: &UpstreamCredential,
+) -> Result<()> {
     let token = match (&scope.mcp.definition.auth, credential) {
         (
             AuthMode::Bearer {},

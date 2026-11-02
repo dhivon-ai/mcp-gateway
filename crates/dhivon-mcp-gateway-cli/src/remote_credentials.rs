@@ -5,7 +5,7 @@ use crate::{
     cache::ValidatedSnapshot,
     central::bounded_body,
     sync::SyncEngine,
-    upstream_credentials::{CredentialFault, NativeCredentials},
+    upstream_credentials::{CredentialFault, NativeCredentials, validate_credential},
 };
 use dhivon_mcp_gateway_core::{AuthMode, CredentialRequest, EffectiveMcp, UpstreamCredential};
 use futures::future::BoxFuture;
@@ -18,6 +18,24 @@ pub struct RemoteCredentials {
     oauth: crate::oauth_control::OAuthControl,
 }
 impl RemoteCredentials {
+    async fn refresh_expired(
+        &self,
+        generation: Uuid,
+        id: &str,
+    ) -> Result<AuthLease, AggregateError> {
+        self.oauth.refresh(generation, id).await.map_err(category)?;
+        let latest = self.native.cache.latest().map_err(category)?;
+        if latest.generation != generation {
+            return Err(AggregateError::Denied);
+        }
+        let current = latest
+            .snapshot
+            .mcps
+            .iter()
+            .find(|mcp| mcp.definition.id == id)
+            .ok_or(AggregateError::Denied)?;
+        self.cached(&latest, current)
+    }
     pub fn new(engine: SyncEngine) -> Self {
         let fixture_http = engine
             .cache
@@ -112,14 +130,28 @@ impl CredentialResolver for RemoteCredentials {
                         let bytes = bounded_body(response).await.map_err(category)?;
                         let credential: UpstreamCredential =
                             serde_json::from_slice(&bytes).map_err(|_| AggregateError::Protocol)?;
+                        validate_credential(&scope, &credential).map_err(category)?;
+                        // A provider can reject an expired access token before reconciliation.
+                        // Its rejection marker must still deny that exact token, but must not
+                        // prevent a version/lease-checked refresh of the expired central record.
+                        if matches!(&credential, UpstreamCredential::OAuth { credentials, .. }
+                            if credentials.expires_at <= self.native.cache.sample().map_err(category)?.wall_seconds().map_err(category)?)
+                        {
+                            return self.refresh_expired(outcome, &mcp.definition.id).await.map(Some);
+                        }
                         self.native
                             .publish(&scope, credential, start)
-                            .map_err(category)
+                            .map_err(category)?;
+                        Ok(None)
                     }
                     .await;
-                    if let Err(error) = prepared {
-                        let _ = self.native.reject(&scope, None, CredentialFault::Required);
-                        return Err(error);
+                    match prepared {
+                        Ok(Some(lease)) => return Ok(lease),
+                        Ok(None) => (),
+                        Err(error) => {
+                            let _ = self.native.reject(&scope, None, CredentialFault::Required);
+                            return Err(error);
+                        }
                     }
                 }
                 Ok(response) => {
@@ -157,18 +189,7 @@ impl CredentialResolver for RemoteCredentials {
                     if online_resolution
                         && matches!(current.definition.auth, AuthMode::OAuth { .. }) =>
                 {
-                    self.oauth
-                        .refresh(outcome, &current.definition.id)
-                        .await
-                        .map_err(category)?;
-                    let latest = self.native.cache.latest().map_err(category)?;
-                    let current = latest
-                        .snapshot
-                        .mcps
-                        .iter()
-                        .find(|mcp| mcp.definition.id == current.definition.id)
-                        .ok_or(AggregateError::Denied)?;
-                    self.cached(&latest, current)
+                    self.refresh_expired(outcome, &current.definition.id).await
                 }
                 result => result,
             }

@@ -15,13 +15,16 @@ struct Args {
     tag: Option<String>,
     #[arg(long)]
     call_log: Option<std::path::PathBuf>,
+    /// Loopback HTTPS origin advertised behind an isolated TLS test proxy.
+    #[arg(long)]
+    public_url: Option<url::Url>,
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let args = Args::parse();
     if args.transport == "stdio" {
-        if args.auth != "none" {
+        if args.auth != "none" || args.public_url.is_some() {
             anyhow::bail!("STDIO fixture does not use HTTP authentication");
         }
         if args.tag.is_some() || args.call_log.is_some() {
@@ -46,7 +49,23 @@ async fn main() -> anyhow::Result<()> {
         }
         let listener = tokio::net::TcpListener::bind(args.bind).await?;
         let addr = listener.local_addr()?;
-        let state = FixtureState::new(format!("http://{addr}"), args.auth);
+        let base = if let Some(url) = args.public_url {
+            if url.scheme() != "https"
+                || !matches!(url.host_str(), Some("localhost" | "127.0.0.1"))
+                || url.port().is_none()
+                || url.path() != "/"
+                || url.query().is_some()
+                || url.fragment().is_some()
+                || !url.username().is_empty()
+                || url.password().is_some()
+            {
+                anyhow::bail!("TLS fixtures require a loopback HTTPS origin with an explicit port");
+            }
+            url.origin().ascii_serialization()
+        } else {
+            format!("http://{addr}")
+        };
+        let state = FixtureState::new(base, args.auth);
         axum::serve(listener, http_router(state, addr.to_string()))
             .with_graceful_shutdown(async {
                 let _ = tokio::signal::ctrl_c().await;

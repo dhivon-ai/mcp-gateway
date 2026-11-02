@@ -2,7 +2,7 @@
 
 Version 0.1.0 was built and exercised locally on 2026-11-02 as Dhivon MCP Gateway,
 a product of Dhivon AI. The initial renamed artifacts are retained below;
-the notice-bearing remediation build supersedes them for current distribution.
+the HTTPS/OAuth remediation build supersedes the earlier builds for current distribution.
 The [original MVP report](release.md) preserves the earlier artifact identities.
 
 ## Artifacts and environment
@@ -31,7 +31,7 @@ distribution remain [roadmap candidates](roadmap.md).
 Review cycle 1, BUG-007, adds the owner-selected Apache-2.0 source license and
 Dhivon AI copyright/ownership, without changing third-party licenses.
 
-| Item | Current identity |
+| Item | Notice-only intermediate identity |
 | --- | --- |
 | Archive SHA-256 | `95b9aa68baaecbd19ca97c9a3d9b18d56e09d4e6063a29d90771877f5078b2d6` |
 | Extracted executable SHA-256 | `b789e155ce8251e9cfc5b13fe8abeb23010782a3abf64b1b83413b4aba960b22` |
@@ -60,6 +60,63 @@ the focused packaging, artifact, site, type/format and current packaged/deployme
 checks above verify the changed delivery paths. Builds use pinned Rust 1.95.0,
 Node 24.19.0 and pnpm 11.4.0. An initial local Node 26 invocation was repeated
 with the pinned Node toolchain before final evidence was recorded.
+
+## HTTPS/native OAuth remediation build — 2026-11-02
+
+The owner selected a Docker HTTPS simulation for review BUG-006. The service image
+above terminates TLS through nginx 1.30.6, pinned to
+`sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949`.
+A second TLS listener exposes the controlled MCP/OAuth fixture. Both publish only
+loopback ports. Certificate and hostname verification remain enabled.
+
+| Item | Current identity |
+| --- | --- |
+| Mac archive SHA-256 | `e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799` |
+| Extracted executable SHA-256 | `f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7` |
+| Service image ID, unchanged | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
+| Simulated control plane | `https://localhost:57518` |
+| Simulated MCP/issuer | `https://localhost:57519` |
+| Actual native callback | `http://127.0.0.1:57521/oauth/callback` |
+
+The extracted Mac client signed in and synchronized over HTTPS. The authorization
+request used the actual management port, S256 PKCE, state, configured public client
+and exact resource. Forged state and issuer callbacks were rejected without
+consuming the live flow. Safari followed the HTTPS provider redirect and displayed
+**OAuth connected** at the native callback, with no certificate warning bypass.
+Consent left the MCP disabled. Management restart preserved the credential;
+explicit enablement allowed a real Node STDIO agent's exact echo call.
+
+The expiry test exposed a real resolver defect: a provider rejection of the old
+access token could block its republishing before the expired-token refresh branch
+ran. The fix validates the online expired record and invokes the existing
+version/lease-checked refresh before attempting to publish that old token. It
+retains rejection of the old binding, generation/policy checks, offline denial,
+protected publication and the prohibition on replaying tool calls.
+
+The final test observed the old token's scoped rejection, central credential
+version 1 advancing to version 2, a successful subsequent tool call, disconnect
+and denial of the retained alias. Discovery is polled while reconciliation runs;
+side-effecting calls are not replayed. All 83 workspace Rust tests pass (12 external
+or parent-driven cases remain ignored in that command), CLI all-target Clippy and
+format pass, and the final extracted all-auth gateway suite passes in 47.13s.
+Script strict TypeScript and formatting pass. The archive notice check still
+passes after the production CLI fix. The earlier explicit PostgreSQL/frontend
+results remain historical evidence for unchanged server/UI behavior.
+
+The generating scripts confirmed empty native identity/credential/cleanup lists
+and removed the exact generated Compose containers, network and volume. The
+operator approved temporary SSL trust restricted to localhost for the one-day CA
+with SHA-256 `9D69099345C36B4FCBADB35E47A55895D87181BC92CFDC0BE4744B10AAEC5B81`.
+After operator authorization of cleanup, trust removal exited successfully, the
+certificate was absent from the login keychain, and the leaf failed verification.
+No temporary certificate trust remains from this test.
+
+In-app Chromium and Chrome rejected the constrained test CA. Safari's native
+macOS trust handling completed the browser step. This is controlled simulation
+evidence only: public DNS/hosting certificates, real-user provider consent and
+named external-provider registration compatibility remain unverified. The
+localhost ports above were temporary and are now closed after fixture cleanup.
+Use the [reproducible HTTPS rehearsal](https-oauth-rehearsal.md) for a new run.
 
 ## Verified user journey and recovery
 
