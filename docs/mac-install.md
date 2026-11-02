@@ -47,7 +47,7 @@ For agents using JSON `mcpServers`, adapt the enclosing configuration:
 ```json
 {
   "mcpServers": {
-    "enterprise-gateway": {
+    "dhivon-mcp-gateway": {
       "command": "/Users/your-name/.local/bin/dhivon-mcp-gateway",
       "args": ["mcp"]
     }
