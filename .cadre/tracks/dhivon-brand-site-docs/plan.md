@@ -254,28 +254,28 @@ BUG-009 and BUG-010 are resolved in the rehearsal supervisor. Uncertain child
 ownership cannot be reported clean, and one recovery exclusively owns cleanup
 through stale-lock reclamation, interrupted acquisition and release.
 
-- [ ] T12.1 Retain child supervision when identity registration fails
+- [x] T12.1 Retain child supervision when identity registration fails <!-- commit: 9aba60c2341b3154f70a27ad04422bb812feef4a -->
   - Task dependencies: none
   - Commit group: recovery-ownership
   - Scope: Register the actual ChildProcess handle and spawned PID before fallible identity/persistence work. On registration failure, stop/reap the known owned child or retain an explicit unresolved ownership state. Distinguish unspawned/confirmed-exited entries from unresolved intents during recovery; never count missing ownership as proof of absence. Preserve PID-reuse safety and require confirmed writer shutdown before credential cleanup. Retain exact recovery evidence if safe cleanup cannot finish.
   - Verification: Reproduce identity lookup and post-spawn persistence failure with a live owned child, plus interruption during registration. Assert child exit or truthful recovery_required, no false clean result, no unrelated process signaling and safe creating-binary logout ordering.
   - Handoff: Child-registration invariants, uncertainty handling and exact ownership/exit evidence.
-- [ ] T12.2 Make recovery-lock acquisition and reclamation exclusive and recoverable
+- [x] T12.2 Make recovery-lock acquisition and reclamation exclusive and recoverable <!-- commit: 9aba60c2341b3154f70a27ad04422bb812feef4a -->
   - Task dependencies: T12.1
   - Commit group: recovery-ownership
   - Scope: Replace the check/unlink/create stale-lock protocol with exclusive, crash-recoverable ownership. A contender must not remove a replacement lock acquired by another live recovery. Publish sufficient durable owner state without an unrecoverable empty-lock window, and release only the lock still owned by the current recovery. Handle malformed/interrupted acquisition conservatively using scoped recovery evidence, without deleting an unrelated or live owner's lock.
   - Verification: Force two contenders to observe one stale lock, let one acquire before releasing the second, and prove at most one enters cleanup. Interrupt lock publication and verify deterministic retry. Check that an old owner cannot release a successor's lock and that process-identity uncertainty does not grant destructive cleanup authority.
   - Handoff: Exclusive-lock protocol, crash/reclamation/release evidence and residual operator boundaries.
-- [ ] T12.3 Verify combined failure, concurrency and recovery paths
+- [x] T12.3 Verify combined failure, concurrency and recovery paths <!-- commit: 9aba60c2341b3154f70a27ad04422bb812feef4a -->
   - Task dependencies: T12.1, T12.2
   - Commit group: recovery-ownership
   - Scope: Add deterministic process-level regressions for both confirmed findings and incomplete lock records. Re-run existing signal/native/normal/failure/diagnostic/repeated-recovery checks with private generated resources. Update the runbook and dated release evidence with exact cleanup outcomes and unchanged product-artifact identities. Keep product OAuth policy, native credential namespaces and manual certificate trust unchanged.
   - Verification: Existing eleven tests and new ownership/lock cases pass under pinned Node. Assert child/native/container/network/volume outcomes, one cleanup owner, preserved unrelated state and truthful retained failures. Run strict script TypeScript, formatting and affected documentation/site/notice checks; reuse unchanged runtime evidence only with matching inputs.
   - Handoff: Reproductions before/after, verified resource absence, source/artifact fingerprints and supported limits.
-- [ ] T12.4 User Manual Verification
+- [x] T12.4 User Manual Verification <!-- commit: 9aba60c2341b3154f70a27ad04422bb812feef4a -->
   - Verification: Review actual registration-failure, exclusive recovery, interrupted-lock and retained-recovery evidence against BUG-009/BUG-010, with manual certificate trust remaining separate.
 
-- Phase completion commit: pending
+- Phase completion commit: `9aba60c2341b3154f70a27ad04422bb812feef4a`
 
 ## Phase 13: Track-level User Manual Verification
 
@@ -284,10 +284,10 @@ through stale-lock reclamation, interrupted acquisition and release.
 The owner verifies the recovery follow-ups with all earlier rebrand, licensing,
 HTTPS/native OAuth and cleanup evidence and its documented compatibility limits.
 
-- [ ] T13.1 User Manual Verification
+- [x] T13.1 User Manual Verification <!-- commit: 6e895ac3b523afbfe0c503ad4e5c966c03c82904 -->
   - Verification: Review the final ownership/lock fixes, actual failure/concurrency/recovery outcomes, unchanged product artifacts and retained earlier acceptance evidence under the selected execution mode.
 
-- Phase completion commit: pending
+- Phase completion commit: `6e895ac3b523afbfe0c503ad4e5c966c03c82904`
 
 ## Approval
 

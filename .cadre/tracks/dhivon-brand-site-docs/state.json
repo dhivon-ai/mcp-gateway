@@ -3,8 +3,8 @@
   "trackId": "dhivon-brand-site-docs",
   "title": "Dhivon MCP Gateway rebrand, product website and documentation",
   "type": "feature",
-  "status": "in_progress",
-  "checkpoint": "executing",
+  "status": "ready_for_review",
+  "checkpoint": "ready_for_review",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -13,34 +13,16 @@
     "dependencyContext": "op:review-1da354d707cbb38cf8a332f2032cff15"
   },
   "artifactProgress": [],
-  "operation": {
-    "action": "implement",
-    "checkpoint": "approved",
-    "baseCommit": "2e10f77f40a72dea35bb89c874664a271b6df32c",
-    "expectedCommit": "cadre(implement): start dhivon-brand-site-docs",
-    "approvedArtifacts": [
-      "executions/execution-2026-11-02T09-53-25-214Z.json",
-      "state.json"
-    ],
-    "artifactProgress": [],
-    "approvedAt": "2026-11-02T09:53:25.214Z",
+  "operation": null,
+  "lastExecution": {
     "executionId": "2026-11-02T09-53-25-214Z",
     "journal": "executions/execution-2026-11-02T09-53-25-214Z.json",
-    "mode": "parallel",
     "approvalMode": "track",
     "approvalPolicyVersion": 2,
+    "planRevision": 4,
     "graphDigest": "e4b94888dcdfc9ed38f19880421968f48005fff5e3c06ac2c88495061939cfca",
-    "planRevision": 4
-  },
-  "lastExecution": {
-    "executionId": "2026-11-02T09-16-20-231Z",
-    "journal": "executions/execution-2026-11-02T09-16-20-231Z.json",
-    "approvalMode": "track",
-    "approvalPolicyVersion": 2,
-    "planRevision": 3,
-    "graphDigest": "483a9c1ac809c3734d905d7e8048fcd2680d8983b83df0abea299d61cec240b2",
-    "headCommit": "5caf554972acc253c62ccb968afc770e10ebc740",
-    "completedAt": "2026-11-02T09:36:55.740Z"
+    "headCommit": "6e895ac3b523afbfe0c503ad4e5c966c03c82904",
+    "completedAt": "2026-11-02T10:20:05.339Z"
   },
   "reviewCycles": [
     {
@@ -108,6 +90,10 @@
     {
       "action": "review",
       "commit": "op:review-1da354d707cbb38cf8a332f2032cff15"
+    },
+    {
+      "action": "implement",
+      "commit": "op:implement-12fc84cbc6f47997305513185cdd8e73"
     }
   ]
 }
