@@ -75,6 +75,7 @@ fn main() -> std::io::Result<()> {
             Some("css") => "text/css; charset=utf-8",
             Some("woff2") => "font/woff2",
             Some("woff") => "font/woff",
+            Some("ttf") => "font/ttf",
             Some("svg") => "image/svg+xml",
             Some("png") => "image/png",
             Some("ico") => "image/x-icon",
