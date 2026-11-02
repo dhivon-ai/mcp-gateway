@@ -6,11 +6,11 @@ Read this seed at each root phase. Later phases read the learning from every dec
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":1,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
+{"schemaVersion":1,"specRevision":1,"planRevision":2,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 1
-- Plan revision: 1
+- Plan revision: 2
 
 | Pattern | Relevance to this track | Constraints to carry forward |
 | --- | --- | --- |
@@ -70,3 +70,28 @@ The final archive SHA-256 is 2467f67ededf51f41e14e4c542d392995ea3be29965bfe37c61
 All generated rehearsal stacks/volumes and native credentials are cleaned through their owning fixtures. The early retained failure journal was logged out, confirmed credential/publication/cleanup lists empty and removed. Local-only static preview remains on port 4173. The runtime cache retains deliverable archive/checksum, site and test evidence.
 
 Current product source is complete. Track mode now requires explicit human track-level verification before execution_finish and ordinary review. Post-track project metadata refresh, physical checkout naming and hosting follow the approved handoff. Preserve historical Cadre and release identities.
+
+## Review cycle 1 — Consolidated findings and deferred remediation
+
+The completed implementation range and subsequent owner-requested OAuth/license
+documentation were reviewed through d16c28a1ea2c63d56e1f1cca939ff7b0ef3faab1.
+BUG-006 retains the hosted HTTPS control-plane/native-loopback verification
+follow-up. BUG-007 records the confirmed omission of full copyright/license
+notices from distributed artifacts. The report includes reproduction and
+acceptance criteria and distinguishes controlled-fixture evidence from a real
+provider/deployment.
+
+The owner selected Apache-2.0 with Dhivon AI copyright. Source LICENSE/NOTICE and
+Cargo/npm metadata were added before the instruction to defer implementation,
+then reverted at the owner's explicit request along with the three supplemental
+OAuth/report commits. Git confirms all non-Cadre tracked content again matches
+the completed execution HEAD. The license decision and OAuth requirements remain
+in the consolidated findings and pending plan. No remediation execution or
+deployment has started. Completed tasks and verification barriers are preserved.
+
+Pattern applicability was reassessed for spec1/plan2. Isolated release verification
+governs notice-bearing archive/container identity and clean fixture ownership.
+Credential publication, native leases and owned transports govern real-provider
+OAuth validation and protected loopback/native behavior. Browser contract
+consistency remains relevant to any visible ownership/notice surfaces.
+All original pattern content hashes remain current.

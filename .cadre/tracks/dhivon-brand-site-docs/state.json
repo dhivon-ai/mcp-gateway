@@ -3,14 +3,14 @@
   "trackId": "dhivon-brand-site-docs",
   "title": "Dhivon MCP Gateway rebrand, product website and documentation",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "in_progress",
+  "checkpoint": "ready",
   "revision": 1,
   "dependencies": [],
   "commits": {
     "spec": "op:track-d88c236c69ec6e974f85b9c0f99098fa",
-    "plan": "op:track-d88c236c69ec6e974f85b9c0f99098fa",
-    "dependencyContext": "op:track-d88c236c69ec6e974f85b9c0f99098fa"
+    "plan": "op:review-f96e204b94f538048104ee21fbd6d2e2",
+    "dependencyContext": "op:review-f96e204b94f538048104ee21fbd6d2e2"
   },
   "artifactProgress": [],
   "operation": null,
@@ -24,7 +24,20 @@
     "headCommit": "eae1965b5154e701f2974c79d2b3d370d9aebc42",
     "completedAt": "2026-11-02T07:30:09.764Z"
   },
-  "reviewCycles": [],
+  "reviewCycles": [
+    {
+      "cycle": 1,
+      "outcome": "changes_requested",
+      "executionId": "2026-11-02T06-39-45-854Z",
+      "planRevision": 1,
+      "graphDigest": "6c318bd83a156af22eb865ebfca4f6a5d38a4eaa28df0ca292da574687ec28c7",
+      "reviewedHead": "eae1965b5154e701f2974c79d2b3d370d9aebc42",
+      "commitRange": "470cbe7a5528219d1624c801b76ee596f266c5c3..eae1965b5154e701f2974c79d2b3d370d9aebc42",
+      "bugs": [
+        "tracks/dhivon-brand-site-docs/bugs/review-1.md"
+      ]
+    }
+  ],
   "history": [
     {
       "action": "track",
@@ -33,6 +46,10 @@
     {
       "action": "implement",
       "commit": "op:implement-84874fb987ee4fcaca8c692991627148"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-f96e204b94f538048104ee21fbd6d2e2"
     }
   ]
 }
