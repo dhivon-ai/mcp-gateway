@@ -215,22 +215,22 @@ BUG-007 remediation outcomes and recorded limits.
 BUG-008 is resolved without changing product OAuth behavior or broadening trust.
 The rehearsal cleans exactly its own resources or retains actionable recovery.
 
-- [ ] T10.1 Supervise interruption and persist rehearsal ownership
+- [x] T10.1 Supervise interruption and persist rehearsal ownership <!-- commit: 03764affe7f76d019a24e34c020ed68d40eb14cf -->
   - Task dependencies: none
   - Commit group: rehearsal-cleanup
   - Scope: Persist generated Compose identity/config, child ownership and immutable creating CLI/state paths before effects. Funnel SIGINT/SIGTERM and ordinary failures into one idempotent bounded cleanup path. Attempt owned process/native cleanup even when diagnostics fail. Verify creating-binary logout before discarding credential ownership; retain exact recovery state and failed cleanup steps when necessary. Keep certificate-trust creation/removal under existing explicit operator ownership and update the runbook.
   - Verification: Interrupt generated rehearsal resources and confirm only owned resources are affected. Check repeated cleanup, diagnostic failure and retained-recovery paths; preserve protocol/policy, TLS validation and manual trust boundaries.
   - Handoff: Ownership/recovery schema, cleanup ordering, exact resource checks and residual operator steps.
-- [ ] T10.2 Verify cleanup on signals, failures and normal completion
+- [x] T10.2 Verify cleanup on signals, failures and normal completion <!-- commit: 03764affe7f76d019a24e34c020ed68d40eb14cf -->
   - Task dependencies: T10.1
   - Commit group: rehearsal-cleanup
   - Scope: Add focused process-level checks for SIGINT/SIGTERM after resource startup and after native login, normal success, diagnostic failure and incomplete cleanup. Use private controlled fixtures; never accept production deployment or credential targets. Record actual Docker/native cleanup evidence and unchanged product artifact identities.
   - Verification: Demonstrate the original signal leak is prevented. Assert child/container/network/volume and credential cleanup, repeated teardown safety, truthful results and preserved evidence on failure. Run strict TypeScript/format and affected rehearsal checks; reuse unchanged product/runtime checks only with matching inputs.
   - Handoff: Reproduction before/after, actual cleanup/recovery assertions and supported limits.
-- [ ] T10.3 User Manual Verification
+- [x] T10.3 User Manual Verification <!-- commit: 03764affe7f76d019a24e34c020ed68d40eb14cf -->
   - Verification: Inspect interruption cleanup and retained recovery against BUG-008, including separation of manual certificate trust.
 
-- Phase completion commit: pending
+- Phase completion commit: `03764affe7f76d019a24e34c020ed68d40eb14cf`
 
 ## Phase 11: Track-level User Manual Verification
 
@@ -239,10 +239,10 @@ The rehearsal cleans exactly its own resources or retains actionable recovery.
 The owner verifies BUG-008 remediation while retaining completed licensing
 and HTTPS/native OAuth evidence and its external-provider limits.
 
-- [ ] T11.1 User Manual Verification
+- [x] T11.1 User Manual Verification <!-- commit: 5caf554972acc253c62ccb968afc770e10ebc740 -->
   - Verification: Review interrupted/failed/successful rehearsal outcomes and recovery instructions, existing product artifacts and retained prior acceptance evidence under the selected execution mode.
 
-- Phase completion commit: pending
+- Phase completion commit: `5caf554972acc253c62ccb968afc770e10ebc740`
 
 ## Approval
 

@@ -218,3 +218,14 @@ cleanup probes make no new TLS/public-provider claim and install no new trust.
 P10 verification is authorized by persisted Track mode, not a human final approval.
 Next: explicit P11 Track-level User Manual Verification of product03764af and these
 outcomes, then execution_finish and ordinary Cadre review. Preserve P1–P9 history.
+
+## Phase 11 — Final track-level user verification
+
+The owner explicitly replied “approve” to the final verification proposal for
+product03764af: BUG-008 cleanup/recovery, passing11-test and artifact/notice/type/
+format/site-link evidence, and transition to Ready for Review. Canonical5caf554
+contains only Cadre checkpoint bookkeeping after that product commit; Git confirms
+no product drift and the working tree was clean at approval recording. Reuse the
+verified evidence and retained original HTTPS/OAuth/provider limits. This approval
+satisfies the Track-mode final implementation gate; ordinary review still owns
+findings and clean completion. Finish and reconcile implementation bookkeeping.
