@@ -13,7 +13,7 @@ Configure the agent with one STDIO server. For clients using a JSON `mcpServers`
 ```json
 {
   "mcpServers": {
-    "enterprise-gateway": {
+    "dhivon-mcp-gateway": {
       "command": "/absolute/path/to/dhivon-mcp-gateway",
       "args": ["mcp"]
     }
@@ -42,6 +42,95 @@ dhivon-mcp-gateway mcp --call-timeout-seconds 30 --startup-timeout-seconds 15 --
 ```
 
 The CLI rejects zero or larger-than-default bounds. `dhivon-mcp-gateway status` prints redacted identity/freshness status; `dhivon-mcp-gateway logout` clears local credentials/cache and requests central session revocation when reachable. Ordinary gateway diagnostics stay on stderr and include fixed policy/outcome categories, correlation IDs, durations, and validated identifiers without arguments, results, or credential values.
+
+## Make a first fixture call
+
+Complete the [echo quickstart](quickstart.md) and keep its local management
+process running. The following Node 24 client starts only the installed gateway,
+initializes MCP, discovers the fixture's permitted alias and calls it. Set
+`DHIVON_CLI` to the absolute installed executable path. Use a controlled account
+with exactly one permitted tool described as **Echo a fixture message**.
+
+```sh
+DHIVON_CLI="$HOME/.local/bin/dhivon-mcp-gateway" node --input-type=module <<'JS'
+import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
+import { createInterface } from "node:readline";
+
+const child = spawn(process.env.DHIVON_CLI, ["mcp"], {
+  stdio: ["pipe", "pipe", "inherit"],
+});
+const lines = createInterface({ input: child.stdout });
+const pending = new Map();
+let sequence = 0;
+function send(value) {
+  child.stdin.write(JSON.stringify(value) + "\n");
+}
+function request(method, params) {
+  const id = ++sequence;
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      pending.delete(id);
+      reject(new Error(`Timed out waiting for ${method}`));
+    }, 35000);
+    pending.set(id, { resolve, reject, timeout });
+    send({ jsonrpc: "2.0", id, method, params });
+  });
+}
+lines.on("line", (line) => {
+  const response = JSON.parse(line);
+  const waiter = pending.get(response.id);
+  if (!waiter) return;
+  clearTimeout(waiter.timeout);
+  pending.delete(response.id);
+  if (response.error) waiter.reject(new Error(response.error.message));
+  else waiter.resolve(response.result);
+});
+child.on("error", (error) => {
+  for (const waiter of pending.values()) {
+    clearTimeout(waiter.timeout);
+    waiter.reject(error);
+  }
+  pending.clear();
+});
+try {
+  await request("initialize", {
+    protocolVersion: "2025-11-25",
+    capabilities: {},
+    clientInfo: { name: "dhivon-quickstart", version: "1" },
+  });
+  send({ jsonrpc: "2.0", method: "notifications/initialized" });
+  const tools = [];
+  let cursor;
+  do {
+    const page = await request("tools/list", cursor ? { cursor } : {});
+    tools.push(...page.tools);
+    cursor = page.nextCursor;
+  } while (cursor);
+  const matches = tools.filter((tool) => tool.description === "Echo a fixture message");
+  assert.equal(matches.length, 1, "Enable exactly one echo fixture for this walkthrough");
+  const result = await request("tools/call", {
+    name: matches[0].name,
+    arguments: { message: "Hello from Dhivon" },
+  });
+  assert.notEqual(result.isError, true);
+  assert.equal(result.structuredContent.message, "Hello from Dhivon");
+  console.log(JSON.stringify(result, null, 2));
+} finally {
+  lines.close();
+  child.stdin.end();
+  child.kill("SIGTERM");
+}
+JS
+```
+
+Expect text content and `structuredContent.message` equal to **Hello from Dhivon**.
+An unavailable fixture should be diagnosed through local status, assignment,
+enablement and the original-name allowlist before repeating the command. The
+script sends one tool call and never retries it. After disabling the MCP in local
+management, running the script again should fail its discovery assertion because
+the fixture is absent. Follow the quickstart's retained-alias check to confirm
+direct-call denial through an agent that keeps its gateway connection open.
 
 Isolated tests can use `--allow-fixture-http --fixture-state-path <existing absolute private directory>`. This creates a separate real-Keychain service and state scope; never use that flag for production. Fixture cleanup must run through the creating CLI's `logout`, and retain the journal if cleanup fails. No existing user agent configuration is modified by these tests.
 
