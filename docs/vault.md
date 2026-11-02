@@ -47,7 +47,7 @@ installationId. Only bearer-authenticated sessions may resolve credentials, and
 only for currently assigned, enabled MCPs. Browser cookies are rejected even with
 valid CSRF. The response contains the selected bearer token/version or the scoped
 managed OAuth record. It is private native traffic over verified TLS; the local
-bridge must put it in Keychain and never forward this response to its browser UI.
+bridge must store it in the native encrypted endpoint store and never forward this response to its browser UI.
 
 OAuth records use `(user, MCP, installation)` identity, separate from editable
 key/value secrets. Native PUT `/api/endpoint/oauth/{mcpId}` requires current

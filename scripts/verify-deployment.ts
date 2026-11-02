@@ -483,6 +483,13 @@ async function nativeJourney(base: string, admin: string) {
       0,
       "Creating archive binary logout",
     );
+    assert.equal(
+      spawnSync(cli, ["fixture-retire", "--fixture-state-path", statePath], {
+        stdio: "pipe",
+      }).status,
+      0,
+      "Verified fixture master key cleanup",
+    );
     const metadata = object(
       JSON.parse(
         readFileSync(join(statePath, "identity.json"), "utf8"),

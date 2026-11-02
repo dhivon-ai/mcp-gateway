@@ -125,6 +125,14 @@ async function cleanup() {
   );
   if (result.status !== 0)
     throw new Error("Creating CLI cleanup failed; recovery journal retained");
+  if (
+    spawnSync(cli, ["fixture-retire", "--fixture-state-path", statePath], {
+      stdio: "pipe",
+    }).status !== 0
+  )
+    throw new Error(
+      "Fixture master key cleanup failed; recovery journal retained",
+    );
   const metadata = JSON.parse(
     readFileSync(join(statePath, "identity.json"), "utf8"),
   );

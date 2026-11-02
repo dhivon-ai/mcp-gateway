@@ -544,6 +544,23 @@ export class Rehearsal {
         existsSync(identityPath),
         "Logout must leave verifiable cleanup metadata",
       );
+      // Select the cleanup protocol from the hash-verified creating binary;
+      // a restored or malformed ordinary file cannot downgrade verification.
+      const help = await this.command(j.cli, ["--help"], {
+        cleanup: true,
+        timeout: 10_000,
+      });
+      if (/^\s+upgrade-handoff\s/m.test(help.toString("utf8"))) {
+        await this.command(
+          j.cli,
+          ["fixture-retire", "--fixture-state-path", j.state],
+          { cleanup: true, timeout: 30_000 },
+        );
+        assert.equal(
+          JSON.parse(readFileSync(identityPath, "utf8")).fixtureRetired,
+          true,
+        );
+      }
       const metadata = JSON.parse(readFileSync(identityPath, "utf8")) as Record<
         string,
         unknown

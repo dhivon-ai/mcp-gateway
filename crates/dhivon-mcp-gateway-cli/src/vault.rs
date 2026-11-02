@@ -20,6 +20,7 @@ use std::{
 use uuid::Uuid;
 use zeroize::{Zeroize, Zeroizing};
 
+pub(crate) const UPGRADE_JOURNAL: &str = "upgrade/legacy-accounts";
 const MAX_RECORD: usize = 2 * 1024 * 1024;
 const MAX_NAMES: usize = 4096;
 const HEADER: &[u8; 8] = b"DHVENC02";
@@ -388,18 +389,29 @@ impl Vault {
         }
         self.unlink(&self.index_path(id))
     }
-}
-
-impl CredentialStore for Vault {
-    fn get(&self, name: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
+    // Ordinary readers must never see a prepared import, even if somebody
+    // restores a previously missing index while the process is already alive.
+    pub(crate) fn read_record(
+        &self,
+        name: &str,
+        allow_prepared: bool,
+    ) -> Result<Option<Zeroizing<Vec<u8>>>> {
         let _guard = self.lock()?;
         let head = self.current()?.ok_or(EndpointError::LoginRequired)?;
         let index = self.load(head)?;
+        if !allow_prepared && index.records.contains_key(UPGRADE_JOURNAL) {
+            return Err(EndpointError::LegacyCleanup);
+        }
         index
             .records
             .get(name)
             .map(|id| read_sealed(&self.blob_path(*id), &index.seed, *id, name.as_bytes()))
             .transpose()
+    }
+}
+impl CredentialStore for Vault {
+    fn get(&self, name: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
+        self.read_record(name, false)
     }
     fn set(&self, name: &str, value: &[u8]) -> Result<()> {
         self.change(name, Some(value))

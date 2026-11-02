@@ -21,14 +21,15 @@ defines revocation, changed transport/authentication and revision conflicts.
 
 ## Credentials and data at rest
 
-| Data                                                           | Owner and protection                                                 |
-| -------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Central catalog, assignments, enablement and ordinary metadata | PostgreSQL, under operator database controls                         |
-| User bearer secrets and managed OAuth values                   | Owner/version-bound authenticated encryption in PostgreSQL           |
-| Central encryption keys                                        | External operator-held private key file, backed up separately        |
-| Native session tokens, upstream credentials and cache keys     | macOS Keychain in a deployment/user/installation/login scope         |
-| Native authorization snapshot                                  | Authenticated encryption in private user-scoped files                |
-| Browser state                                                  | HttpOnly session cookies and in-memory CSRF, metadata-only read APIs |
+| Data                                                                      | Owner and protection                                                 |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Central catalog, assignments, enablement and ordinary metadata            | PostgreSQL, under operator database controls                         |
+| User bearer secrets and managed OAuth values                              | Owner/version-bound authenticated encryption in PostgreSQL           |
+| Central encryption keys                                                   | External operator-held private key file, backed up separately        |
+| Native configuration, session tokens, upstream credentials and cache keys | Authenticated encrypted files scoped to the installation and login   |
+| Native master key                                                         | One random 32-byte value in macOS Keychain                           |
+| Native authorization snapshot                                             | Authenticated encryption in private user-scoped files                |
+| Browser state                                                             | HttpOnly session cookies and in-memory CSRF, metadata-only read APIs |
 
 Administrator access does not reveal another user's secret values. Browser APIs
 expose credential metadata only. Native credential resolution checks current

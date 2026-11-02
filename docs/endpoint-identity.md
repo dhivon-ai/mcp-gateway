@@ -8,11 +8,7 @@ email/password only; Name is display-only. Current status returns separate
 `email` and `name` metadata. Older username accounts/API/cache are unsupported;
 see [identity deployment compatibility](identity.md#fresh-identity-setup).
 
-The identity slice provides real native login, Keychain storage and a protected
-loopback API. The local product UI belongs to Phase 7; the current page explicitly
-identifies itself as a development endpoint. Encrypted snapshot refresh belongs
-to the next Phase 3 group, and STDIO aggregation to Phase 4. An authenticated
-session alone does not authorize tools or establish a configuration lease.
+The local Rust process owns the browser session, native login and encrypted endpoint storage. An authenticated session alone does not authorize tools or establish a configuration lease.
 
 ```sh
 dhivon-mcp-gateway ui --server https://gateway.example
@@ -30,68 +26,27 @@ fixture flag when revoking a fixture session. Control-plane URLs must be origins
 without credentials, query strings, fragments or path prefixes. Requests have a
 10-second deadline, do not follow redirects and do not use an HTTP proxy.
 
-`mcp` currently refuses startup with empty stdout and a fixed stderr diagnostic.
-It never opens a browser, prompts on stdin or implies that an identity without a
-validated snapshot permits tool execution. `status` emits ordinary identity and
-absolute session expiry metadata; passwords, central tokens, upstream tokens,
-local cookies and CSRF values are absent. It currently reports `sync_required`.
+`mcp` uses the configured origin from the authenticated store. It refuses startup without usable policy and never prompts on stdin. `status` reports identity and expiry without returning tokens, passwords, cookies or CSRF values.
 
 ## Native state and Keychain ownership
 
-The production directory is
-`~/Library/Application Support/com.dhivon.mcp-gateway`. Directories are created
-with mode 0700; metadata, lock files and atomically written files use 0600.
-Existing permissive files/directories and symlinks are rejected. The state root
-must be absolute and have no symlink ancestors. This follows the trusted OS/user
-boundary; it does not claim protection from an attacker controlling the user
-account or replacing the program.
+The gateway keeps **one generic-password item per initialized installation** in the default Mac Keychain. In production the service is `com.dhivon.mcp-gateway.endpoint.v1.master.v2`. Its secret is exactly 32 random bytes; its account is an opaque random UUID. The account name and master key change together when a new encrypted index commits. The account name never contains a user ID or server URL.
 
-`identity.json` contains only schema version, stable installation UUID, generation
-UUID, the active origin/deployment/user IDs and owned Keychain account names. A
-pending-cleanup journal contains only the same ordinary ownership metadata.
-`state.lock` uses Rust 1.95 safe standard-library file locking across processes.
-Atomic writes sync the temporary file, rename it and sync the containing directory.
-Caller code must hold `StateStore::locked` across read/compare/write transactions.
+The private state directory is `~/Library/Application Support/com.dhivon.mcp-gateway`. Its `endpoint-v2/` directory contains an authenticated index and separate encrypted records. These hold the selected origin, installation and login generation, session, cache key and checkpoints, upstream credentials, pending saves, rejection markers, cleanup lists and install receipts. The policy payload remains in `snapshot.enc`. Directories use 0700 and files use 0600. Lock files, opaque record names, format headers and the v1 fence `identity.json` contain no credentials or user configuration. The gateway never persists the login password.
 
-The Keychain service is `com.dhivon.mcp-gateway.endpoint.v1`. Account names are
-`v1:<identity SHA-256>:<generation UUID>:<credential kind>`, where the identity
-hash includes canonical control-plane origin, deployment UUID and user UUID.
-`session` stores the private native session JSON. `cache-key` is reserved for the
-snapshot key; the typed upstream credential kind includes MCP UUID and a nonzero binding/version.
-The ownership list makes all inserted entries discoverable for scoped cleanup,
-without broad Keychain enumeration or deleting other applications' entries.
+The index opens before an identity is known. A random seed and fresh record UUID derive separate AES-256-GCM keys with HKDF-SHA-256; the purpose is also authenticated. Account records include the origin, deployment and verified user in their scope and are pinned to the current login generation. Credential consumers additionally verify the installation, MCP, runtime binding and version. The user ID is a binding, not an encryption secret.
 
-The production adapter calls the maintained security-framework 3.7.0 safe
-`set_generic_password`, `get_generic_password` and `delete_generic_password`
-APIs against the default macOS Keychain. Missing entries are distinct from locked
-or failed Keychain access. Keychain failure has no plaintext or mock fallback.
-A small `CredentialStore` trait supports deterministic tests; non-macOS production
-adapters return unsupported, permitting Linux central CI without pretending to
-support a Linux endpoint release. Credential structs have no Debug/TS export;
-Keychain byte buffers and serialized native session buffers are zeroized on drop.
+Under the process lock the gateway writes and syncs new ciphertext and the encrypted index, then updates the one Keychain item to select that index. Earlier files cannot grant access after logout, credential rejection or a newer clock watermark, even when a whole old directory is restored. This assumes the OS and Keychain remain trusted. It does not protect against restoration of **both** a prior Keychain and its matching files.
 
-Login invalidates the old active identity locally before network work, removes
-its cache and owned credentials and attempts to revoke its old central session.
-Native login POSTs `/api/endpoint/login` and stores the returned private bearer
-session only in Keychain. The origin, stable IDs, active account and absolute
-maximum 12-hour expiry are validated before installation. A generation captured
-before login prevents an in-flight response from resurrecting logout or replacing
-a newer login. A rejected stale result is revoked centrally where reachable.
+## Upgrade and recovery
 
-Logout persists a new generation and clears active authorization before deleting
-Keychain entries. A Keychain deletion failure retains a bounded owned cleanup
-journal for retry, while authorization remains absent. Successful cleanup removes
-`snapshot.enc`, all owned active entries and the active identity, retaining the
-installation UUID. Other state roots/deployments and unrelated Keychain entries
-are untouched. Local cleanup succeeds independently of control-plane availability;
-online revocation is best effort and an unreachable central session retains its
-original absolute deadline.
+Stop all old UI and agent processes and retain the creating executable before upgrading. Start the new CLI normally. It validates the old ownership list against the exact legacy service, verifies the encrypted copy, fences v1 readers and retires only known entries. An interrupted upgrade resumes on the next invocation. Unknown entries or unavailable Keychain access stop the upgrade. Historical plaintext in external backups is unaffected.
 
-Known central HTTP 401 immediately invalidates the matching local generation.
-An HTTP 403 permission failure, redirect, malformed response, server failure or
-network outage does not masquerade as session rejection. An expired/inactive
-stored session also clears locally. Later consumers must independently enforce
-the snapshot lease during outages.
+If the creating executable is needed for Keychain access, first finish any pending OAuth save using that executable. Before cutover, run its `logout`, then open the new UI and sign in. If cutover already fenced the old executable and reports incomplete legacy cleanup, run the new executable's **`upgrade-handoff`**, then the original executable's **`logout`**, then restart the new version. This explicit handoff discards the staged login and unsaved OAuth responses before enabling a signed-out legacy cleanup journal. Reconnect affected providers; no provider exchange or install is repeated.
+
+With a valid native login, a successful authenticated sync can replace damaged policy data; a fresh credential response can repair its damaged local token while preserving version, expiry and rejection evidence. A locked Keychain must be unlocked. If the master or authenticated identity is lost, open `ui --server <origin>` and sign in online before rebuilding. A new installation identity cannot inherit old install receipts or installation-bound OAuth grants. Verify local side effects yourself and reconnect as necessary. Missing or damaged local-only evidence cannot be fetched from the server.
+
+Logout fences the current generation, removes its credentials and policy, and attempts central revocation. Offline cleanup still works. A signed-out installation keeps one master key to protect installation receipts and configuration. Known 401s invalidate only the matching generation.
 
 ## Local browser protocol
 
@@ -132,7 +87,9 @@ CSRF, passwords or tokens. Neither context, status nor login response exposes a
 central bearer token. Native session data is never transparently proxied to the
 browser. Future management bridges must return explicit metadata DTOs.
 
-## Integration seams and actual verification
+## Historical identity-slice verification
+
+The following notes record the original identity slice. For the current encrypted endpoint integration and packaged tests, see [testing](testing.md#single-key-endpoint-storage).
 
 `SessionManager::request` loads the selected native session, sends only to fixed
 `/api/` paths on its origin and invalidates on 401. It returns a native session
@@ -141,7 +98,7 @@ with generation plus the private response to native callers; success and revisio
 2 MiB response limit. The snapshot group must validate a complete snapshot and
 recheck generation inside `StateStore::locked` before atomically installing it;
 only that durable installation may renew freshness. `save_credential` accepts only typed cache/upstream kinds and also checks
-generation and journals ownership before any Keychain insertion. It does not
+generation and journals ownership before credential publication. It does not
 replace assignment, binding-version, snapshot-lease or upstream-origin checks.
 
 `ManagementAssets` accepts a compiled index HTML and an exact embedded `/assets/`

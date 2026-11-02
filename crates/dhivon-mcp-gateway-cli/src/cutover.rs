@@ -7,7 +7,7 @@ use zeroize::Zeroizing;
 const FENCE: &[u8] = br#"{"schemaVersion":2}"#;
 const RETIRED:&[u8]=br#"{"schemaVersion":2,"fixtureRetired":true,"active":null,"credentialAccounts":[],"pendingCleanup":[]}"#;
 const RETIRING: &[u8] = br#"{"schemaVersion":2,"fixtureRetiring":true}"#;
-const CLEANUP: &str = "upgrade/legacy-accounts";
+use crate::vault::UPGRADE_JOURNAL as CLEANUP;
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Upgrade {
@@ -161,7 +161,7 @@ impl StateStore {
         }
         // The fence is meaningful to old binaries only. New binaries consult the
         // protected root exclusively once present, even if v1 files are restored.
-        let journal = match vault.get(CLEANUP) {
+        let journal = match vault.read_record(CLEANUP, true) {
             Ok(j) => j,
             Err(EndpointError::InvalidCache | EndpointError::LoginRequired)
                 if fenced && legacy.accounts()?.is_empty() =>
@@ -189,7 +189,7 @@ impl StateStore {
                         for name in &remaining {
                             let prior = legacy.get(name)?.ok_or(EndpointError::LegacyCleanup)?;
                             if vault
-                                .get(name)?
+                                .read_record(name, true)?
                                 .is_none_or(|v| v.as_slice() != prior.as_slice())
                             {
                                 return Err(EndpointError::LegacyCleanup);
@@ -266,7 +266,9 @@ impl StateStore {
             vault: Some(vault.clone()),
         };
         let _lock = store.lock_file()?;
-        let bytes = vault.get(CLEANUP)?.ok_or(EndpointError::Invalid)?;
+        let bytes = vault
+            .read_record(CLEANUP, true)?
+            .ok_or(EndpointError::Invalid)?;
         let mut journal: Upgrade =
             serde_json::from_slice(&bytes).map_err(|_| EndpointError::InvalidCache)?;
         journal.cleanup.validate()?;
@@ -288,7 +290,7 @@ impl StateStore {
                 Zeroizing::new(serde_json::to_vec(&m).map_err(|_| EndpointError::Invalid)?),
             ),
         ]);
-        if let Some(receipts) = vault.get("installations.json")? {
+        if let Some(receipts) = vault.read_record("installations.json", true)? {
             records.insert("installations.json".into(), receipts);
         }
         vault.replace_all(vault.current()?, &records)?;
@@ -455,6 +457,15 @@ mod tests {
                     Ok(())
                 })
                 .is_err()
+            );
+            let pending = Vault::open(&root, format!("{}.master.v2", legacy(&root).service))
+                .expect("concurrent reader");
+            assert!(
+                matches!(
+                    pending.get("identity.json"),
+                    Err(EndpointError::LegacyCleanup)
+                ),
+                "prepared identity cannot authorize another reader"
             );
             if step == "v1-logout" {
                 v1.locked(|m| v1.clear_locked(m))

@@ -94,9 +94,18 @@ fixture-only loopback proxy for the internal control-plane hop, logs in through
 the packaged local APIs, explicitly installs/enables, spawns the sole STDIO entry
 through Node socket pairs, invokes the exact namespaced echo tool, then confirms
 disable blocks the next dispatch. Its immutable creating-binary copy performs
-Keychain logout and verifies empty cleanup metadata before removing private state.
+logout and `fixture-retire --fixture-state-path <directory>`. The latter requires a signed-out installation, verifies the old namespace is empty, deletes the one fixture master, and confirms its absence before reporting retirement. The production `logout` retains its master and encrypted install receipts.
 
 For a Docker-hosted HTTPS control plane, HTTPS MCP/OAuth fixture and actual native
 loopback callback, follow the [HTTPS OAuth rehearsal](https-oauth-rehearsal.md).
 It preserves certificate verification, requires explicit temporary localhost trust
 and cleanup, and labels controlled-provider evidence separately from public hosting.
+
+## Single-key endpoint storage
+
+`cargo test --locked -p dhivon-mcp-gateway-cli --test master_key` exercises two live processes and a full file rollback. The CLI library’s `cutover` tests interrupt preparation, fencing and deletion, exercise a signed-out handoff, and compare concurrent recovery attempts. The `identity` and `upstream_credentials` suites check independent online sign-in, failed offline repair, authenticated bearer refetch, rejection and exact expiry. The PostgreSQL `remote_oauth` integration uses the encrypted store on macOS.
+
+For a package upgrade rehearsal, also set `DHIVON_MCP_GATEWAY_TEST_V1_CLI` to an absolute path to the original v1 executable and run the extracted CLI gateway suite above. It creates a signed-out v1 installation, migrates it, checks Keychain item counts without reading secrets, damages a synthetic snapshot, repairs through the running UI and verifies fixture retirement.
+
+The real locked-Keychain check is **manual**: macOS may show a password dialog. Run it only when prepared:
+`cargo test --locked -p dhivon-mcp-gateway-cli --lib locked_isolated_keychain -- --ignored --nocapture`. The test prints its new isolated path and disposable password **before** creation. Its test-only password is `Dhivon-Test-Only-27!`. Choose Cancel or Deny to verify that a locked read fails; entering the password unlocks the fixture and changes that test condition. The test deletes its own Keychain. Routine tests do not create or lock a separate Keychain database.

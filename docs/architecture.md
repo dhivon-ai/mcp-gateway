@@ -36,7 +36,7 @@ user secrets and installation-scoped OAuth records.
 
 The Mac management process serves a protected loopback website. It handles login,
 explicit installation, enablement, secret selection, OAuth consent and status.
-Native credentials and cache keys live in macOS Keychain. The agent starts a
+Native credentials and configuration live in encrypted files protected by one macOS Keychain master key. The agent starts a
 separate `dhivon-mcp-gateway mcp` process that reads the selected identity and
 protected authorization state. Its stdout carries MCP protocol messages.
 

@@ -823,7 +823,7 @@ impl OwnedFiles {
 impl Drop for OwnedFiles {
     fn drop(&mut self) {
         let journal = self.0.join("native-state/identity.json");
-        if journal.exists()
+        if (journal.exists() || journal.with_file_name("endpoint-v2").exists())
             && std::fs::read(&journal)
                 .ok()
                 .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())

@@ -24,43 +24,11 @@ validation time and absolute configuration/session expiry are protected inside
 the payload. Copied ciphertext cannot authenticate for another principal,
 deployment, installation or login generation.
 
-The AES key is an immutable 32-byte Keychain entry named with the scoped
-`cache-key` kind. Protected receipt/revision/policy fingerprint and clock watermark
-records use fresh `cache-head:<UUID>` Keychain entries. Ordinary `identity.json`
-contains only the validated scoped account pointer, a publication-pending flag
-and owned cleanup names; it contains no key, token, password or snapshot.
-Pointers must match the current identity/generation, have a UUID suffix and appear
-in the owned credential list. Both metadata reading and writing enforce 64 KiB.
+The snapshot AES key is a scoped record in the [single-key endpoint store](endpoint-identity.md#native-state-and-keychain-ownership). The authenticated metadata separately holds its receipt, revision, policy fingerprint, clock watermark and publication state.
 
-Every cache transaction holds `StateStore::locked`, serializing processes:
+Every transaction holds the shared state lock. An authenticated full response must match the current session, identity and generation; revisions and validation time cannot regress. Equal revisions must carry the same policy. The gateway publishes a pending checkpoint, writes the snapshot with a fresh data key, then publishes the committed checkpoint and rechecks freshness. Interrupted publication denies use until successful online synchronization. Losing the data key does not let repair bypass a healthy revision or clock checkpoint.
 
-1. Recheck active generation and identity; validate the complete response and
-   reject revision/validation-time regression. Equal revision permits unchanged
-   policy with new validated timestamps, but rejects different policy content.
-2. Journal ownership and a pending publication barrier. Publish an uncommitted
-   protected head and retire obsolete checkpoints.
-3. Atomically write and sync the ciphertext; recheck freshness.
-4. Publish a fresh committed checkpoint and atomically select its pointer;
-   retire older checkpoints before clearing the pending barrier. Recheck
-   freshness after Keychain publication before reporting success.
-
-Incomplete publication, failed checkpoint insertion, failed retirement, or a
-crash before the final barrier is cleared denies access until a complete online
-recovery. A new usable authorization is never acknowledged while an older usable
-checkpoint remains owned and replayable. Journaled orphan checkpoints are pruned
-before allocating another one, preventing retry-driven growth. Healthy cache
-state has one AES key and one current checkpoint in addition to the native
-session; logout clears all owned entries and the ciphertext.
-
-The current receipt also prevents replaying an earlier ciphertext after a newer
-snapshot was observed. Latest reads publish a new protected clock watermark and
-retire the previous checkpoint; this does **not** change ciphertext, receipt,
-validation time or immutable lease deadline. Restoring an old pointer alone is
-rejected because its retired account is neither owned nor available. A pending
-publication barrier remains enforced even when a failed retirement left an old
-owned checkpoint. This operates within the trusted OS/user-account boundary;
-it does not claim resistance to a privileged attacker replacing the program or
-restoring both user files and Keychain state.
+Reads publish a protected clock watermark without rewriting the snapshot or changing its receipt, validation time or expiry. The master key transition invalidates old indexes. Restoring an old snapshot or a full earlier set of ordinary files cannot roll the watermark back.
 
 ## Native clock and exact expiry
 
@@ -83,7 +51,7 @@ publication cannot reset this budget. A clock check after persistence prevents
 boundary-crossing Keychain work from returning an expired authorization.
 
 The protected boot identity and native anchor survive process restart. The
-Keychain watermark detects a wall-clock or continuous-clock regression since a
+protected watermark detects a wall-clock or continuous-clock regression since a
 previous check, including after another process observed a later time. Missing
 clock samples, boot change, regression or corrupt protected state fail closed.
 A reboot requires a new online synchronization; a restarted process on the same
@@ -140,15 +108,16 @@ identity status, configuration state/revision/validation/expiry/remaining second
 last sync error category and the last refresh outcome (`online`). The outcome is
 not permission to mutate: future writes still require authenticated online
 requests and confirmed snapshot publication. `dhivon-mcp-gateway status` reads this
-redacted shape without contacting the server. Agent-facing MCP aggregation remains
-Phase 4; its startup currently refuses with empty stdout and no browser action.
+redacted shape without contacting the server. The agent-facing `mcp` command refuses startup without a valid policy snapshot and never opens a browser.
 
 `authorization_changes` exposes a metadata watch channel for later runtime
 expiry/revocation cleanup. Runtime consumers must still call `latest` before each
 new discovery/call and arrange their own cancellation/deadline handling; a watch
 notice does not replace dispatch authorization.
 
-## Actual verification and failed approach
+## Historical v1 verification
+
+The evidence below describes the former per-item Keychain design. For current storage tests and the packaged upgrade rehearsal, see [testing](testing.md#single-key-endpoint-storage).
 
 Tested on actual **macOS 27.0.1 (26A434), arm64, Rust 1.95.0**: native RAW samples,
 stable boot identity across constructors, real Keychain AES storage, durable

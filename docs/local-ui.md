@@ -18,7 +18,7 @@ email/password. The administrator website remains at the central origin.
   without rerunning installation. Reinstall requires a separate confirmation.
 - **Bearer:** add a token under Secrets, then select its owned key in Manage.
   The stable secret ID is saved centrally. Downloaded credentials stay in native
-  Keychain; a newly enabled entry may require native credential synchronization
+  encrypted storage; a newly enabled entry may require native credential synchronization
   when the coding agent starts. Enablement does not claim remote health.
 - **OAuth:** Connect opens the provider only after your action. The administrator
   must supply a supported preregistered public client ID; see [oauth.md](oauth.md).

@@ -61,7 +61,7 @@ changes remain unavailable until online confirmation. See
 **Diagnose.** Check the MCP's configured auth mode, selected owned secret and
 native status category such as `auth_required`, `auth_rejected` or `token_expired`.
 Confirm the upstream accepts that token at the exact configured URL. A foreign
-secret, stale binding or missing Keychain entry cannot fall back to another token.
+secret, stale binding or damaged credential record cannot fall back to another token.
 
 **Recover.** Replace the value through Secrets if needed, select the intended
 owned key in Manage, refresh online and review enablement. Reconnect the affected

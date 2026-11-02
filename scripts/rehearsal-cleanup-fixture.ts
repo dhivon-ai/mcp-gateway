@@ -1,6 +1,6 @@
 /** Controlled cleanup probe. Real Docker + extracted Mac CLI, no TLS trust changes. */
 import assert from "node:assert/strict";
-import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createServer } from "node:net";
 import { join } from "node:path";
@@ -153,12 +153,13 @@ try {
       signal: r.signal,
     });
     assert.equal(response.status, 200, "Actual native login");
-    const metadata = JSON.parse(
-      readFileSync(join(r.journal.state, "identity.json"), "utf8"),
-    ) as { active: unknown; credentialAccounts: unknown[] };
-    assert(
-      metadata.active && metadata.credentialAccounts.length > 0,
-      "Actual Keychain ownership established",
+    const authenticated = (await response.json()) as {
+      identity: { state: string };
+    };
+    assert.equal(
+      authenticated.identity.state,
+      "authenticated",
+      "Creating CLI established a native login",
     );
   }
   process.send?.({ ready: mode });

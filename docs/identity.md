@@ -20,7 +20,7 @@ salted Argon2id (19 MiB, two iterations, parallelism one).
 
 Native clients POST email/password to `/api/endpoint/login`. The response is a
 private endpoint session containing an opaque token, deployment ID, user and
-absolute expiry. The Mac stores it in Keychain. Browser clients first GET
+absolute expiry. The Mac stores it in an encrypted file under its one Keychain master key. Browser clients first GET
 `/api/context` to establish an HttpOnly pre-login cookie and obtain its CSRF
 challenge, then POST `/api/auth/login` with `X-CSRF-Token`. Login returns context,
 with the session token confined to an HttpOnly SameSite=Strict cookie (Secure on

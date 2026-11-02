@@ -194,7 +194,7 @@ impl Files {
 impl Drop for Files {
     fn drop(&mut self) {
         let journal = self.state().join("identity.json");
-        if journal.exists()
+        if (journal.exists() || journal.with_file_name("endpoint-v2").exists())
             && std::fs::read(&journal)
                 .ok()
                 .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
@@ -343,6 +343,29 @@ async fn local_login(base: &str, client: &reqwest::Client) -> (String, String, S
         .to_owned();
     (cookie, csrf, generation)
 }
+fn assert_fixture_slots(files: &Files, expected: usize) {
+    use base64::Engine;
+    use security_framework::item::{ItemClass, ItemSearchOptions, Limit};
+    use sha2::{Digest, Sha256};
+    let root = files.state().canonicalize().expect("fixture path");
+    let digest = base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .encode(Sha256::digest(root.to_str().expect("fixture").as_bytes()));
+    let legacy = format!("com.dhivon.mcp-gateway.fixture.{digest}");
+    for (service, count) in [(&legacy, 0), (&format!("{legacy}.master.v2"), expected)] {
+        let n = match ItemSearchOptions::new()
+            .class(ItemClass::generic_password())
+            .service(service)
+            .load_attributes(true)
+            .limit(Limit::Max(2))
+            .search()
+        {
+            Ok(items) => items.len(),
+            Err(e) if e.code() == -25300 => 0,
+            Err(_) => panic!("fixture keychain attribute lookup failed"),
+        };
+        assert_eq!(n, count, "exact owned namespace, no secret read");
+    }
+}
 async fn cleanup(files: &Files) {
     let status = tokio::process::Command::new(cli_binary())
         .args(["logout", "--allow-fixture-http", "--fixture-state-path"])
@@ -365,12 +388,31 @@ async fn cleanup(files: &Files) {
             .expect("verify and retire fixture master")
             .success()
     );
+    assert_fixture_slots(files, 0);
 }
 
 #[tokio::test]
 async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline_restart_and_owned_exit()
  {
     let files = Files::new();
+    if let Some(creator) = std::env::var_os("DHIVON_MCP_GATEWAY_TEST_V1_CLI") {
+        let path = Path::new(&creator);
+        assert!(path.is_absolute() && path.is_file());
+        assert!(
+            std::process::Command::new(path)
+                .args(["status", "--allow-fixture-http", "--fixture-state-path"])
+                .arg(files.state())
+                .output()
+                .expect("original CLI")
+                .status
+                .success()
+        );
+        let old: Value = serde_json::from_slice(
+            &std::fs::read(files.state().join("identity.json")).expect("legacy format"),
+        )
+        .expect("legacy metadata");
+        assert_eq!(old["schemaVersion"], 1);
+    }
     let local_pids = files.0.join("upstream-pids");
     let install_marker = files.0.join("never-installed");
     let remote_calls = Arc::new(AtomicUsize::new(0));
@@ -611,6 +653,36 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         .expect("local HTTP");
     let base = format!("http://127.0.0.1:{port}");
     let (cookie, csrf, generation) = local_login(&base, &client).await;
+    assert_fixture_slots(&files, 1);
+    // Damage only the synthetic snapshot, exercise denial with the same live UI,
+    // then repair through its authenticated refresh route before starting the agent.
+    control.code.store(503, Ordering::Relaxed);
+    std::fs::write(files.state().join("snapshot.enc"), b"truncated")
+        .expect("damage fixture snapshot");
+    let status: Value = client
+        .get(format!("{base}/api/status"))
+        .header("cookie", &cookie)
+        .send()
+        .await
+        .expect("redacted status")
+        .json()
+        .await
+        .expect("status");
+    assert_eq!(status["configuration"]["state"], "invalid");
+    control.code.store(200, Ordering::Relaxed);
+    let repaired = client
+        .post(format!("{base}/api/refresh"))
+        .header("cookie", &cookie)
+        .header("origin", &base)
+        .header("x-csrf-token", &csrf)
+        .json(&LocalAction {
+            expected_generation: generation.clone(),
+            input: (),
+        })
+        .send()
+        .await
+        .expect("recover in running UI");
+    assert_eq!(repaired.status(), StatusCode::OK);
     let gateway_spec = command(
         cli_binary(),
         vec![

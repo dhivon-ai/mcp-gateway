@@ -72,8 +72,7 @@ are preserved in `.cadre/archive/mac-mvp/`.
 
 ## Access and credential boundaries
 
-Enablement is authoritative on the server. Native credentials and cache keys live
-in macOS Keychain. The authenticated encrypted cache expires at most one hour
+Enablement is authoritative on the server. The Mac keeps one random master key in Keychain. Configuration, tokens, cache keys and install receipts live in encrypted files. The authenticated encrypted cache expires at most one hour
 after a complete successful synchronization, further bounded by session and
 credential lifetimes. Failed requests cannot renew it. Configuration and new
 authentication changes require connectivity.

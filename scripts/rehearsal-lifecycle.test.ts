@@ -168,7 +168,8 @@ test(
           );
           if (mode === "incomplete-native") {
             const metadata = read(join(directory, "native/identity.json"));
-            assert(metadata.active && metadata.credentialAccounts.length > 0);
+            assert.equal(metadata.schemaVersion, 2);
+            assert.notEqual(metadata.fixtureRetired, true);
           }
           const composeFile = join(directory, "compose.yaml");
           const original = readFileSync(composeFile);

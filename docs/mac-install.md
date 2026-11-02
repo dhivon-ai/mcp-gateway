@@ -20,7 +20,7 @@ cp dhivon-mcp-gateway-0.1.0-macos-arm64/dhivon-mcp-gateway "$HOME/.local/bin/dhi
 Use the actual enterprise HTTPS origin. The CLI opens a loopback page in your
 browser; keep the command running while using management. Log in with the email and password
 created by an administrator. Name is display-only. The operating system may ask for Keychain access.
-Passwords are not saved locally. For a provider requiring a registered callback,
+Keychain holds one random master key. The gateway encrypts its saved server URL, identity, credentials, settings cache and install receipts in private files. Passwords are not saved locally. When upgrading, stop old gateways and retain their executable until cleanup succeeds; see the endpoint identity guide in the repository. For a provider requiring a registered callback,
 use `ui --server <origin> --port <registered-port>`; register
 `http://127.0.0.1:<registered-port>/oauth/callback` with the OAuth public client.
 
@@ -75,7 +75,7 @@ time. A failed refresh or token refresh cannot extend it.
 "$HOME/.local/bin/dhivon-mcp-gateway" logout
 ```
 
-Logout clears local cache/Keychain entries and revokes the central session when
+Logout removes the signed-in generation’s cache and credentials and revokes the central session when
 reachable. It remains available offline. Exit the UI with Ctrl-C. The agent owns
 its STDIO process; EOF/SIGTERM also requests cleanup. If a session is rejected,
 log in again. If clock/cache integrity is uncertain, synchronize online. The
