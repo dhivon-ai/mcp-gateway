@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "trackId": "single-key-endpoint-store",
+  "title": "Single Keychain master key for all local gateway state",
+  "type": "feature",
+  "status": "planned",
+  "checkpoint": "ready",
+  "revision": 1,
+  "dependencies": [],
+  "commits": {
+    "spec": "op:track-799b0bdaec6b8aca92a337aeb1bb1926",
+    "plan": "op:track-799b0bdaec6b8aca92a337aeb1bb1926",
+    "dependencyContext": "op:track-799b0bdaec6b8aca92a337aeb1bb1926"
+  },
+  "artifactProgress": [],
+  "operation": null,
+  "lastExecution": null,
+  "reviewCycles": [],
+  "history": [
+    {
+      "action": "track",
+      "commit": "op:track-799b0bdaec6b8aca92a337aeb1bb1926"
+    }
+  ]
+}
