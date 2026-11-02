@@ -1352,13 +1352,13 @@ a:focus-visible {
   font-weight: 400;
 }
 .local-layout .freshness.connected {
-  background: #f0f8f5;
+  background: #eef6f2;
 }
 .local-layout .freshness.connected [data-slot="alert-title"] {
   font-weight: 400;
 }
 .local-layout .connection-dot {
-  background: #00882d;
+  background: var(--dhivon-success);
 }
 .local-layout .connection-dot.disabled {
   background: #969da6;
@@ -1509,4 +1509,14 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.local-sidebar .brand .brand-product {
+  font-size: 18px;
+  line-height: 1.4;
+}
+.local-sidebar .brand .brand-company {
+  font-size: 11px;
+  line-height: 1.4;
+  letter-spacing: 0;
 }

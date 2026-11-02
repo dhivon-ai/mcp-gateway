@@ -40,7 +40,8 @@ export function Brand() {
     <div className="brand">
       <GatewayMark />
       <div>
-        <strong>MCP Gateway</strong>
+        <strong className="brand-product">Dhivon MCP Gateway</strong>
+        <p className="brand-company">A product of Dhivon AI</p>
         <p>This Mac</p>
       </div>
     </div>
@@ -85,7 +86,7 @@ function Login({
         <div className="local-login-form">
           <header>
             <h1>Sign in on this Mac</h1>
-            <p>Connect to your enterprise MCP Gateway.</p>
+            <p>Connect to your team’s Dhivon MCP Gateway.</p>
           </header>
           <form
             onSubmit={(e) => {
