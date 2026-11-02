@@ -13,7 +13,9 @@
     "lint": "pnpm --filter @dhivon/mcp-gateway-web lint",
     "test": "pnpm --filter @dhivon/mcp-gateway-web test",
     "format": "prettier --write apps/web package.json pnpm-workspace.yaml",
-    "format:check": "prettier --check apps/web package.json pnpm-workspace.yaml"
+    "format:check": "prettier --check apps/web package.json pnpm-workspace.yaml",
+    "site:build": "pnpm --filter @dhivon/mcp-gateway-site build",
+    "site:preview": "pnpm --filter @dhivon/mcp-gateway-site preview"
   },
   "devDependencies": {
     "prettier": "3.9.10"

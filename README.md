@@ -81,3 +81,19 @@ PostgreSQL stores central configuration and encrypted user secrets. Operators ke
 the vault keys separately from the database. [Policy configuration](docs/configuration.md),
 [native credentials](docs/remote-credentials.md) and [vault operations](docs/vault.md)
 describe these contracts and recovery requirements.
+
+## Product website
+
+Build and preview the public product and documentation website from this checkout.
+
+```sh
+pnpm install --frozen-lockfile
+pnpm site:build
+pnpm site:preview
+```
+
+Open http://127.0.0.1:4173. The site renders the canonical Markdown guides in
+`docs/` and serves them without a control plane. Set
+`DHIVON_MCP_GATEWAY_BUILD_CACHE` to Cadre's owned output during execution.
+The default static output is `apps/site/dist/`. Management UI builds remain
+under the existing `pnpm build` command.

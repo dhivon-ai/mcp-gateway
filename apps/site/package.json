@@ -1,0 +1,17 @@
+{
+  "name": "@dhivon/mcp-gateway-site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.ts",
+    "preview": "node preview.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "marked": "18.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "typescript": "6.0.3"
+  }
+}

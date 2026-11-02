@@ -6,7 +6,7 @@ aggregation; see [local UI](local-ui.md), [cache](endpoint-cache.md) and
 [agent configuration](agent-configuration.md) for current behavior. Sign-in uses
 email/password only; Name is display-only. Current status returns separate
 `email` and `name` metadata. Older username accounts/API/cache are unsupported;
-see [identity deployment compatibility](identity.md#pre-release-identity-deployment-change).
+see [identity deployment compatibility](identity.md#fresh-identity-setup).
 
 The identity slice provides real native login, Keychain storage and a protected
 loopback API. The local product UI belongs to Phase 7; the current page explicitly
@@ -102,14 +102,14 @@ on different ports; the server keeps the cookie value and a separate random CSRF
 challenge in a bounded in-memory table (maximum 128 live sessions). The page
 contains no native token or password. Native and browser sessions are separate.
 
-| Endpoint | Authorization and result |
-| --- | --- |
-| GET `/` | Exact Host and permitted navigation context; establishes local cookie |
-| GET `/api/context` | Local cookie; redacted status, configured origin and CSRF challenge |
-| GET `/api/status` | Local cookie; redacted status only |
-| POST `/api/auth/login` | Cookie, exact Origin and CSRF; JSON email/password; redacted status |
-| POST `/api/auth/logout` | Cookie, exact Origin and CSRF; local cleanup and best-effort revocation; clears cookie |
-| GET `/oauth/callback` | Separate callback hook; currently rejects every request because no OAuth flow is pending |
+| Endpoint                | Authorization and result                                                                 |
+| ----------------------- | ---------------------------------------------------------------------------------------- |
+| GET `/`                 | Exact Host and permitted navigation context; establishes local cookie                    |
+| GET `/api/context`      | Local cookie; redacted status, configured origin and CSRF challenge                      |
+| GET `/api/status`       | Local cookie; redacted status only                                                       |
+| POST `/api/auth/login`  | Cookie, exact Origin and CSRF; JSON email/password; redacted status                      |
+| POST `/api/auth/logout` | Cookie, exact Origin and CSRF; local cleanup and best-effort revocation; clears cookie   |
+| GET `/oauth/callback`   | Separate callback hook; currently rejects every request because no OAuth flow is pending |
 
 Every route checks the exact `127.0.0.1:<port>` Host, rejecting alternatives such
 as `localhost`. An Origin header must match exactly. Management requests reject
