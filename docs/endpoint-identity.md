@@ -15,10 +15,10 @@ to the next Phase 3 group, and STDIO aggregation to Phase 4. An authenticated
 session alone does not authorize tools or establish a configuration lease.
 
 ```sh
-mcp-gateway ui --server https://gateway.example
-mcp-gateway status
-mcp-gateway logout
-mcp-gateway mcp
+dhivon-mcp-gateway ui --server https://gateway.example
+dhivon-mcp-gateway status
+dhivon-mcp-gateway logout
+dhivon-mcp-gateway mcp
 ```
 
 `ui` binds only `127.0.0.1`, chooses an ephemeral port and opens the plain local
@@ -39,7 +39,7 @@ local cookies and CSRF values are absent. It currently reports `sync_required`.
 ## Native state and Keychain ownership
 
 The production directory is
-`~/Library/Application Support/com.cadre.mcp-gateway`. Directories are created
+`~/Library/Application Support/com.dhivon.mcp-gateway`. Directories are created
 with mode 0700; metadata, lock files and atomically written files use 0600.
 Existing permissive files/directories and symlinks are rejected. The state root
 must be absolute and have no symlink ancestors. This follows the trusted OS/user
@@ -53,7 +53,7 @@ pending-cleanup journal contains only the same ordinary ownership metadata.
 Atomic writes sync the temporary file, rename it and sync the containing directory.
 Caller code must hold `StateStore::locked` across read/compare/write transactions.
 
-The Keychain service is `com.cadre.mcp-gateway.endpoint.v1`. Account names are
+The Keychain service is `com.dhivon.mcp-gateway.endpoint.v1`. Account names are
 `v1:<identity SHA-256>:<generation UUID>:<credential kind>`, where the identity
 hash includes canonical control-plane origin, deployment UUID and user UUID.
 `session` stores the private native session JSON. `cache-key` is reserved for the
@@ -96,7 +96,7 @@ the snapshot lease during outages.
 ## Local browser protocol
 
 The plain same-origin GET `/` creates a random 256-bit, one-hour, HttpOnly,
-SameSite=Strict cookie named `gateway_local_<port>`. No capability appears in the
+SameSite=Strict cookie named `dhivon_mcp_gateway_local_<port>`. No capability appears in the
 URL, HTML or browser storage. Cookie names isolate concurrent loopback servers
 on different ports; the server keeps the cookie value and a separate random CSRF
 challenge in a bounded in-memory table (maximum 128 live sessions). The page

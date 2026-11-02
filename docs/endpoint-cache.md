@@ -139,7 +139,7 @@ successful native login. Context/status responses contain explicit metadata only
 identity status, configuration state/revision/validation/expiry/remaining seconds,
 last sync error category and the last refresh outcome (`online`). The outcome is
 not permission to mutate: future writes still require authenticated online
-requests and confirmed snapshot publication. `mcp-gateway status` reads this
+requests and confirmed snapshot publication. `dhivon-mcp-gateway status` reads this
 redacted shape without contacting the server. Agent-facing MCP aggregation remains
 Phase 4; its startup currently refuses with empty stdout and no browser action.
 

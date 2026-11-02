@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   build: {
-    outDir: process.env.GATEWAY_BUILD_CACHE
-      ? `${process.env.GATEWAY_BUILD_CACHE}/web`
+    outDir: process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE
+      ? `${process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE}/web`
       : "dist",
     emptyOutDir: true,
   },

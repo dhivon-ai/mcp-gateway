@@ -19,11 +19,11 @@ import { createInterface } from "node:readline";
 import { setTimeout as pause } from "node:timers/promises";
 import { join, resolve } from "node:path";
 
-const cache = process.env.GATEWAY_BUILD_CACHE;
-assert(cache, "Set the owned GATEWAY_BUILD_CACHE");
+const cache = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE;
+assert(cache, "Set the owned DHIVON_MCP_GATEWAY_BUILD_CACHE");
 const directory = mkdtempSync(join(realpathSync(cache), "release-rehearsal-"));
 const root = resolve(import.meta.dirname, "..");
-const image = "mcp-gateway-server:0.1.0";
+const image = "dhivon-mcp-gateway-server:0.1.0";
 const id = randomUUID().replaceAll("-", "");
 const projects = [`gw-rehearsal-${id}`, `gw-restore-${id}`];
 const key = join(directory, "vault-keys.json");
@@ -63,7 +63,7 @@ const environment = projects.map((_, i) =>
 function env(i: number, port: number, keyFile = key) {
   writeFileSync(
     environment[i]!,
-    `POSTGRES_PASSWORD=${password}\nGATEWAY_PUBLIC_URL=${origin}\nGATEWAY_KEY_FILE=${keyFile}\nGATEWAY_IMAGE=${image}\nGATEWAY_PORT=${port}\nGATEWAY_UID=${uid}\nGATEWAY_GID=${gid}\n`,
+    `POSTGRES_PASSWORD=${password}\nDHIVON_MCP_GATEWAY_PUBLIC_URL=${origin}\nDHIVON_MCP_GATEWAY_KEY_FILE=${keyFile}\nDHIVON_MCP_GATEWAY_IMAGE=${image}\nDHIVON_MCP_GATEWAY_PORT=${port}\nDHIVON_MCP_GATEWAY_UID=${uid}\nDHIVON_MCP_GATEWAY_GID=${gid}\n`,
     { mode: 0o600 },
   );
 }
@@ -205,14 +205,14 @@ function mcps(snapshot: Record<string, unknown>): Record<string, unknown>[] {
 }
 
 async function nativeJourney(base: string, admin: string) {
-  const archive = process.env.GATEWAY_TEST_CLI;
-  const fixture = process.env.GATEWAY_FIXTURE_BIN;
+  const archive = process.env.DHIVON_MCP_GATEWAY_TEST_CLI;
+  const fixture = process.env.DHIVON_MCP_GATEWAY_FIXTURE_BIN;
   if (!archive && !fixture) return;
   assert(archive && fixture, "Supply both extracted CLI and built MCP fixture");
   const native = join(directory, "native");
   mkdirSync(native, { mode: 0o700 });
   const statePath = realpathSync(native);
-  const cli = join(directory, "mcp-gateway");
+  const cli = join(directory, "dhivon-mcp-gateway");
   copyFileSync(archive, cli); // immutable creating binary retained until Keychain cleanup
   const localMcp = randomUUID();
   await request(base, "/api/admin/mcps", admin, "POST", {
@@ -523,7 +523,7 @@ try {
       "--rm",
       "--no-deps",
       "-T",
-      "gateway",
+      "dhivon",
       "bootstrap-admin",
       "--email",
       "admin@example.test",
@@ -533,7 +533,7 @@ try {
     ],
     password,
   );
-  compose(0, ["up", "-d", "--wait", "gateway"]);
+  compose(0, ["up", "-d", "--wait", "dhivon"]);
   const base = bases[0]!;
   await request(base, "/healthz");
   const html = await wire(base);
@@ -621,17 +621,17 @@ try {
     "postgres",
     "psql",
     "-U",
-    "gateway",
+    "dhivon",
     "-d",
-    "gateway",
+    "dhivon",
     "-At",
     "-c",
     "SELECT encode(ciphertext,'hex') FROM user_secrets",
   ]);
   assert(!db.includes(Buffer.from(secretValue)));
   console.log("Rehearsal: Restart durability");
-  compose(0, ["restart", "gateway"]);
-  compose(0, ["up", "-d", "--wait", "gateway"]);
+  compose(0, ["restart", "dhivon"]);
+  compose(0, ["up", "-d", "--wait", "dhivon"]);
   const restarted = await snapshot(base, alice);
   assert.equal(restarted.deploymentId, before.deploymentId);
   assert.equal(restarted.revision, before.revision);
@@ -652,9 +652,9 @@ try {
         "postgres",
         "pg_dump",
         "-U",
-        "gateway",
+        "dhivon",
         "-d",
-        "gateway",
+        "dhivon",
         "-Fc",
       ],
       undefined,
@@ -675,9 +675,9 @@ try {
         "postgres",
         "pg_restore",
         "-U",
-        "gateway",
+        "dhivon",
         "-d",
-        "gateway",
+        "dhivon",
         "--no-owner",
         "--exit-on-error",
       ],
@@ -692,15 +692,15 @@ try {
     "postgres",
     "psql",
     "-U",
-    "gateway",
+    "dhivon",
     "-d",
-    "gateway",
+    "dhivon",
     "-v",
     "ON_ERROR_STOP=1",
     "-c",
     "DELETE FROM sessions;",
   ]);
-  compose(1, ["up", "-d", "--wait", "gateway"]);
+  compose(1, ["up", "-d", "--wait", "dhivon"]);
   const restoredBase = bases[1]!;
   await request(restoredBase, "/api/config", alice, "GET", undefined, 401);
   const restored = await login(restoredBase, "alice");
@@ -715,13 +715,13 @@ try {
   // Matching database alone is insufficient; the independent wrong key must fail closed.
   console.log("Rehearsal: Wrong-key denial and matching-key recovery");
   env(1, ports[1]!, wrongKey);
-  compose(1, ["up", "-d", "--wait", "--force-recreate", "gateway"]);
+  compose(1, ["up", "-d", "--wait", "--force-recreate", "dhivon"]);
   await credential(restoredBase, restored, 503);
   env(1, ports[1]!);
-  compose(1, ["up", "-d", "--wait", "--force-recreate", "gateway"]);
+  compose(1, ["up", "-d", "--wait", "--force-recreate", "dhivon"]);
   assert.equal((await credential(restoredBase, restored)).token, secretValue);
   const logs = Buffer.concat(
-    projects.map((_, i) => compose(i, ["logs", "--no-color", "gateway"])),
+    projects.map((_, i) => compose(i, ["logs", "--no-color", "dhivon"])),
   );
   for (const value of [password, secretValue, alice, bob, admin, restored])
     assert(

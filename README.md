@@ -1,4 +1,4 @@
-# Enterprise MCP Gateway
+# Dhivon MCP Gateway
 
 A self-hosted control plane and Apple Silicon macOS gateway for coding agents.
 Administrators manage a default-deny MCP catalog; users choose enabled MCPs through
@@ -19,7 +19,7 @@ The locally built release is not Developer ID signed/notarized or published.
 
 Rust is pinned in `rust-toolchain.toml`, Node LTS in `.node-version`, and pnpm in
 `package.json`. The control plane and Mac CLI are separate Rust binaries; policy
-and API contracts belong in `gateway-core`. The React/TypeScript website is in
+and API contracts belong in `dhivon-mcp-gateway-core`. The React/TypeScript website is in
 `apps/web` and uses Vite, Tailwind and shadcn/ui. Both central and local sites use
 the compiled frontend with role-specific routing.
 
@@ -34,11 +34,11 @@ pnpm lint
 pnpm test
 pnpm format:check
 pnpm build
-cargo run -p gateway-server -- --help
-cargo run -p gateway-cli -- --help
+cargo run -p dhivon-mcp-gateway-server -- --help
+cargo run -p dhivon-mcp-gateway-cli -- --help
 ```
 
-During Cadre execution, set `CARGO_TARGET_DIR` and `GATEWAY_BUILD_CACHE` to the
+During Cadre execution, set `CARGO_TARGET_DIR` and `DHIVON_MCP_GATEWAY_BUILD_CACHE` to the
 owned build cache returned by the runtime; frontend builds honor that location.
 `node_modules` contains dependencies only. No secrets belong in repository files.
 

@@ -1,10 +1,10 @@
 # Central identity API
 
 The service has no default users or passwords. Set `DATABASE_URL` and
-`GATEWAY_PUBLIC_URL` (the externally visible HTTPS origin), then run:
+`DHIVON_MCP_GATEWAY_PUBLIC_URL` (the externally visible HTTPS origin), then run:
 
 ```sh
-mcp-gateway-server bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
+dhivon-mcp-gateway-server bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
 ```
 
 Supply the password through standard input, using a password manager or a

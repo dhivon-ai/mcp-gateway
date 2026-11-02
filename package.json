@@ -1,5 +1,5 @@
 {
-  "name": "enterprise-mcp-gateway",
+  "name": "dhivon-mcp-gateway",
   "private": true,
   "type": "module",
   "packageManager": "pnpm@11.4.0",
@@ -7,11 +7,11 @@
     "node": ">=24.19.0 <25"
   },
   "scripts": {
-    "dev": "pnpm --filter @mcp-gateway/web dev",
-    "build": "pnpm --filter @mcp-gateway/web build",
-    "typecheck": "pnpm --filter @mcp-gateway/web typecheck",
-    "lint": "pnpm --filter @mcp-gateway/web lint",
-    "test": "pnpm --filter @mcp-gateway/web test",
+    "dev": "pnpm --filter @dhivon/mcp-gateway-web dev",
+    "build": "pnpm --filter @dhivon/mcp-gateway-web build",
+    "typecheck": "pnpm --filter @dhivon/mcp-gateway-web typecheck",
+    "lint": "pnpm --filter @dhivon/mcp-gateway-web lint",
+    "test": "pnpm --filter @dhivon/mcp-gateway-web test",
     "format": "prettier --write apps/web package.json pnpm-workspace.yaml",
     "format:check": "prettier --check apps/web package.json pnpm-workspace.yaml"
   },

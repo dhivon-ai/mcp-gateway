@@ -1,5 +1,5 @@
 # Run on the same host as Compose. DNS must point here; allow inbound 80/443.
-# Replace this hostname and set exactly the same HTTPS GATEWAY_PUBLIC_URL.
+# Replace this hostname and set exactly the same HTTPS DHIVON_MCP_GATEWAY_PUBLIC_URL.
 gateway.example.com {
     reverse_proxy 127.0.0.1:8080
 }

@@ -1,6 +1,6 @@
 # Local management website
 
-Run `mcp-gateway ui --server https://gateway.example.com`. The Rust CLI opens a
+Run `dhivon-mcp-gateway ui --server https://gateway.example.com`. The Rust CLI opens a
 loopback page and serves its embedded React/TypeScript/shadcn assets. No Node
 process is required by the installed application. Sign in with your enterprise
 email/password. The administrator website remains at the central origin.
@@ -68,9 +68,9 @@ Radix positioning and focus handling.
 Use the execution-owned build directory while implementing with Cadre:
 
 ```sh
-GATEWAY_BUILD_CACHE="$BUILD_CACHE" pnpm build
-GATEWAY_WEB_ASSETS="$BUILD_CACHE/web" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" cargo build -p gateway-cli -p gateway-server -p gateway-fixtures
-GATEWAY_BUILD_CACHE="$BUILD_CACHE" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" node scripts/local-browser-fixture.ts
+DHIVON_MCP_GATEWAY_BUILD_CACHE="$BUILD_CACHE" pnpm build
+DHIVON_MCP_GATEWAY_WEB_ASSETS="$BUILD_CACHE/web" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" cargo build -p dhivon-mcp-gateway-cli -p dhivon-mcp-gateway-server -p dhivon-mcp-gateway-fixtures
+DHIVON_MCP_GATEWAY_BUILD_CACHE="$BUILD_CACHE" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" node scripts/local-browser-fixture.ts
 ```
 
 The fixture accepts no production DSN/account, creates one owned PostgreSQL

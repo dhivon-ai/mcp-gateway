@@ -10,12 +10,12 @@ no Debug implementation and no generated browser bindings.
 Create a key file in a private directory outside the database/backups:
 
 ```sh
-mcp-gateway-server generate-vault-key --output /private/path/vault-keys.json
+dhivon-mcp-gateway-server generate-vault-key --output /private/path/vault-keys.json
 ```
 
 The command creates a new 0600 file and prints its path, never its value. It
-refuses to overwrite an existing file. Set `GATEWAY_VAULT_KEY_FILE` to that file,
-alongside `DATABASE_URL` and `GATEWAY_PUBLIC_URL`. Startup rejects missing,
+refuses to overwrite an existing file. Set `DHIVON_MCP_GATEWAY_VAULT_KEY_FILE` to that file,
+alongside `DATABASE_URL` and `DHIVON_MCP_GATEWAY_PUBLIC_URL`. Startup rejects missing,
 malformed, symlinked, or group/world-accessible key files. Container mounts must
 retain owner-only permissions and be readable by the service UID.
 
@@ -70,7 +70,7 @@ flow is implemented by the Mac endpoint, separate from this storage API.
 
 For key rotation, generate a second private file, securely merge the new key into
 the existing key map and select its ID as active. Keep all old keys. Restart the
-service with the combined file, then run `mcp-gateway-server rotate-vault` using
+service with the combined file, then run `dhivon-mcp-gateway-server rotate-vault` using
 the same environment/file. It reencrypts records in bounded transactions without
 changing values or credential versions. Inspect key-ID counts in both vault
 tables before retiring old keys. Old database backups still need their matching

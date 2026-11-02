@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
-authority=${GATEWAY_PUBLIC_URL#*://}
+authority=${DHIVON_MCP_GATEWAY_PUBLIC_URL#*://}
 authority=${authority%/}
-case "$GATEWAY_PUBLIC_URL" in
+case "$DHIVON_MCP_GATEWAY_PUBLIC_URL" in
   https://*) authority=${authority%:443} ;;
   http://*) authority=${authority%:80} ;;
 esac

@@ -11,8 +11,8 @@ jobs:
         os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
     env:
-      CARGO_TARGET_DIR: ${{ runner.temp }}/gateway-build/cargo
-      GATEWAY_BUILD_CACHE: ${{ runner.temp }}/gateway-build
+      CARGO_TARGET_DIR: ${{ runner.temp }}/dhivon-mcp-gateway-build/cargo
+      DHIVON_MCP_GATEWAY_BUILD_CACHE: ${{ runner.temp }}/dhivon-mcp-gateway-build
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install 1.95.0 --profile minimal --component rustfmt --component clippy
@@ -26,7 +26,7 @@ jobs:
   web:
     runs-on: ubuntu-24.04
     env:
-      GATEWAY_BUILD_CACHE: ${{ runner.temp }}/gateway-build
+      DHIVON_MCP_GATEWAY_BUILD_CACHE: ${{ runner.temp }}/dhivon-mcp-gateway-build
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,28 +45,28 @@ jobs:
       postgres:
         image: postgres:18.6@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
         env:
-          POSTGRES_DB: gateway_test
-          POSTGRES_USER: gateway_test
+          POSTGRES_DB: dhivon_mcp_gateway_test
+          POSTGRES_USER: dhivon_mcp_gateway_test
           POSTGRES_PASSWORD: isolated-fixture-password
         ports: ["18432:5432"]
-        options: --health-cmd "pg_isready -U gateway_test -d gateway_test" --health-interval 2s --health-timeout 2s --health-retries 30
+        options: --health-cmd "pg_isready -U dhivon_mcp_gateway_test -d dhivon_mcp_gateway_test" --health-interval 2s --health-timeout 2s --health-retries 30
     env:
-      CARGO_TARGET_DIR: ${{ runner.temp }}/gateway-build/cargo
-      TEST_DATABASE_URL: postgres://gateway_test:isolated-fixture-password@127.0.0.1:18432/gateway_test
+      CARGO_TARGET_DIR: ${{ runner.temp }}/dhivon-mcp-gateway-build/cargo
+      TEST_DATABASE_URL: postgres://dhivon_mcp_gateway_test:isolated-fixture-password@127.0.0.1:18432/dhivon_mcp_gateway_test
     steps:
       - uses: actions/checkout@v4
       - run: rustup toolchain install 1.95.0 --profile minimal
-      - run: cargo test --locked -p gateway-server -- --ignored
+      - run: cargo test --locked -p dhivon-mcp-gateway-server -- --ignored
 
   deployment:
     runs-on: ubuntu-24.04
     env:
-      GATEWAY_BUILD_CACHE: ${{ runner.temp }}/gateway-release-check
+      DHIVON_MCP_GATEWAY_BUILD_CACHE: ${{ runner.temp }}/dhivon-mcp-gateway-release-check
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
-      - run: mkdir -p "$GATEWAY_BUILD_CACHE"
-      - run: docker build -f deploy/Dockerfile -t mcp-gateway-server:0.1.0 .
+      - run: mkdir -p "$DHIVON_MCP_GATEWAY_BUILD_CACHE"
+      - run: docker build -f deploy/Dockerfile -t dhivon-mcp-gateway-server:0.1.0 .
       - run: node scripts/verify-deployment.ts

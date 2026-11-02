@@ -48,8 +48,8 @@ runtime decoders, and requests have a ten-second deadline.
 Use the execution-provided build cache while implementing with Cadre:
 
 ```sh
-GATEWAY_BUILD_CACHE="$BUILD_CACHE" pnpm build
-GATEWAY_WEB_ASSETS="$BUILD_CACHE/web" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" cargo build -p gateway-server
+DHIVON_MCP_GATEWAY_BUILD_CACHE="$BUILD_CACHE" pnpm build
+DHIVON_MCP_GATEWAY_WEB_ASSETS="$BUILD_CACHE/web" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" cargo build -p dhivon-mcp-gateway-server
 ```
 
 The resulting binary embeds its index and assets; it needs no Node process at
@@ -65,11 +65,11 @@ positioning; inline scripts and external origins are disallowed.
 The flow checked is central login → real catalog/policy/assignment/account/group
 actions → server-confirmed state, explicit conflict recovery and role denial.
 The disposable fixture script creates one unique database inside the owned
-`cadre-gateway-tests` PostgreSQL environment and one private key directory. It
+`dhivon-mcp-gateway-tests` PostgreSQL environment and one private key directory. It
 accepts no production DSN. Run with the owned build-cache environment above:
 
 ```sh
-GATEWAY_BUILD_CACHE="$BUILD_CACHE" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" node scripts/admin-browser-fixture.ts
+DHIVON_MCP_GATEWAY_BUILD_CACHE="$BUILD_CACHE" CARGO_TARGET_DIR="$BUILD_CACHE/cargo" node scripts/admin-browser-fixture.ts
 ```
 
 The synthetic admin email is `admin@example.test`; the fixture-only password is

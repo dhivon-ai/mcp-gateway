@@ -3,7 +3,7 @@
 Install the Apple Silicon CLI and authenticate using the local management command:
 
 ```sh
-mcp-gateway ui --server https://gateway.example.com
+dhivon-mcp-gateway ui --server https://gateway.example.com
 ```
 
 The local page supports login and assigned MCP management. An administrator must grant access, and the user must explicitly enable an MCP before it exposes tools. An optional installer runs only through the explicit management action. Finish remote authentication in management before starting the coding agent; agent STDIO never opens a browser or asks for a password.
@@ -14,7 +14,7 @@ Configure the agent with one STDIO server. For clients using a JSON `mcpServers`
 {
   "mcpServers": {
     "enterprise-gateway": {
-      "command": "/absolute/path/to/mcp-gateway",
+      "command": "/absolute/path/to/dhivon-mcp-gateway",
       "args": ["mcp"]
     }
   }
@@ -38,10 +38,10 @@ SIGTERM, Ctrl-C, and agent EOF trigger owned cleanup. Shutdown shares a five-sec
 You can reduce the call/startup/concurrency limits:
 
 ```sh
-mcp-gateway mcp --call-timeout-seconds 30 --startup-timeout-seconds 15 --concurrency 8
+dhivon-mcp-gateway mcp --call-timeout-seconds 30 --startup-timeout-seconds 15 --concurrency 8
 ```
 
-The CLI rejects zero or larger-than-default bounds. `mcp-gateway status` prints redacted identity/freshness status; `mcp-gateway logout` clears local credentials/cache and requests central session revocation when reachable. Ordinary gateway diagnostics stay on stderr and include fixed policy/outcome categories, correlation IDs, durations, and validated identifiers without arguments, results, or credential values.
+The CLI rejects zero or larger-than-default bounds. `dhivon-mcp-gateway status` prints redacted identity/freshness status; `dhivon-mcp-gateway logout` clears local credentials/cache and requests central session revocation when reachable. Ordinary gateway diagnostics stay on stderr and include fixed policy/outcome categories, correlation IDs, durations, and validated identifiers without arguments, results, or credential values.
 
 Isolated tests can use `--allow-fixture-http --fixture-state-path <existing absolute private directory>`. This creates a separate real-Keychain service and state scope; never use that flag for production. Fixture cleanup must run through the creating CLI's `logout`, and retain the journal if cleanup fails. No existing user agent configuration is modified by these tests.
 

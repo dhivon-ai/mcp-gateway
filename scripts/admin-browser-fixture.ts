@@ -5,17 +5,17 @@ import { mkdirSync, openSync, closeSync, rmSync, writeFileSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
 
-const cache = process.env.GATEWAY_BUILD_CACHE;
-if (!cache) throw new Error("Use the execution-owned GATEWAY_BUILD_CACHE");
+const cache = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE;
+if (!cache) throw new Error("Use the execution-owned DHIVON_MCP_GATEWAY_BUILD_CACHE");
 const root = resolve(import.meta.dirname, "..");
 const directory = join(cache, `admin-browser-${randomUUID()}`);
 mkdirSync(directory, { mode: 0o700 });
-const name = `gateway_test_browser_${randomUUID().replaceAll("-", "")}`;
+const name = `dhivon_mcp_gateway_test_browser_${randomUUID().replaceAll("-", "")}`;
 const binary = join(
   process.env.CARGO_TARGET_DIR ?? join(cache, "cargo"),
-  "debug/mcp-gateway-server",
+  "debug/dhivon-mcp-gateway-server",
 );
-const port = Number(process.env.GATEWAY_UI_TEST_PORT ?? 18081);
+const port = Number(process.env.DHIVON_MCP_GATEWAY_UI_TEST_PORT ?? 18081);
 if (!Number.isInteger(port) || port < 1024 || port > 65535)
   throw new Error("Invalid isolated UI port");
 const origin = `http://127.0.0.1:${port}`;
@@ -27,7 +27,7 @@ function postgres(sql: string) {
     [
       "compose",
       "-p",
-      "cadre-gateway-tests",
+      "dhivon-mcp-gateway-tests",
       "-f",
       join(root, "deploy/compose.test.yaml"),
       "exec",
@@ -35,9 +35,9 @@ function postgres(sql: string) {
       "postgres",
       "psql",
       "-U",
-      "gateway_test",
+      "dhivon_mcp_gateway_test",
       "-d",
-      "gateway_test",
+      "dhivon_mcp_gateway_test",
       "-v",
       "ON_ERROR_STOP=1",
       "-c",
@@ -54,7 +54,7 @@ function command(args: string[], input?: string) {
 }
 const common = [
   "--database-url",
-  `postgres://gateway_test:isolated-fixture-password@127.0.0.1:18432/${name}`,
+  `postgres://dhivon_mcp_gateway_test:isolated-fixture-password@127.0.0.1:18432/${name}`,
   "--public-url",
   origin,
   "--vault-key-file",

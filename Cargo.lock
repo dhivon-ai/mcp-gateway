@@ -641,6 +641,105 @@ dependencies = [
 ]
 
 [[package]]
+name = "dhivon-mcp-gateway-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.23.1",
+ "bytes",
+ "clap",
+ "dhivon-mcp-gateway-core",
+ "futures",
+ "getrandom 0.4.3",
+ "http",
+ "libproc",
+ "nix",
+ "oauth2",
+ "reqwest",
+ "rmcp",
+ "rustix",
+ "security-framework",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "sse-stream",
+ "sysctl",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-util",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
+name = "dhivon-mcp-gateway-core"
+version = "0.1.0"
+dependencies = [
+ "aes-gcm",
+ "base64 0.23.1",
+ "getrandom 0.4.3",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+ "ts-rs",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "dhivon-mcp-gateway-fixtures"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.23.1",
+ "clap",
+ "dhivon-mcp-gateway-cli",
+ "dhivon-mcp-gateway-core",
+ "reqwest",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "tokio",
+ "tokio-util",
+ "url",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
+name = "dhivon-mcp-gateway-server"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "argon2",
+ "axum",
+ "clap",
+ "dhivon-mcp-gateway-cli",
+ "dhivon-mcp-gateway-core",
+ "dhivon-mcp-gateway-fixtures",
+ "reqwest",
+ "rmcp",
+ "serde",
+ "serde_json",
+ "sha2 0.11.1",
+ "sqlx",
+ "tokio",
+ "tower",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+ "zeroize",
+]
+
+[[package]]
 name = "digest"
 version = "0.10.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -883,105 +982,6 @@ dependencies = [
  "memchr",
  "pin-project-lite",
  "slab",
-]
-
-[[package]]
-name = "gateway-cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.23.1",
- "bytes",
- "clap",
- "futures",
- "gateway-core",
- "getrandom 0.4.3",
- "http",
- "libproc",
- "nix",
- "oauth2",
- "reqwest",
- "rmcp",
- "rustix",
- "security-framework",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "sse-stream",
- "sysctl",
- "thiserror 2.0.21",
- "tokio",
- "tokio-util",
- "tower",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
- "zeroize",
-]
-
-[[package]]
-name = "gateway-core"
-version = "0.1.0"
-dependencies = [
- "aes-gcm",
- "base64 0.23.1",
- "getrandom 0.4.3",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
- "ts-rs",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "gateway-fixtures"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.23.1",
- "clap",
- "gateway-cli",
- "gateway-core",
- "reqwest",
- "rmcp",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "tokio",
- "tokio-util",
- "url",
- "uuid",
- "zeroize",
-]
-
-[[package]]
-name = "gateway-server"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "argon2",
- "axum",
- "clap",
- "gateway-cli",
- "gateway-core",
- "gateway-fixtures",
- "reqwest",
- "rmcp",
- "serde",
- "serde_json",
- "sha2 0.11.1",
- "sqlx",
- "tokio",
- "tower",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
- "zeroize",
 ]
 
 [[package]]

@@ -9,12 +9,12 @@ built trusted artifact; follow your enterprise's policy for unsigned software.
 Verify the supplied checksum before extracting:
 
 ```sh
-shasum -a 256 -c mcp-gateway-0.1.0-macos-arm64.tar.gz.sha256
-tar -xzf mcp-gateway-0.1.0-macos-arm64.tar.gz
+shasum -a 256 -c dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz.sha256
+tar -xzf dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz
 mkdir -p "$HOME/.local/bin"
-cp mcp-gateway-0.1.0-macos-arm64/mcp-gateway "$HOME/.local/bin/mcp-gateway"
-"$HOME/.local/bin/mcp-gateway" --version
-"$HOME/.local/bin/mcp-gateway" ui --server https://gateway.example.com
+cp dhivon-mcp-gateway-0.1.0-macos-arm64/dhivon-mcp-gateway "$HOME/.local/bin/dhivon-mcp-gateway"
+"$HOME/.local/bin/dhivon-mcp-gateway" --version
+"$HOME/.local/bin/dhivon-mcp-gateway" ui --server https://gateway.example.com
 ```
 
 Use the actual enterprise HTTPS origin. The CLI opens a loopback page in your
@@ -48,7 +48,7 @@ For agents using JSON `mcpServers`, adapt the enclosing configuration:
 {
   "mcpServers": {
     "enterprise-gateway": {
-      "command": "/Users/your-name/.local/bin/mcp-gateway",
+      "command": "/Users/your-name/.local/bin/dhivon-mcp-gateway",
       "args": ["mcp"]
     }
   }
@@ -71,8 +71,8 @@ there is no offline queue. Status shows the fixed validation/expiry and remainin
 time. A failed refresh or token refresh cannot extend it.
 
 ```sh
-"$HOME/.local/bin/mcp-gateway" status
-"$HOME/.local/bin/mcp-gateway" logout
+"$HOME/.local/bin/dhivon-mcp-gateway" status
+"$HOME/.local/bin/dhivon-mcp-gateway" logout
 ```
 
 Logout clears local cache/Keychain entries and revokes the central session when

@@ -1,6 +1,6 @@
 # Wire and policy contracts
 
-`gateway-core` owns the Rust/JSON contracts. Public fields are camelCase; tagged
+`dhivon-mcp-gateway-core` owns the Rust/JSON contracts. Public fields are camelCase; tagged
 transport/auth/grant modes use snake_case kind tags. Secrets have no `Debug`
 implementation and endpoint credential types are excluded from frontend exports.
 Browser secret APIs accept writes and return metadata only.
@@ -8,7 +8,7 @@ Browser secret APIs accept writes and return metadata only.
 Generate the frontend bindings with:
 
 ```sh
-cargo run -p gateway-core --example export_contracts -- apps/web/src/generated
+cargo run -p dhivon-mcp-gateway-core --example export_contracts -- apps/web/src/generated
 ```
 
 During execution use the runtime-owned Cargo build cache. Committed generated

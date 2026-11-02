@@ -9,7 +9,7 @@ and remote production MCPs require verified TLS.
 Build with Docker/Compose from the repository root:
 
 ```sh
-docker build -f deploy/Dockerfile -t mcp-gateway-server:0.1.0 .
+docker build -f deploy/Dockerfile -t dhivon-mcp-gateway-server:0.1.0 .
 ```
 
 Node 24.19.0/pnpm 11.4.0 and Rust 1.95.0 build stages use the committed lockfiles.
@@ -25,34 +25,34 @@ an ordinary Unix operator account. The service UID/GID match the owner of its
 No default account or password exists.
 
 ```sh
-gateway_deploy="$HOME/.config/mcp-gateway-server"
+gateway_deploy="$HOME/.config/dhivon-mcp-gateway-server"
 install -d -m 700 "$gateway_deploy"
 gateway_db_password=$(openssl rand -hex 32)
 cat > "$gateway_deploy/deployment.env" <<EOF
 POSTGRES_PASSWORD=$gateway_db_password
-GATEWAY_PUBLIC_URL=https://gateway.example.com
-GATEWAY_KEY_FILE=$gateway_deploy/vault-keys.json
-GATEWAY_IMAGE=mcp-gateway-server:0.1.0
-GATEWAY_PORT=8080
-GATEWAY_UID=$(id -u)
-GATEWAY_GID=$(id -g)
+DHIVON_MCP_GATEWAY_PUBLIC_URL=https://gateway.example.com
+DHIVON_MCP_GATEWAY_KEY_FILE=$gateway_deploy/vault-keys.json
+DHIVON_MCP_GATEWAY_IMAGE=dhivon-mcp-gateway-server:0.1.0
+DHIVON_MCP_GATEWAY_PORT=8080
+DHIVON_MCP_GATEWAY_UID=$(id -u)
+DHIVON_MCP_GATEWAY_GID=$(id -g)
 EOF
 chmod 600 "$gateway_deploy/deployment.env"
 unset gateway_db_password
 docker run --rm --user "$(id -u):$(id -g)" \
   --mount "type=bind,source=$gateway_deploy,target=/keys" \
-  mcp-gateway-server:0.1.0 generate-vault-key --output /keys/vault-keys.json
+  dhivon-mcp-gateway-server:0.1.0 generate-vault-key --output /keys/vault-keys.json
 gateway_compose() {
   docker compose --env-file "$gateway_deploy/deployment.env" \
-    -p mcp-gateway -f deploy/compose.yaml "$@"
+    -p dhivon-mcp-gateway -f deploy/compose.yaml "$@"
 }
 gateway_compose up -d --wait postgres
 read -r -s -p 'New administrator password: ' gateway_admin_password
 printf '\n'
 printf '%s' "$gateway_admin_password" | gateway_compose run --rm --no-deps -T \
-  gateway bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
+  dhivon bootstrap-admin --email admin@example.com --name "Administrator" --password-stdin
 unset gateway_admin_password
-gateway_compose up -d --wait gateway
+gateway_compose up -d --wait dhivon
 ```
 
 Choose a password of at least 12 bytes. Bootstrap refuses a second first-admin
@@ -66,7 +66,7 @@ already initialized database password; perform a coordinated database credential
 rotation with your operator tooling.
 
 Point DNS at the host and configure your HTTPS proxy. `deploy/Caddyfile.example`
-is a same-host Caddy example; replace its hostname to match GATEWAY_PUBLIC_URL.
+is a same-host Caddy example; replace its hostname to match DHIVON_MCP_GATEWAY_PUBLIC_URL.
 Caddy can provision certificates automatically for a reachable domain. Use your
 enterprise certificate/proxy configuration where appropriate. Preserve the
 original Host (including nonstandard port) and Origin through the proxy; the
@@ -77,7 +77,7 @@ expose it publicly or enable the hidden fixture HTTP exception.
 ```sh
 curl --fail --silent --show-error https://gateway.example.com/healthz
 gateway_compose ps
-gateway_compose logs --tail 100 gateway
+gateway_compose logs --tail 100 dhivon
 ```
 
 Health performs a database query; startup automatically applies migrations.
@@ -114,27 +114,27 @@ changing live routing. Losing the matching keys makes encrypted values unusable.
 ```sh
 umask 077
 mkdir -p "$gateway_deploy/backups"
-gateway_compose exec -T postgres pg_dump -U gateway -d gateway -Fc \
+gateway_compose exec -T postgres pg_dump -U dhivon -d dhivon -Fc \
   > "$gateway_deploy/backups/database.dump"
 ```
 
 Use a fresh Compose project/empty database for restoration, a separate loopback
 port and the matching separately recovered key file. Do not restore over the
 running deployment. For example, create another private `restore.env` from the
-original settings with `GATEWAY_PORT=18080` and its recovered key path, then:
+original settings with `DHIVON_MCP_GATEWAY_PORT=18080` and its recovered key path, then:
 
 ```sh
 restore_compose() {
   docker compose --env-file "$gateway_deploy/restore.env" \
-    -p mcp-gateway-restore -f deploy/compose.yaml "$@"
+    -p dhivon-mcp-gateway-restore -f deploy/compose.yaml "$@"
 }
 restore_compose up -d --wait postgres
-restore_compose exec -T postgres pg_restore -U gateway -d gateway \
+restore_compose exec -T postgres pg_restore -U dhivon -d dhivon \
   --no-owner --exit-on-error < "$gateway_deploy/backups/database.dump"
 # Invalidate sessions copied from the restore point before exposing the service.
-restore_compose exec -T postgres psql -U gateway -d gateway -v ON_ERROR_STOP=1 \
+restore_compose exec -T postgres psql -U dhivon -d dhivon -v ON_ERROR_STOP=1 \
   -c 'DELETE FROM sessions;'
-restore_compose up -d --wait gateway
+restore_compose up -d --wait dhivon
 ```
 
 Verify health, admin/user login, assignments/tool restrictions, central enablement,
@@ -150,7 +150,7 @@ fails credential resolution with a redacted 503; restoring the correct key recov
 Key rotation is detailed in [vault operations](vault.md): retain old keys, add a
 new active key, restart with the combined ring, run `rotate-vault`, inspect key-ID
 counts, and keep old backup keys for their retention period. Test recovery before
-retiring old key material. Stop/start or `restart gateway` preserves PostgreSQL
+retiring old key material. Stop/start or `restart dhivon` preserves PostgreSQL
 state. Never use `down --volumes` on the real deployment unless intentionally
 deleting its data; the automated rehearsal uses it only on generated owned stacks.
 
@@ -160,7 +160,7 @@ On the development Mac with the local image built, Node 24 and an existing owned
 absolute build directory:
 
 ```sh
-GATEWAY_BUILD_CACHE=/absolute/owned/build node scripts/verify-deployment.ts
+DHIVON_MCP_GATEWAY_BUILD_CACHE=/absolute/owned/build node scripts/verify-deployment.ts
 ```
 
 The script creates two UUID Compose projects/volumes and synthetic users/secrets;
@@ -169,8 +169,8 @@ roles/default deny, enablement, central ciphertext and redacted logs; restarts t
 service, dumps/restores into a fresh database, rejects an independent wrong key
 and verifies matching-key recovery. Both stacks/volumes are removed. Failed
 runs retain only their private generated recovery directory for diagnosis.
-On the validated Mac, additionally set GATEWAY_TEST_CLI to an extracted archive
-executable and GATEWAY_FIXTURE_BIN to the built gateway-fixture executable to run
+On the validated Mac, additionally set DHIVON_MCP_GATEWAY_TEST_CLI to an extracted archive
+executable and DHIVON_MCP_GATEWAY_FIXTURE_BIN to the built dhivon-mcp-gateway-fixture executable to run
 the complete container→packaged login/install/enable→Node STDIO→disable journey.
 Its local proxy is a fixture-only internal hop; creating-binary logout verifies
 Keychain cleanup. The ordinary Linux CI rehearsal skips this Mac-only addition.

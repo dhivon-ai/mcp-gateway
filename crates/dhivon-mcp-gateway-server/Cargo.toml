@@ -1,0 +1,36 @@
+[package]
+name = "dhivon-mcp-gateway-server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "dhivon-mcp-gateway-server"
+path = "src/main.rs"
+
+[dependencies]
+dhivon-mcp-gateway-core.workspace = true
+axum.workspace = true
+tokio.workspace = true
+clap.workspace = true
+anyhow.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+sqlx.workspace = true
+argon2.workspace = true
+uuid.workspace = true
+sha2.workspace = true
+url.workspace = true
+tower.workspace = true
+
+[dev-dependencies]
+reqwest.workspace = true
+dhivon-mcp-gateway-cli = { path = "../dhivon-mcp-gateway-cli" }
+dhivon-mcp-gateway-fixtures = { path = "../dhivon-mcp-gateway-fixtures" }
+zeroize.workspace = true
+rmcp.workspace = true
+
+[lints]
+workspace = true

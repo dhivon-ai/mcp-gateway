@@ -45,13 +45,13 @@ export function Status({
           Configure one STDIO entry for your coding agent.
         </p>
         <div className="agent-command">
-          <code>mcp-gateway mcp</code>
+          <code>dhivon-mcp-gateway mcp</code>
           <Button
             variant="ghost"
             size="icon"
             aria-label="Copy STDIO command"
             onClick={() => {
-              void navigator.clipboard.writeText("mcp-gateway mcp").then(
+              void navigator.clipboard.writeText("dhivon-mcp-gateway mcp").then(
                 () => setCopy("Copied"),
                 () => setCopy("Copy unavailable. Select the command manually."),
               );
