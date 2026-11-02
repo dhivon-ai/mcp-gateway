@@ -4,7 +4,7 @@
   "title": "Dhivon MCP Gateway rebrand, product website and documentation",
   "type": "feature",
   "status": "in_progress",
-  "checkpoint": "ready",
+  "checkpoint": "executing",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -13,7 +13,25 @@
     "dependencyContext": "op:review-72c50f7fabb990c84462359b25adffab"
   },
   "artifactProgress": [],
-  "operation": null,
+  "operation": {
+    "action": "implement",
+    "checkpoint": "approved",
+    "baseCommit": "04656bde24e9b025d8183cfbc47e52540a9bb9a1",
+    "expectedCommit": "cadre(implement): start dhivon-brand-site-docs",
+    "approvedArtifacts": [
+      "executions/execution-2026-11-02T09-16-20-231Z.json",
+      "state.json"
+    ],
+    "artifactProgress": [],
+    "approvedAt": "2026-11-02T09:16:20.231Z",
+    "executionId": "2026-11-02T09-16-20-231Z",
+    "journal": "executions/execution-2026-11-02T09-16-20-231Z.json",
+    "mode": "parallel",
+    "approvalMode": "track",
+    "approvalPolicyVersion": 2,
+    "graphDigest": "483a9c1ac809c3734d905d7e8048fcd2680d8983b83df0abea299d61cec240b2",
+    "planRevision": 3
+  },
   "lastExecution": {
     "executionId": "2026-11-02T08-03-09-159Z",
     "journal": "executions/execution-2026-11-02T08-03-09-159Z.json",

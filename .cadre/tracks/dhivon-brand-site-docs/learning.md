@@ -181,3 +181,40 @@ publication and authorization leases constrain late cleanup and native identity
 isolation. Owned transports govern child shutdown; browser consistency remains
 applicable to retained product flows. All five pattern hashes remain unchanged
 and current. Preserve completed P1–P9 and their historical evidence.
+
+## Phase 10 — Interruption-safe rehearsal ownership and recovery
+
+Product commit 03764affe7f76d019a24e34c020ed68d40eb14cf implements BUG-008.
+The rehearsal persists private ownership, creating-CLI/config hashes and child
+PID/start/command identities before effects. Cancellable asynchronous commands
+replace blocking Docker calls. SIGINT/SIGTERM and ordinary failures converge on
+one bounded, idempotent cleanup; malformed agent output also enters that path.
+Diagnostic failures cannot skip independent teardown. Owned writers stop before
+creating-binary logout; incomplete native cleanup preserves central resources.
+Recovery validates scope/hashes and refuses active supervisors/concurrent recovery.
+Failed attempts and failed verification outcomes survive successful cleanup retry.
+Certificate trust remains explicitly owned by the operator, outside these scripts.
+
+The pinned Node24.19.0 process suite passes11/11 in149.68s, covering ten scenarios:
+both signals after Docker startup and real Mac login, normal completion, ordinary
+failure, diagnostic failure, incomplete stack/native cleanup with repeated recovery,
+and the original HTTPS entry point interrupted during PostgreSQL startup. Repeated
+signals, an interrupt-ignoring child, active-supervisor/changed-input refusal,
+independent exact child/container/network/volume/credential checks and preservation
+of an unrelated process pass. All28 generated scopes across exploratory and final
+runs are clean. Current execution-owned cache retains private per-run manifests,
+cleanup-test-results.json, cleanup-tests-verified.log, artifact identities and link
+check evidence. The runbook and docs/dhivon-release.md publish the redacted outcomes.
+
+Script/site strict TypeScript, formatting, static build,34-page link/anchor crawl,
+archive/image/site notice-byte checks and Git diff checks pass. Actual CLI SHA
+f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7,
+archive SHA e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799
+and service image sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07
+are unchanged. Product Rust/UI/license inputs match the prior verified baseline.
+The full HTTPS/browser/OAuth acceptance is reused for those unchanged artifacts;
+cleanup probes make no new TLS/public-provider claim and install no new trust.
+
+P10 verification is authorized by persisted Track mode, not a human final approval.
+Next: explicit P11 Track-level User Manual Verification of product03764af and these
+outcomes, then execution_finish and ordinary Cadre review. Preserve P1–P9 history.
