@@ -71,6 +71,11 @@ pub struct CacheStatus {
     pub expires_at: Option<i64>,
     pub remaining_seconds: Option<u64>,
 }
+#[cfg(target_os = "macos")]
+pub(crate) fn import_checkpoint(bytes: &[u8]) -> Result<serde_json::Value> {
+    let head: CacheHead = serde_json::from_slice(bytes).map_err(|_| EndpointError::InvalidCache)?;
+    serde_json::to_value(head).map_err(|_| EndpointError::InvalidCache)
+}
 impl SnapshotCache {
     pub fn new(sessions: SessionManager, clock: Arc<dyn Clock>) -> Self {
         Self { sessions, clock }
@@ -95,6 +100,14 @@ impl SnapshotCache {
         };
         if key.len() != 32 {
             return Err(EndpointError::InvalidCache);
+        }
+        if self.sessions.store.is_protected()
+            && let Some(checkpoint) = &m.cache_checkpoint
+        {
+            let mut head: CacheHead = serde_json::from_value(checkpoint.clone())
+                .map_err(|_| EndpointError::InvalidCache)?;
+            head.key = key.to_vec();
+            return Ok(Some(head));
         }
         let Some(account) = &m.cache_head_account else {
             return Ok(None);
@@ -124,6 +137,26 @@ impl SnapshotCache {
     }
     fn save_head(&self, m: &mut Metadata, head: &CacheHead, create_key: bool) -> Result<()> {
         let key_account = Self::account(m)?;
+        if self.sessions.store.is_protected() {
+            let store = &self.sessions.store;
+            if create_key {
+                if !m.credential_accounts.contains(&key_account) {
+                    m.credential_accounts.push(key_account.clone());
+                }
+                m.cache_publication_pending = true;
+                store.write(m)?;
+                store.credentials().set(&key_account, &head.key)?;
+            }
+            m.cache_checkpoint =
+                Some(serde_json::to_value(head).map_err(|_| EndpointError::InvalidCache)?);
+            m.cache_publication_pending = !head.committed;
+            if let Some(old) = m.cache_head_account.take() {
+                store.write(m)?;
+                store.credentials().delete(&old)?;
+                m.credential_accounts.retain(|c| c != &old);
+            }
+            return store.write(m);
+        }
         match self.sessions.store.credentials().get(&key_account)? {
             Some(key) if key.as_slice() == head.key.as_slice() => {}
             None if create_key => {
@@ -411,7 +444,19 @@ impl SnapshotCache {
                 return Err(EndpointError::InvalidCache);
             }
             let hash = policy_hash(&snapshot)?;
-            let mut head = match self.head(m)? {
+            // A live authenticated pull can replace a lost data key. Keep revision,
+            // clock and policy floors from the separately protected checkpoint.
+            let prior = if self.sessions.store.is_protected()
+                && let Some(floor) = &m.cache_checkpoint
+            {
+                Some(
+                    serde_json::from_value(floor.clone())
+                        .map_err(|_| EndpointError::InvalidCache)?,
+                )
+            } else {
+                self.head(m)?
+            };
+            let mut head = match prior {
                 Some(head) => head,
                 None => {
                     let mut key = vec![0u8; 32];
@@ -428,6 +473,10 @@ impl SnapshotCache {
                     }
                 }
             };
+            if self.sessions.store.is_protected() {
+                head.key.resize(32, 0);
+                getrandom::fill(&mut head.key).map_err(|_| EndpointError::Storage)?;
+            }
             if let Some(revision) = head.revision
                 && (snapshot.revision < revision
                     || Some(snapshot.validated_at) < head.validated_at

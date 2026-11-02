@@ -74,6 +74,10 @@ impl Drop for NativeFixture {
             );
             return;
         }
+        if self.store.is_protected() && StateStore::retire_fixture(self.root.clone()).is_err() {
+            eprintln!("Retained owned OAuth fixture: {}", self.root.display());
+            return;
+        }
         let _ = std::fs::remove_dir_all(&self.root);
     }
 }
@@ -171,19 +175,21 @@ async fn consent_central_encryption_gateway_refresh_coordination_and_disconnect(
         .expect("parent")
         .join(format!("gateway-oauth-owned-{}", Uuid::new_v4()));
     #[cfg(not(target_os = "macos"))]
-    let memory = Arc::new(Memory::default());
+    let store = StateStore::new(root.clone(), Arc::new(Memory::default())).expect("fixture store");
     #[cfg(target_os = "macos")]
-    let memory = {
-        use std::os::unix::fs::PermissionsExt;
-        std::fs::create_dir(&root).expect("owned private root");
-        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700))
-            .expect("permissions");
-        Arc::new(
+    let store = {
+        use std::os::unix::fs::DirBuilderExt;
+        std::fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .expect("private fixture");
+        StateStore::native(
+            root.clone(),
             dhivon_mcp_gateway_cli::credentials::MacKeychain::fixture(&root)
-                .expect("isolated real Mac Keychain"),
+                .expect("fixture service"),
         )
+        .expect("encrypted store")
     };
-    let store = StateStore::new(root.clone(), memory).expect("store");
     let native = NativeFixture {
         root,
         store: store.clone(),

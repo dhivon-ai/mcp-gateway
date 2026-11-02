@@ -23,6 +23,19 @@ struct Args {
 }
 #[derive(Subcommand)]
 enum Command {
+    /// Prepare an incomplete upgrade for logout with its original executable.
+    UpgradeHandoff {
+        #[arg(long)]
+        allow_fixture_http: bool,
+        #[arg(long, requires = "allow_fixture_http")]
+        fixture_state_path: Option<std::path::PathBuf>,
+    },
+    /// Remove the master key of an explicitly logged-out isolated test installation.
+    #[command(hide = true)]
+    FixtureRetire {
+        #[arg(long)]
+        fixture_state_path: std::path::PathBuf,
+    },
     /// Start browser-based login and MCP management on loopback.
     Ui {
         #[arg(long)]
@@ -76,10 +89,10 @@ fn manager(
     let store = match fixture_state_path {
         Some(path) if allow_fixture_http => {
             let keychain = MacKeychain::fixture(&path)?;
-            StateStore::new(path, Arc::new(keychain))?
+            StateStore::native(path, keychain)?
         }
         Some(_) => return Err(dhivon_mcp_gateway_cli::EndpointError::Invalid),
-        None => StateStore::production(Arc::new(MacKeychain::production()))?,
+        None => StateStore::production()?,
     };
     Ok(SessionManager::new(store, allow_fixture_http))
 }
@@ -88,6 +101,18 @@ async fn main() -> anyhow::Result<()> {
     use tracing_subscriber::util::SubscriberInitExt;
     dhivon_mcp_gateway_cli::logging::subscriber(std::io::stderr).init();
     match Args::parse().command {
+        Command::UpgradeHandoff {
+            fixture_state_path, ..
+        } => {
+            StateStore::legacy_handoff(fixture_state_path)?;
+            eprintln!(
+                "Prepared signed-out handoff. Run logout with the creating gateway executable, then start this version."
+            );
+        }
+        Command::FixtureRetire { fixture_state_path } => {
+            StateStore::retire_fixture(fixture_state_path)?;
+            println!("fixture retired");
+        }
         Command::Status {
             allow_fixture_http,
             fixture_state_path,
@@ -165,6 +190,12 @@ async fn main() -> anyhow::Result<()> {
             allow_fixture_http,
             fixture_state_path,
         } => {
+            if allow_fixture_http
+                && let Some(path) = &fixture_state_path
+                && StateStore::finish_fixture_retirement(path)?
+            {
+                return Ok(());
+            }
             manager(allow_fixture_http, fixture_state_path)?
                 .logout()
                 .await?

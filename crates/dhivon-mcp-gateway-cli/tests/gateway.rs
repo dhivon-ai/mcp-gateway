@@ -6,9 +6,7 @@ use axum::{
     response::IntoResponse,
     routing::{get, post, put},
 };
-use dhivon_mcp_gateway_cli::{
-    credentials::MacKeychain, epoch, owned_process::OwnedProcess, store::StateStore,
-};
+use dhivon_mcp_gateway_cli::{epoch, owned_process::OwnedProcess};
 use dhivon_mcp_gateway_core::*;
 use rmcp::{
     ServerHandler, ServiceExt,
@@ -200,12 +198,7 @@ impl Drop for Files {
             && std::fs::read(&journal)
                 .ok()
                 .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
-                .is_none_or(|state| {
-                    !state["active"].is_null()
-                        || state["pendingCleanup"]
-                            .as_array()
-                            .is_some_and(|pending| !pending.is_empty())
-                })
+                .is_none_or(|state| state["fixtureRetired"] != true)
         {
             eprintln!(
                 "Owned gateway fixture cleanup journal retained: {}",
@@ -364,13 +357,14 @@ async fn cleanup(files: &Files) {
         status.success(),
         "Keychain cleanup failed; retained owned journal"
     );
-    let store = StateStore::new(
-        files.state(),
-        Arc::new(MacKeychain::fixture(&files.state()).expect("fixture service")),
-    )
-    .expect("owned journal");
-    let state = store.read().expect("cleanup journal");
-    assert!(state.active.is_none() && state.pending_cleanup.is_empty());
+    assert!(
+        std::process::Command::new(cli_binary())
+            .args(["fixture-retire", "--fixture-state-path"])
+            .arg(files.state())
+            .status()
+            .expect("verify and retire fixture master")
+            .success()
+    );
 }
 
 #[tokio::test]
@@ -600,7 +594,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         vec![
             "ui".into(),
             "--server".into(),
-            origin,
+            origin.clone(),
             "--allow-fixture-http".into(),
             "--fixture-state-path".into(),
             files.state().to_str().expect("state").into(),
@@ -667,23 +661,39 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .is_err()
     );
     assert_eq!(remote_calls.load(Ordering::Relaxed), 3);
-    let metadata: Value = serde_json::from_slice(
-        &std::fs::read(files.state().join("identity.json")).expect("native metadata"),
-    )
-    .expect("metadata JSON");
-    assert!(
-        metadata["upstreamHeads"]["bearer-fixture"].is_string(),
-        "creating CLI stored a real Keychain credential head"
-    );
-    for file in std::fs::read_dir(files.state()).expect("native files") {
-        let path = file.expect("native file").path();
-        if path.is_file() {
-            let bytes = std::fs::read(path).expect("native bytes");
-            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-bearer-fixture"));
-            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-oauth-fixture"));
-            assert!(!String::from_utf8_lossy(&bytes).contains("private-cli-refresh-fixture"));
+    let fence = std::fs::read(files.state().join("identity.json")).expect("inert legacy fence");
+    assert_eq!(fence, br#"{"schemaVersion":2}"#);
+    let mut files_to_scan = vec![files.state()];
+    let mut records = 0;
+    while let Some(path) = files_to_scan.pop() {
+        if path.is_dir() {
+            files_to_scan.extend(
+                std::fs::read_dir(path)
+                    .expect("fixture directory")
+                    .map(|e| e.expect("fixture entry").path()),
+            );
+            continue;
+        }
+        if path
+            .file_name()
+            .expect("fixture file name")
+            .to_string_lossy()
+            .starts_with("record-")
+        {
+            records += 1;
+        }
+        let bytes = std::fs::read(path).expect("fixture encrypted file");
+        for text in [
+            "private-cli-bearer-fixture",
+            "private-cli-oauth-fixture",
+            "private-cli-refresh-fixture",
+            "bearer-fixture",
+            &origin,
+        ] {
+            assert!(!String::from_utf8_lossy(&bytes).contains(text));
         }
     }
+    assert!(records >= 3);
     let revision = control.snapshot.lock().expect("revision").revision;
     let response = client
         .put(format!("{base}/api/settings/local-fixture"))
@@ -906,15 +916,6 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             snapshot.revision += 1;
         }
         std::fs::remove_file(&local_pids).expect("clear verified exited PID witness");
-        // Read only fixture-owned identity metadata to reuse its pinned control-plane origin.
-        let metadata: Value = serde_json::from_slice(
-            &std::fs::read(files.state().join("identity.json")).expect("owned native identity"),
-        )
-        .expect("metadata JSON");
-        let origin = metadata["selectedServerOrigin"]
-            .as_str()
-            .expect("selected fixture origin")
-            .to_owned();
         let ui = Process::spawn(&command(
             cli_binary(),
             vec![

@@ -26,7 +26,7 @@ pub trait CredentialStore: Send + Sync {
     fn delete(&self, account: &str) -> Result<()>;
 }
 pub struct MacKeychain {
-    service: String,
+    pub(crate) service: String,
 }
 impl MacKeychain {
     pub fn new(service: String) -> Self {
@@ -41,6 +41,14 @@ impl MacKeychain {
         }
         crate::store::check_private(root, true)?;
         let canonical = root.canonicalize().map_err(|_| EndpointError::Storage)?;
+        #[cfg(target_os = "macos")]
+        if let Some(home) = std::env::var_os("HOME") {
+            let production = std::path::PathBuf::from(home)
+                .join("Library/Application Support/com.dhivon.mcp-gateway");
+            if canonical.starts_with(production.canonicalize().unwrap_or(production)) {
+                return Err(EndpointError::Invalid);
+            }
+        }
         let canonical = canonical.to_str().ok_or(EndpointError::Storage)?;
         let digest = base64::engine::general_purpose::URL_SAFE_NO_PAD
             .encode(Sha256::digest(canonical.as_bytes()));

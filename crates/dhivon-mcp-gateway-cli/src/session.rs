@@ -64,6 +64,9 @@ impl SessionManager {
     /// Explicit CLI startup selection. Different origins invalidate active and pending login generations.
     pub async fn select_server(&self, central: &CentralClient) -> Result<Self> {
         let origin = central.origin();
+        if self.store.recovery_witness()?.is_some() {
+            return Ok(self.for_server(central));
+        }
         let retired = self.store.locked(|m| {
             let changed = m
                 .selected_server_origin
@@ -80,8 +83,10 @@ impl SessionManager {
             if changed {
                 self.store.clear_locked(m)?;
             }
-            m.selected_server_origin = Some(origin.clone());
-            self.store.write(m)?;
+            if m.selected_server_origin.as_ref() != Some(&origin) {
+                m.selected_server_origin = Some(origin.clone());
+                self.store.write(m)?;
+            }
             Ok(previous)
         })?;
         if let Some(previous) = retired {
@@ -151,7 +156,7 @@ impl SessionManager {
                 email: None,
                 name: None,
             }),
-            Err(EndpointError::LoginRequired) => Ok(RedactedStatus {
+            Err(EndpointError::LoginRequired | EndpointError::InvalidCache) => Ok(RedactedStatus {
                 state: "login_required",
                 identity: None,
                 generation: None,
@@ -171,19 +176,37 @@ impl SessionManager {
         {
             return Err(EndpointError::ServerMismatch);
         }
-        let previous = self.store.locked(|m| Ok(self.load_locked(m, false).ok()))?;
-        // An identity transition invalidates old authorization before network work.
-        let expected = self.store.locked(|m| {
-            self.store.clear_locked(m)?;
-            m.selected_server_origin = Some(central.origin());
-            self.store.write(m)?;
-            Ok(m.generation)
-        })?;
-        if let Some(previous) = previous
-            && let Ok(previous_client) = self.client(&previous)
-        {
-            let _ = previous_client.revoke(&previous.credentials).await;
-        }
+        let recovery = self.store.recovery_witness()?;
+        let (expected, delayed_clear) = if recovery.is_none() {
+            let (expected, damaged, previous) = self.store.locked(|m| {
+                let previous = match self.load_locked(m, false) {
+                    Ok(s) => Some(s),
+                    Err(EndpointError::InvalidCache | EndpointError::LoginRequired)
+                        if self.store.is_protected() && m.active.is_some() =>
+                    {
+                        return Ok((m.generation, true, None));
+                    }
+                    Err(EndpointError::Keychain | EndpointError::Storage)
+                        if self.store.is_protected() =>
+                    {
+                        return Err(EndpointError::Keychain);
+                    }
+                    Err(_) => None,
+                };
+                self.store.clear_locked(m)?;
+                m.selected_server_origin = Some(central.origin());
+                self.store.write(m)?;
+                Ok((m.generation, false, previous))
+            })?;
+            if let Some(previous) = previous
+                && let Ok(client) = self.client(&previous)
+            {
+                let _ = client.revoke(&previous.credentials).await;
+            }
+            (Some(expected), damaged)
+        } else {
+            (None, false)
+        };
         let session = central.login(input).await?;
         let identity = Identity {
             server_origin: central.origin(),
@@ -191,23 +214,37 @@ impl SessionManager {
             user_id: session.user.id.clone(),
         };
         identity.validate()?;
-        let installed = self.store.locked(|m| {
-            if m.generation != expected {
-                return Err(EndpointError::IdentityChanged);
-            }
-            let account = StateStore::account(&identity, expected, "session")?;
-            // Journal owned entries before Keychain insertion for crash-safe cleanup.
-            m.active = Some(identity.clone());
-            m.credential_accounts.push(account.clone());
-            self.store.write(m)?;
-            let bytes =
-                Zeroizing::new(serde_json::to_vec(&session).map_err(|_| EndpointError::Invalid)?);
-            if let Err(e) = self.store.credentials().set(&account, &bytes) {
-                self.store.clear_locked(m)?;
-                return Err(e);
-            }
-            Ok(())
-        });
+        let installed = (|| {
+            let expected = match (expected, recovery) {
+                (Some(g), None) => g,
+                (None, Some(witness)) => self
+                    .store
+                    .recover_authenticated(witness, &central.origin())?,
+                _ => return Err(EndpointError::IdentityChanged),
+            };
+            self.store.locked(|m| {
+                if m.generation != expected {
+                    return Err(EndpointError::IdentityChanged);
+                }
+                if delayed_clear {
+                    self.store.clear_locked(m)?;
+                    m.selected_server_origin = Some(central.origin());
+                }
+                let account = StateStore::account(&identity, m.generation, "session")?;
+                // Journal owned entries before Keychain insertion for crash-safe cleanup.
+                m.active = Some(identity.clone());
+                m.credential_accounts.push(account.clone());
+                self.store.write(m)?;
+                let bytes = Zeroizing::new(
+                    serde_json::to_vec(&session).map_err(|_| EndpointError::Invalid)?,
+                );
+                if let Err(e) = self.store.credentials().set(&account, &bytes) {
+                    self.store.clear_locked(m)?;
+                    return Err(e);
+                }
+                Ok(())
+            })
+        })();
         if installed.is_err() {
             let _ = central.revoke(&session).await;
         }

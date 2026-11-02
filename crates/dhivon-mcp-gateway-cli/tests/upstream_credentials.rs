@@ -72,6 +72,9 @@ struct Fixture {
 }
 impl Fixture {
     fn new(oauth: bool) -> Self {
+        Self::with_store(oauth, false, "http://127.0.0.1:1")
+    }
+    fn with_store(oauth: bool, protected: bool, origin: &str) -> Self {
         let root = std::env::temp_dir()
             .canonicalize()
             .expect("fixture parent")
@@ -80,7 +83,24 @@ impl Fixture {
                 Uuid::new_v4()
             ));
         let memory = Arc::new(Memory::default());
-        let store = StateStore::new(root.clone(), memory.clone()).expect("private fixture store");
+        let store = if protected {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::DirBuilderExt;
+                std::fs::DirBuilder::new()
+                    .mode(0o700)
+                    .create(&root)
+                    .expect("fixture root");
+            }
+            StateStore::native(
+                root.clone(),
+                dhivon_mcp_gateway_cli::credentials::MacKeychain::fixture(&root)
+                    .expect("owned service"),
+            )
+        } else {
+            StateStore::new(root.clone(), memory.clone())
+        }
+        .expect("private store");
         let now = epoch().expect("epoch");
         let user = UserInfo {
             name: "Fixture User".into(),
@@ -97,9 +117,9 @@ impl Fixture {
         };
         store
             .locked(|metadata| {
-                metadata.selected_server_origin = Some("http://127.0.0.1:1".into());
+                metadata.selected_server_origin = Some(origin.into());
                 metadata.active = Some(Identity {
-                    server_origin: "http://127.0.0.1:1".into(),
+                    server_origin: origin.into(),
                     deployment_id: session.deployment_id.clone(),
                     user_id: user.id.clone(),
                 });
@@ -242,6 +262,12 @@ impl Drop for Fixture {
             .sessions
             .store
             .locked(|metadata| self.cache.sessions.store.clear_locked(metadata));
+        if self.cache.sessions.store.is_protected()
+            && StateStore::retire_fixture(self.root.clone()).is_err()
+        {
+            eprintln!("Retained fixture for cleanup: {}", self.root.display());
+            return;
+        }
         let _ = std::fs::remove_dir_all(&self.root);
     }
 }
@@ -657,4 +683,99 @@ fn invalid_metadata_write_preserves_the_last_readable_identity() {
             .expect("last valid state survives rejected write");
         fixture.cache.sessions.load().expect("login remains usable");
     }
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn one_authenticated_pull_repairs_only_damaged_bearer_and_preserves_rejection() {
+    use axum::{
+        Router,
+        http::{HeaderMap, StatusCode},
+        routing::post,
+    };
+    use dhivon_mcp_gateway_cli::{
+        aggregation::CredentialResolver,
+        remote_credentials::RemoteCredentials,
+        sync::{NativeTransport, SyncEngine},
+    };
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("fixture port");
+    let origin = format!("http://{}", listener.local_addr().expect("address"));
+    let f = Fixture::with_store(false, true, &origin);
+    let reads = Arc::new(AtomicUsize::new(0));
+    let count = reads.clone();
+    let reply = serde_json::to_value(f.credential(1)).expect("synthetic bearer");
+    let app = Router::new().route(
+        "/api/endpoint/credentials/{id}",
+        post(move |headers: HeaderMap| {
+            let reply = reply.clone();
+            let count = count.clone();
+            async move {
+                assert_eq!(headers["authorization"], "Bearer private-central-fixture");
+                let n = count.fetch_add(1, Ordering::SeqCst);
+                (
+                    if n == 1 {
+                        StatusCode::SERVICE_UNAVAILABLE
+                    } else {
+                        StatusCode::OK
+                    },
+                    axum::Json(reply),
+                )
+            }
+        }),
+    );
+    let server = tokio::spawn(async move {
+        axum::serve(listener, app).await.expect("fixture service");
+    });
+    let resolver =
+        RemoteCredentials::new(SyncEngine::new(f.cache.clone(), Arc::new(NativeTransport)));
+    let snapshot = f.cache.latest().expect("validated config");
+    let mcp = &f.snapshot.mcps[0];
+    let first = resolver
+        .resolve(&snapshot, mcp)
+        .await
+        .expect("online resolution");
+    let store = &f.cache.sessions.store;
+    let account = &store.read().expect("identity").upstream_heads[&mcp.definition.id];
+    let size = store
+        .credentials()
+        .get(account)
+        .expect("read")
+        .expect("current head")
+        .len()
+        + 36;
+    let matching: Vec<_> = std::fs::read_dir(f.root.join("endpoint-v2"))
+        .expect("records")
+        .flatten()
+        .filter(|e| {
+            e.file_name().to_string_lossy().starts_with("record-")
+                && e.metadata().is_ok_and(|m| m.len() == size as u64)
+        })
+        .collect();
+    assert_eq!(matching.len(), 1);
+    std::fs::write(matching[0].path(), b"corrupt").expect("inject dedicated record damage");
+    assert!(
+        resolver.resolve(&snapshot, mcp).await.is_err(),
+        "unavailable control plane cannot repair"
+    );
+    let repaired = resolver
+        .resolve(&snapshot, mcp)
+        .await
+        .expect("fresh authenticated pull");
+    assert_eq!(first.binding, repaired.binding);
+    assert!(!matching[0].path().exists());
+    assert_eq!(reads.load(Ordering::SeqCst), 3);
+    resolver.rejected(snapshot.generation, &mcp.definition.id, &repaired.binding);
+    assert!(
+        resolver.resolve(&snapshot, mcp).await.is_err(),
+        "same rejected token remains fenced"
+    );
+    f.time.advance(3600, true);
+    assert!(
+        f.cache.latest().is_err(),
+        "repair did not extend configuration lease"
+    );
+    server.abort();
 }

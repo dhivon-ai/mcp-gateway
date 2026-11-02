@@ -15,7 +15,6 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs::{File, OpenOptions},
-    io::Read,
     sync::{Arc, Mutex},
     time::Duration,
 };
@@ -52,6 +51,15 @@ struct Receipt {
     scope: String,
     digest: String,
     progress: InstallProgress,
+}
+#[cfg(target_os = "macos")]
+pub(crate) fn validate_receipts(bytes: &[u8]) -> Result<()> {
+    let receipts: Vec<Receipt> =
+        serde_json::from_slice(bytes).map_err(|_| EndpointError::Invalid)?;
+    if receipts.len() > 256 {
+        return Err(EndpointError::Invalid);
+    }
+    Ok(())
 }
 impl InstallManager {
     pub fn new(bridge: ControlBridge) -> Self {
@@ -117,24 +125,16 @@ impl InstallManager {
         })
     }
     fn receipts(&self) -> Result<Vec<Receipt>> {
-        let path = self
+        let Some(bytes) = self
             .bridge
             .sync
             .cache
             .sessions
             .store
-            .root()
-            .join("installations.json");
-        if !path.exists() {
+            .read_component("installations.json", 262144)?
+        else {
             return Ok(Vec::new());
-        }
-        check_private(&path, false)?;
-        let mut bytes = Vec::new();
-        File::open(path)
-            .map_err(|_| EndpointError::Storage)?
-            .take(262145)
-            .read_to_end(&mut bytes)
-            .map_err(|_| EndpointError::Storage)?;
+        };
         if bytes.len() > 262144 {
             return Err(EndpointError::Storage);
         }

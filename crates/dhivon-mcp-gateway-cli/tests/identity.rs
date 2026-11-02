@@ -1135,3 +1135,57 @@ async fn configured_server_selection_preserves_same_origin_and_isolates_other_ui
         Err(EndpointError::ServerMismatch)
     ));
 }
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn unreadable_index_requires_independent_online_sign_in() {
+    use std::os::unix::fs::DirBuilderExt;
+    let root = std::env::temp_dir()
+        .canonicalize()
+        .expect("temp")
+        .join(format!("dhivon-relogin-{}", Uuid::new_v4()));
+    std::fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&root)
+        .expect("private root");
+    let server = server().await;
+    let store = StateStore::native(root.clone(), MacKeychain::fixture(&root).expect("fixture"))
+        .expect("new");
+    let manager = SessionManager::new(store, true)
+        .select_server(&server.client)
+        .await
+        .expect("server selection");
+    manager
+        .login(&server.client, login("alice"))
+        .await
+        .expect("original sign-in");
+    let previous = manager.load().expect("alice").metadata.generation;
+    let index = std::fs::read_dir(root.join("endpoint-v2"))
+        .expect("fixture records")
+        .flatten()
+        .find(|e| e.file_name().to_string_lossy().starts_with("index-"))
+        .expect("committed index")
+        .path();
+    std::fs::write(&index, b"truncated").expect("damage root");
+    let disconnected = CentralClient::new("http://127.0.0.1:1", true).expect("unreachable fixture");
+    let offline = manager
+        .select_server(&disconnected)
+        .await
+        .expect("login UI");
+    assert!(offline.login(&disconnected, login("bob")).await.is_err());
+    assert_eq!(
+        std::fs::read(&index).expect("no offline rebuild"),
+        b"truncated"
+    );
+    assert!(manager.load().is_err());
+    manager
+        .login(&server.client, login("bob"))
+        .await
+        .expect("independent login");
+    let current = manager.load().expect("new session");
+    assert_ne!(current.metadata.generation, previous);
+    assert_eq!(current.credentials.user.id, server.state.bob);
+    manager.logout().await.expect("logout");
+    StateStore::retire_fixture(root.clone()).expect("verified cleanup");
+    std::fs::remove_dir_all(root).expect("fixture cleanup");
+}

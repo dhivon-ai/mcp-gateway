@@ -827,12 +827,7 @@ impl Drop for OwnedFiles {
             && std::fs::read(&journal)
                 .ok()
                 .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
-                .is_none_or(|state| {
-                    !state["active"].is_null()
-                        || state["pendingCleanup"]
-                            .as_array()
-                            .is_some_and(|a| !a.is_empty())
-                })
+                .is_none_or(|state| state["fixtureRetired"] != true)
         {
             eprintln!(
                 "Owned native fixture cleanup journal retained: {}",
@@ -1473,7 +1468,7 @@ async fn actual_management_and_install_events_are_correlated_and_redacted() {
 #[cfg(target_os = "macos")]
 #[tokio::test]
 async fn actual_cli_sigterm_and_ctrl_c_clean_owned_installer_without_production_state() {
-    use dhivon_mcp_gateway_cli::{credentials::MacKeychain, owned_process::OwnedProcess};
+    use dhivon_mcp_gateway_cli::owned_process::OwnedProcess;
     for signal in [
         nix::sys::signal::Signal::SIGTERM,
         nix::sys::signal::Signal::SIGINT,
@@ -1490,11 +1485,6 @@ async fn actual_cli_sigterm_and_ctrl_c_clean_owned_installer_without_production_
             .mode(0o700)
             .create(&state_path)
             .expect("private fixture state directory");
-        let store = StateStore::new(
-            state_path.clone(),
-            Arc::new(MacKeychain::fixture(&state_path).expect("fixture-only Keychain service")),
-        )
-        .expect("owned actual Keychain state");
         let spec = CommandSpec {
             program: env!("CARGO_BIN_EXE_dhivon-mcp-gateway").into(),
             args: vec![
@@ -1603,8 +1593,14 @@ async fn actual_cli_sigterm_and_ctrl_c_clean_owned_installer_without_production_
             cleanup.success(),
             "creating binary cleanup failed; journal retained"
         );
-        let cleared = store.read().expect("owned cleanup journal");
-        assert!(cleared.active.is_none() && cleared.pending_cleanup.is_empty());
+        assert!(
+            std::process::Command::new(&spec.program)
+                .args(["fixture-retire", "--fixture-state-path"])
+                .arg(&state_path)
+                .status()
+                .expect("verify and retire fixture master")
+                .success()
+        );
         assert_eq!(observed, Some(Some(0)));
         assert!(status.success());
         assert!(

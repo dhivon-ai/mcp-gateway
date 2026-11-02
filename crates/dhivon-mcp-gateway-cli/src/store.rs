@@ -1,4 +1,4 @@
-//! Cross-process generation guards and atomic, ordinary metadata. No credentials in files.
+//! Cross-process identity and authorization guards. The native store encrypts metadata and receipts.
 use crate::{EndpointError, Result, credentials::CredentialStore};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -61,6 +61,8 @@ pub struct Metadata {
     pub cache_head_account: Option<String>,
     #[serde(default)]
     pub cache_publication_pending: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) cache_checkpoint: Option<serde_json::Value>,
     #[serde(default)]
     pub upstream_heads: BTreeMap<String, String>,
     #[serde(default)]
@@ -78,6 +80,7 @@ impl Default for Metadata {
             credential_accounts: Vec::new(),
             cache_head_account: None,
             cache_publication_pending: false,
+            cache_checkpoint: None,
             upstream_heads: BTreeMap::new(),
             upstream_publication_pending: BTreeSet::new(),
             pending_cleanup: Vec::new(),
@@ -184,24 +187,41 @@ impl Metadata {
 pub struct StateStore {
     root: PathBuf,
     credentials: Arc<dyn CredentialStore>,
+    protected: bool,
+    #[cfg(target_os = "macos")]
+    vault: Option<Arc<crate::vault::Vault>>,
 }
 impl StateStore {
-    pub fn production(credentials: Arc<dyn CredentialStore>) -> Result<Self> {
+    pub fn production() -> Result<Self> {
         #[cfg(target_os = "macos")]
         {
             let home = std::env::var_os("HOME").ok_or(EndpointError::Storage)?;
-            Self::new(
+            Self::native(
                 PathBuf::from(home).join("Library/Application Support/com.dhivon.mcp-gateway"),
-                credentials,
+                crate::credentials::MacKeychain::production(),
             )
         }
         #[cfg(not(target_os = "macos"))]
         {
-            let _ = credentials;
             Err(EndpointError::Unsupported)
         }
     }
     pub fn new(root: PathBuf, credentials: Arc<dyn CredentialStore>) -> Result<Self> {
+        Self::private_root(&root)?;
+        let store = Self {
+            root,
+            credentials,
+            protected: false,
+            #[cfg(target_os = "macos")]
+            vault: None,
+        };
+        store.locked(|m| store.write(m))?;
+        Ok(store)
+    }
+    pub fn is_protected(&self) -> bool {
+        self.protected
+    }
+    fn private_root(root: &Path) -> Result<()> {
         if !root.is_absolute() {
             return Err(EndpointError::Storage);
         }
@@ -217,21 +237,15 @@ impl StateStore {
                 fs::DirBuilder::new()
                     .recursive(true)
                     .mode(0o700)
-                    .create(&root)
+                    .create(root)
                     .map_err(|_| EndpointError::Storage)?;
             }
             #[cfg(not(unix))]
             {
-                fs::create_dir_all(&root).map_err(|_| EndpointError::Storage)?;
+                fs::create_dir_all(root).map_err(|_| EndpointError::Storage)?;
             }
         }
-        check_private(&root, true)?;
-        let store = Self { root, credentials };
-        store.locked(|metadata| {
-            store.write(metadata)?;
-            Ok(())
-        })?;
-        Ok(store)
+        check_private(root, true)
     }
     pub fn root(&self) -> &Path {
         &self.root
@@ -241,6 +255,11 @@ impl StateStore {
     }
     /// Own the process lock for the entire read/compare/write or cache transaction.
     pub fn locked<T>(&self, f: impl FnOnce(&mut Metadata) -> Result<T>) -> Result<T> {
+        let _lock = self.lock_file()?;
+        let mut metadata = self.metadata()?;
+        f(&mut metadata)
+    }
+    pub(super) fn lock_file(&self) -> Result<File> {
         check_private(&self.root, true)?;
         let lock_path = self.root.join("state.lock");
         if fs::symlink_metadata(&lock_path).is_ok() {
@@ -257,24 +276,31 @@ impl StateStore {
             .open(lock_path)
             .map_err(|_| EndpointError::Storage)?;
         lock.lock().map_err(|_| EndpointError::Storage)?;
-        let path = self.root.join("identity.json");
-        let mut metadata = if fs::symlink_metadata(&path).is_ok() {
-            check_private(&path, false)?;
-            let mut bytes = Vec::with_capacity(65537);
-            File::open(&path)
-                .map_err(|_| EndpointError::Storage)?
-                .take(65537)
-                .read_to_end(&mut bytes)
-                .map_err(|_| EndpointError::Storage)?;
-            if bytes.len() > 65536 {
-                return Err(EndpointError::Invalid);
-            }
-            serde_json::from_slice::<Metadata>(&bytes).map_err(|_| EndpointError::Invalid)?
-        } else {
-            Metadata::default()
+        Ok(lock)
+    }
+    fn metadata(&self) -> Result<Metadata> {
+        let metadata = match self.read_component("identity.json", 65536)? {
+            Some(bytes) => serde_json::from_slice::<Metadata>(&bytes)
+                .map_err(|_| EndpointError::InvalidCache)?,
+            None if self.protected => return Err(EndpointError::LoginRequired),
+            None => Metadata::default(),
         };
         metadata.validate()?;
-        f(&mut metadata)
+        Ok(metadata)
+    }
+    pub(crate) fn read_component(
+        &self,
+        name: &str,
+        limit: usize,
+    ) -> Result<Option<zeroize::Zeroizing<Vec<u8>>>> {
+        if self.protected {
+            let value = self.credentials.get(name)?;
+            if value.as_ref().is_some_and(|v| v.len() > limit) {
+                return Err(EndpointError::InvalidCache);
+            }
+            return Ok(value);
+        }
+        read_legacy(&self.root.join(name), limit)
     }
     pub fn read(&self) -> Result<Metadata> {
         self.locked(|m| Ok(m.clone()))
@@ -295,6 +321,12 @@ impl StateStore {
         ) {
             return Err(EndpointError::Invalid);
         }
+        if self.protected && name != "snapshot.enc" {
+            return self.credentials.set(name, bytes);
+        }
+        self.write_file(name, bytes)
+    }
+    pub(super) fn write_file(&self, name: &str, bytes: &[u8]) -> Result<()> {
         let path = self.root.join(name);
         if fs::symlink_metadata(&path).is_ok() {
             check_private(&path, false)?;
@@ -349,6 +381,7 @@ impl StateStore {
             });
         }
         metadata.cache_head_account = None;
+        metadata.cache_checkpoint = None;
         metadata.cache_publication_pending = false;
         metadata.upstream_heads.clear();
         metadata.upstream_publication_pending.clear();
@@ -370,6 +403,13 @@ impl StateStore {
 }
 pub fn check_private(path: &Path, directory: bool) -> Result<()> {
     let m = fs::symlink_metadata(path).map_err(|_| EndpointError::Storage)?;
+    #[cfg(target_os = "macos")]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if m.uid() != rustix::process::geteuid().as_raw() {
+            return Err(EndpointError::Storage);
+        }
+    }
     if m.file_type().is_symlink() || (directory && !m.is_dir()) || (!directory && !m.is_file()) {
         return Err(EndpointError::Storage);
     }
@@ -381,4 +421,44 @@ pub fn check_private(path: &Path, directory: bool) -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn read_legacy(path: &Path, limit: usize) -> Result<Option<zeroize::Zeroizing<Vec<u8>>>> {
+    match fs::symlink_metadata(path) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(_) => return Err(EndpointError::Storage),
+        Ok(_) => check_private(path, false)?,
+    }
+    let mut bytes = zeroize::Zeroizing::new(Vec::new());
+    File::open(path)
+        .and_then(|f| f.take(limit as u64 + 1).read_to_end(&mut bytes))
+        .map_err(|_| EndpointError::Storage)?;
+    if bytes.len() > limit {
+        return Err(EndpointError::Invalid);
+    }
+    Ok(Some(bytes))
+}
+#[cfg(target_os = "macos")]
+#[path = "cutover.rs"]
+mod cutover;
+#[cfg(not(target_os = "macos"))]
+impl StateStore {
+    pub(crate) fn recovery_witness(&self) -> Result<Option<Option<Uuid>>> {
+        Ok(None)
+    }
+    pub(crate) fn recover_authenticated(&self, _: Option<Uuid>, _: &str) -> Result<Uuid> {
+        Err(EndpointError::Unsupported)
+    }
+    pub fn legacy_handoff(_: Option<PathBuf>) -> Result<()> {
+        Err(EndpointError::Unsupported)
+    }
+    pub fn finish_fixture_retirement(_: &Path) -> Result<bool> {
+        Err(EndpointError::Unsupported)
+    }
+    pub fn retire_fixture(_: PathBuf) -> Result<()> {
+        Err(EndpointError::Unsupported)
+    }
+    pub fn native(_: PathBuf, _: crate::credentials::MacKeychain) -> Result<Self> {
+        Err(EndpointError::Unsupported)
+    }
 }

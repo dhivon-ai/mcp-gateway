@@ -40,6 +40,10 @@ pub enum EndpointError {
     CredentialCapacity,
     #[error("macOS Keychain is unavailable; unlock it and retry")]
     Keychain,
+    #[error(
+        "Legacy Keychain cleanup is incomplete. Stop old gateway processes and retry with Keychain access, or use the creating CLI for the documented logout handoff."
+    )]
+    LegacyCleanup,
     #[error("Login is required")]
     LoginRequired,
     #[error("The central session was rejected; login again")]

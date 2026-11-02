@@ -1,4 +1,4 @@
-//! Native-only immutable Keychain credential heads. Ordinary files contain scoped pointers only.
+//! Native-only credential heads and scoped rejection, expiry and publication checks.
 use crate::{
     EndpointError, Result,
     cache::{SnapshotCache, ValidatedSnapshot},
@@ -50,6 +50,15 @@ pub struct CredentialHead {
     fingerprint: String,
     pub credential: Option<UpstreamCredential>,
     fault: Option<CredentialFault>,
+}
+#[cfg(target_os = "macos")]
+pub(crate) fn recovery_evidence(bytes: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
+    let mut head: CredentialHead =
+        serde_json::from_slice(bytes).map_err(|_| EndpointError::Invalid)?;
+    head.credential = None;
+    serde_json::to_vec(&head)
+        .map(Zeroizing::new)
+        .map_err(|_| EndpointError::Invalid)
 }
 impl CredentialHead {
     pub fn version(&self) -> u32 {
@@ -266,12 +275,26 @@ impl NativeCredentials {
         scope: &CredentialScope,
         allow_retired: bool,
     ) -> Result<CredentialHead> {
+        self.read_component(account, scope, allow_retired, false)
+    }
+    fn read_component(
+        &self,
+        account: &str,
+        scope: &CredentialScope,
+        allow_retired: bool,
+        guard: bool,
+    ) -> Result<CredentialHead> {
+        let name = if guard {
+            account.replace(":upstream-head:", ":upstream-guard:")
+        } else {
+            account.to_string()
+        };
         let bytes = self
             .cache
             .sessions
             .store
             .credentials()
-            .get(account)?
+            .get(&name)?
             .ok_or(EndpointError::UpstreamRequired)?;
         if bytes.len() > 65536 {
             return Err(EndpointError::Invalid);
@@ -362,6 +385,11 @@ impl NativeCredentials {
                     {
                         None
                     }
+                    Err(EndpointError::InvalidCache)
+                        if self.cache.sessions.store.is_protected() =>
+                    {
+                        Some(self.read_component(account, scope, false, true)?)
+                    }
                     Err(error) => return Err(error),
                 },
             };
@@ -424,6 +452,7 @@ impl NativeCredentials {
                         observed = old.observed;
                     }
                     if anchor_valid
+                        && old.credential.is_some()
                         && old.fault.is_none()
                         && old.source_revision == scope.revision
                         && !metadata
@@ -469,7 +498,14 @@ impl NativeCredentials {
             let old = metadata
                 .upstream_heads
                 .get(&scope.mcp.definition.id)
-                .map(|account| self.read_raw(account, scope, false))
+                .map(|account| match self.read_raw(account, scope, false) {
+                    Err(EndpointError::InvalidCache)
+                        if self.cache.sessions.store.is_protected() =>
+                    {
+                        self.read_component(account, scope, false, true)
+                    }
+                    other => other,
+                })
                 .transpose()?;
             let old_bound = old
                 .as_ref()

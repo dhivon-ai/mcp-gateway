@@ -7,7 +7,6 @@ use hkdf::Hkdf;
 use security_framework::{
     item::{ItemClass, ItemSearchOptions, ItemUpdateOptions, ItemUpdateValue, Limit, update_item},
     os::macos::keychain::SecKeychain,
-    passwords::{delete_generic_password, get_generic_password},
 };
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
@@ -28,6 +27,7 @@ const HEADER: &[u8; 8] = b"DHVENC02";
 pub struct Vault {
     root: PathBuf,
     service: String,
+    keychain: SecKeychain,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -41,6 +41,12 @@ impl Drop for Index {
     fn drop(&mut self) {
         self.seed.zeroize();
     }
+}
+
+pub(crate) fn guard_name(name: &str) -> Option<String> {
+    let (scope, id) = name.rsplit_once(":upstream-head:")?;
+    Uuid::parse_str(id).ok()?;
+    Some(format!("{scope}:upstream-guard:{id}"))
 }
 
 fn random_key() -> Result<Zeroizing<[u8; 32]>> {
@@ -59,6 +65,9 @@ fn ring(secret: &[u8], id: Uuid, purpose: &[u8]) -> Result<KeyRing> {
 }
 
 fn read_sealed(path: &Path, secret: &[u8], id: Uuid, purpose: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
+    if matches!(path.symlink_metadata(),Err(e) if e.kind()==std::io::ErrorKind::NotFound) {
+        return Err(EndpointError::InvalidCache);
+    }
     check_private(path, false)?;
     let mut bytes = Vec::new();
     File::open(path)
@@ -82,6 +91,9 @@ fn read_sealed(path: &Path, secret: &[u8], id: Uuid, purpose: &[u8]) -> Result<Z
 }
 
 fn write_sealed(path: &Path, secret: &[u8], id: Uuid, purpose: &[u8], bytes: &[u8]) -> Result<()> {
+    if bytes.len() > MAX_RECORD {
+        return Err(EndpointError::Storage);
+    }
     let sealed = ring(secret, id, purpose)?
         .seal(purpose, bytes)
         .map_err(|_| EndpointError::Invalid)?;
@@ -101,6 +113,10 @@ fn write_sealed(path: &Path, secret: &[u8], id: Uuid, purpose: &[u8], bytes: &[u
 impl Vault {
     /// Caller supplies a private installation directory and its fixed Keychain namespace.
     pub fn open(parent: &Path, service: String) -> Result<Self> {
+        let chain = SecKeychain::default().map_err(|_| EndpointError::Keychain)?;
+        Self::in_keychain(parent, service, chain)
+    }
+    fn in_keychain(parent: &Path, service: String, keychain: SecKeychain) -> Result<Self> {
         check_private(parent, true)?;
         let root = parent.join("endpoint-v2");
         match fs::DirBuilder::new().mode(0o700).create(&root) {
@@ -112,7 +128,11 @@ impl Vault {
         File::open(parent)
             .and_then(|dir| dir.sync_all())
             .map_err(|_| EndpointError::Storage)?;
-        Ok(Self { root, service })
+        Ok(Self {
+            root,
+            service,
+            keychain,
+        })
     }
 
     fn lock(&self) -> Result<File> {
@@ -133,10 +153,17 @@ impl Vault {
         Ok(lock)
     }
 
-    fn current(&self) -> Result<Option<Uuid>> {
-        let entries = match ItemSearchOptions::new()
+    fn query(&self) -> ItemSearchOptions {
+        let mut query = ItemSearchOptions::new();
+        query
+            .keychains(std::slice::from_ref(&self.keychain))
             .class(ItemClass::generic_password())
-            .service(&self.service)
+            .service(&self.service);
+        query
+    }
+    pub(crate) fn current(&self) -> Result<Option<Uuid>> {
+        let entries = match self
+            .query()
             .load_attributes(true)
             .limit(Limit::Max(2))
             .search()
@@ -163,10 +190,17 @@ impl Vault {
     }
 
     fn load(&self, id: Uuid) -> Result<Index> {
-        let key = Zeroizing::new(
-            get_generic_password(&self.service, &id.to_string())
-                .map_err(|_| EndpointError::Keychain)?,
-        );
+        let mut results = self
+            .query()
+            .account(&id.to_string())
+            .load_data(true)
+            .skip_authenticated_items(true)
+            .search()
+            .map_err(|_| EndpointError::Keychain)?;
+        let Some(security_framework::item::SearchResult::Data(value)) = results.pop() else {
+            return Err(EndpointError::Keychain);
+        };
+        let key = Zeroizing::new(value);
         if key.len() != 32 {
             return Err(EndpointError::InvalidCache);
         }
@@ -195,17 +229,14 @@ impl Vault {
             .map_err(|_| EndpointError::Storage)?;
         let result = if let Some(old) = previous {
             update_item(
-                ItemSearchOptions::new()
-                    .class(ItemClass::generic_password())
-                    .service(&self.service)
-                    .account(&old.to_string()),
+                self.query().account(&old.to_string()),
                 ItemUpdateOptions::new()
                     .set_account_name(id.to_string())
                     .set_value(ItemUpdateValue::Data(CFData::from_buffer(&*key))),
             )
         } else {
-            SecKeychain::default()
-                .and_then(|chain| chain.add_generic_password(&self.service, &id.to_string(), &*key))
+            self.keychain
+                .add_generic_password(&self.service, &id.to_string(), &*key)
         };
         result.map_err(|_| EndpointError::Keychain)?;
         if let Some(old) = previous {
@@ -244,6 +275,39 @@ impl Vault {
         )
     }
 
+    // Caller holds state.lock. Stage all imported records and verify them before the
+    // single Keychain transition. A failed preparation leaves the old format usable.
+    pub(crate) fn replace_all(
+        &self,
+        expected: Option<Uuid>,
+        values: &BTreeMap<String, Zeroizing<Vec<u8>>>,
+    ) -> Result<()> {
+        let _guard = self.lock()?;
+        if self.current()? != expected {
+            return Err(EndpointError::IdentityChanged);
+        }
+        if values.len() > MAX_NAMES {
+            return Err(EndpointError::CredentialCapacity);
+        }
+        let mut index = Index {
+            seed: *random_key()?,
+            records: BTreeMap::new(),
+        };
+        for (name, value) in values {
+            let id = Uuid::new_v4();
+            write_sealed(&self.blob_path(id), &index.seed, id, name.as_bytes(), value)?;
+            if read_sealed(&self.blob_path(id), &index.seed, id, name.as_bytes())?.as_slice()
+                != value.as_slice()
+            {
+                return Err(EndpointError::InvalidCache);
+            }
+            index.records.insert(name.clone(), id);
+        }
+        self.commit(expected, &index)?;
+        let head = self.current()?.ok_or(EndpointError::Keychain)?;
+        let verified = self.load(head)?;
+        self.collect_orphans(head, &verified)
+    }
     fn collect_orphans(&self, head: Uuid, index: &Index) -> Result<()> {
         let live: std::collections::BTreeSet<_> = index.records.values().copied().collect();
         for entry in fs::read_dir(&self.root).map_err(|_| EndpointError::Storage)? {
@@ -270,37 +334,58 @@ impl Vault {
         let _guard = self.lock()?;
         let head = self.current()?.ok_or(EndpointError::LoginRequired)?;
         let mut index = self.load(head)?;
-        let old = index.records.remove(name);
-        if let Some(value) = value {
-            if index.records.len() >= MAX_NAMES {
-                return Err(EndpointError::CredentialCapacity);
-            }
-            let id = Uuid::new_v4();
-            write_sealed(&self.blob_path(id), &index.seed, id, name.as_bytes(), value)?;
-            index.records.insert(name.into(), id);
-        } else if old.is_none() {
-            return Ok(());
+        let mut changes = vec![(name.to_owned(), value)];
+        let evidence;
+        if let Some(guard) = guard_name(name) {
+            evidence = value
+                .map(crate::upstream_credentials::recovery_evidence)
+                .transpose()?;
+            changes.push((guard, evidence.as_ref().map(|v| v.as_slice())));
         }
-        self.commit(Some(head), &index)?;
-        if let Some(old) = old {
-            self.unlink(&self.blob_path(old))?;
+        let mut obsolete = Vec::new();
+        let mut wrote = false;
+        for (name, value) in changes {
+            obsolete.extend(index.records.remove(&name));
+            if let Some(value) = value {
+                if index.records.len() >= MAX_NAMES {
+                    return Err(EndpointError::CredentialCapacity);
+                }
+                let id = Uuid::new_v4();
+                write_sealed(&self.blob_path(id), &index.seed, id, name.as_bytes(), value)?;
+                index.records.insert(name, id);
+                wrote = true;
+            }
+        }
+        if wrote || !obsolete.is_empty() {
+            self.commit(Some(head), &index)?;
+            for id in obsolete {
+                self.unlink(&self.blob_path(id))?;
+            }
         }
         Ok(())
     }
 
     /// Explicit teardown for isolated installs. Caller has already stopped writers.
     pub fn remove_empty(&self) -> Result<()> {
+        self.retire_records(&[])
+    }
+    pub(crate) fn retire_records(&self, allowed: &[&str]) -> Result<()> {
         let _guard = self.lock()?;
         let Some(id) = self.current()? else {
             return Ok(());
         };
         let index = self.load(id)?;
-        if !index.records.is_empty() {
+        if !index.records.keys().all(|k| allowed.contains(&k.as_str())) {
             return Err(EndpointError::Invalid);
         }
         self.collect_orphans(id, &index)?;
-        delete_generic_password(&self.service, &id.to_string())
+        self.query()
+            .account(&id.to_string())
+            .delete()
             .map_err(|_| EndpointError::Keychain)?;
+        for id in index.records.values() {
+            self.unlink(&self.blob_path(*id))?;
+        }
         self.unlink(&self.index_path(id))
     }
 }
@@ -327,6 +412,66 @@ impl CredentialStore for Vault {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "manual macOS locked-Keychain check: a SecurityAgent prompt may appear; run explicitly with --ignored --nocapture"]
+    fn locked_isolated_keychain_cannot_replace_a_committed_master() {
+        use security_framework::os::macos::keychain::CreateOptions;
+        let root = std::env::temp_dir()
+            .canonicalize()
+            .expect("temp")
+            .join(format!("dhivon-locked-{}", Uuid::new_v4()));
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(&root)
+            .expect("fixture");
+        let path = root.join("isolated.keychain-db");
+        let pass = "Dhivon-Test-Only-27!";
+        eprintln!(
+            "Creating disposable Keychain: {}. Test password: {pass}. For the locked-access check choose Cancel or Deny; unlocking would change the condition under test.",
+            path.display()
+        );
+        let chain = CreateOptions::new()
+            .password(pass)
+            .create(&path)
+            .expect("isolated test keychain");
+        let v = Vault::in_keychain(
+            &root,
+            format!("dhivon.fixture.{}", Uuid::new_v4()),
+            chain.clone(),
+        )
+        .expect("fixture vault");
+        v.initialize().expect("create");
+        v.set("a", b"synthetic").expect("publish");
+        let before = v.current().expect("head");
+        assert!(
+            std::process::Command::new("/usr/bin/security")
+                .arg("lock-keychain")
+                .arg(&path)
+                .status()
+                .expect("lock only test keychain")
+                .success()
+        );
+        let no_dialog = SecKeychain::disable_user_interaction().expect("local noninteractive read");
+        let denied = v.get("a");
+        let init = v.initialize();
+        let after = v.current().expect("locked slot attributes remain visible");
+        drop(no_dialog);
+        drop(v);
+        drop(chain);
+        assert!(
+            std::process::Command::new("/usr/bin/security")
+                .arg("delete-keychain")
+                .arg(&path)
+                .status()
+                .expect("remove only test keychain")
+                .success()
+        );
+        fs::remove_dir_all(root).expect("remove fixture");
+        assert!(matches!(denied, Err(EndpointError::Keychain)));
+        assert!(matches!(init, Err(EndpointError::Keychain)));
+        assert_eq!(before, after);
+    }
 
     #[test]
     fn committed_index_selects_records_and_discards_abandoned_writes() {
