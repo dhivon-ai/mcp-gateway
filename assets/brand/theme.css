@@ -1,0 +1,23 @@
+@font-face {
+  font-family: "Manrope";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("./fonts/Manrope-wght.ttf") format("truetype");
+}
+
+:root {
+  --dhivon-font: "Manrope", sans-serif;
+  --dhivon-navy: #102c4c;
+  --dhivon-emerald: #00ad78;
+  --dhivon-white: #ffffff;
+  --dhivon-ink: #102c4c;
+  --dhivon-surface: #f4f7fa;
+  --dhivon-muted: #52677f;
+  --dhivon-border: #8191a3;
+  --dhivon-action: #102c4c;
+  --dhivon-action-foreground: #ffffff;
+  --dhivon-focus: #102c4c;
+  --dhivon-success: #007d56;
+  --dhivon-danger: #b42318;
+}

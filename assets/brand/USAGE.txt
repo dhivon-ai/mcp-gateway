@@ -1,0 +1,29 @@
+DHIVON — SOFT GATE
+
+Approved colors: navy enclosure #102C4C, emerald module #00AD78.
+The original approved generated PNG is preserved in ../final/dhivon-soft-gate-color.png.
+Production logos are clean vector reconstructions of that approved design.
+logo.svg / logo.png: standalone mark; PNG 2048 square, transparent.
+dhivon.svg / dhivon.png: horizontal lowercase wordmark lockup.
+*-dark: white enclosure / lettering and green module, for dark backgrounds.
+*-black and *-white: one-color versions.
+SVG wordmark lettering is outlined; no font installation required.
+Typeface: Manrope, weight 650. Original font and OFL license in fonts/.
+
+SPACING AND SIZE
+Keep clear space of at least half the green module width around visible artwork.
+Use the standalone mark below 120 px lockup width. Minimum mark size: 16 px.
+Favicons use tighter padding; do not use the padded logo.png as a favicon.
+Keep the aspect ratio and the two gaps. Do not stretch, add shadows or gradients.
+Use the white/green version on dark surfaces. Keep the green square as an accent.
+
+WEB INTEGRATION
+Copy the asset files to your public/static directory and adjust paths as needed:
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta name="theme-color" content="#102C4C">
+
+The default favicon uses navy/green. Use a white tile or a light variant if a
+specific browser theme needs more contrast. The included touch icon is white-backed.
