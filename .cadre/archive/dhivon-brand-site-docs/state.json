@@ -3,8 +3,8 @@
   "trackId": "dhivon-brand-site-docs",
   "title": "Dhivon MCP Gateway rebrand, product website and documentation",
   "type": "feature",
-  "status": "completed",
-  "checkpoint": "completed",
+  "status": "archived",
+  "checkpoint": "archived",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -115,6 +115,10 @@
     {
       "action": "review",
       "commit": "op:review-535ddd99f064bdfb7a53a981c9ba3367"
+    },
+    {
+      "action": "archive",
+      "commit": "op:archive-5cf1ff45e0787820765b577f23c97888"
     }
   ]
 }

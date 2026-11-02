@@ -43,6 +43,13 @@
       "action": "refresh",
       "commit": "op:refresh-3db8cc346c0bc402e13d729a68f15a66",
       "refreshPath": "refreshes/refresh-20261015-mvp-baseline.md"
+    },
+    {
+      "action": "archive",
+      "selectedTracks": [
+        "dhivon-brand-site-docs"
+      ],
+      "commit": "op:archive-5cf1ff45e0787820765b577f23c97888"
     }
   ]
 }

@@ -26,6 +26,18 @@ OAuth response must survive failure to persist it centrally.
 - Pin authenticated I/O to validated destinations and reject redirects/unrelated
   origins. Never forward a control-plane session as upstream authentication.
 
+## Expired records and rejection fences
+
+An upstream may reject an expired access token before local reconciliation. Keep
+that exact credential binding rejected. After a complete authenticated central
+response passes scope validation, detect OAuth expiry before trying to publish
+the old rejected record; use the existing refresh lease/version CAS and complete
+response recovery path. Re-read the protected generation/current policy before
+returning the refreshed credential. Never erase the rejection fence, extend a
+policy lease through credential traffic, refresh expired credentials offline, or
+replay the failed tool call. A refresh attempt succeeding does not independently
+prove the refreshed binding is authorized for dispatch.
+
 ## Tradeoffs and limits
 
 Immutable heads increase publication/cleanup work. The tested native limit is 128
@@ -41,3 +53,20 @@ Public-client OAuth fixture coverage is not universal provider compatibility.
 - Commits: `ce051f249b8110858813339ced107dcb86fb1dec`, `cd2d02ab4881ccbcb9a0981af9e083aaf504bbbc`, `d4fb795a60fbb6f93a64575d88861f93ba8c0643`, `64a57dbd489202da80507c361152decd9bb1cae1`, `798b0fb0cc049842c81e28f6e7e36235ac8a71bf`.
 - Source/evidence: CLI `store.rs`, `upstream_credentials.rs`, `oauth_pending.rs`, `oauth_control.rs`, server vault/core crypto; credential tests for 128/129, invalid writes, failed publication and token anchors; real-PG OAuth/vault recovery tests.
 - Archived at: 2026-10-15 (proposed archive batch).
+
+## Additional provenance
+
+- Track: `dhivon-brand-site-docs`; clean completion approved in
+  `7249c26ed16da52cdcb3b9a848832e579ef7ab18`.
+- Phase/task: P8/T8.1 (BUG-006 controlled HTTPS/native OAuth verification).
+- Commit: `3d6eecb60106ba74a5126ee0b4a277ccec3e85d9`.
+- Source/evidence: CLI `remote_credentials.rs` uses imported
+  `upstream_credentials::validate_credential` before the expiry/refresh branch;
+  `refresh_expired` reloads the protected generation and current MCP before
+  cached access. `tests/upstream_credentials.rs` proves the same rejected binding
+  cannot be republished and an old rejection cannot poison its replacement.
+  `scripts/verify-https-oauth.ts` and `docs/dhivon-release.md` record the actual
+  extracted-client old-token failure, refresh version1→2, permitted call,
+  disconnect and denial. This is a controlled provider, not general compatibility.
+- Archived at: 2026-11-02 (proposed archive batch).
+- Supersession: extends this pattern; original publication/CAS guidance remains.

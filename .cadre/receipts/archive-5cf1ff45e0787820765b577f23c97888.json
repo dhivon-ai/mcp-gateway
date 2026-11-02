@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "operationId": "archive-5cf1ff45e0787820765b577f23c97888",
+  "kind": "archive",
+  "status": "completed",
+  "approvalDigest": "8d7520a2d2ba2e61ac0015712c156d17c954d6a1c5e3e411e2e7df34ba190e7c",
+  "baseCommit": "7249c26ed16da52cdcb3b9a848832e579ef7ab18",
+  "artifacts": [
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/bugs/review-1.md",
+      "sha256": "27592e23b9d435d81b4778f74abac8f48670d0734fbe27355487fc43c9da8b71"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/bugs/review-2.md",
+      "sha256": "00e6d742e6dd2244709e96a4211ef61042d8e7f45be7053da18232f5f58fb5fb"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/bugs/review-3.md",
+      "sha256": "2a717576d53977a84994c44f036e9cf139095f7eadb78d8b13b5235aa2fcb631"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/dependency-context.json",
+      "sha256": "d926bc7665ac37a2a6d0aa0017d2425bff6ed26c822466c833b4c09538d5aa9e"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/executions/execution-2026-11-02T06-39-45-854Z.json",
+      "sha256": "c79182165456c29128d9a175753d7e39325d4d3d19a06498d9dabc45ccd0ee20"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/executions/execution-2026-11-02T08-03-09-159Z.json",
+      "sha256": "02c66d5accf03f42b17f157c5349806c2b3469e8c127ac173bb89b88dd831785"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/executions/execution-2026-11-02T09-16-20-231Z.json",
+      "sha256": "705c5e240032defcccc19fe21c29dd40267e167966452683d6afb6bc9cd4a9fb"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/executions/execution-2026-11-02T09-53-25-214Z.json",
+      "sha256": "a25a2222cf4f388f603180c17688c4b14caf0bfe248ffaed950c4fb4d1c61250"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/learning.md",
+      "sha256": "4ee310adee6a528a87b8a3c37d39d74f9d243094746fbcf463417af196059ae4"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/plan.md",
+      "sha256": "71e96c39d6e7b87db7ba8d13ae9e43ab7f4f45815dc4dbe632fcae47710d48db"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/spec.md",
+      "sha256": "9d296decf6adccbc26107a2e0e3f09374957329b5563f4ea179eaa36a16dd9c6"
+    },
+    {
+      "path": ".cadre/archive/dhivon-brand-site-docs/state.json",
+      "sha256": "9ee0cd60cf14e022174f3ac11ac5c4bd39ee31a978002ffb37ad8083975d89b6"
+    },
+    {
+      "path": ".cadre/patterns/canonical-product-guides.md",
+      "sha256": "2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"
+    },
+    {
+      "path": ".cadre/patterns/credential-publication.md",
+      "sha256": "e7bc09e68d460cd5aa68cdf0298ba67b314ff894d318eb748153e10426d2be91"
+    },
+    {
+      "path": ".cadre/patterns/index.md",
+      "sha256": "38db33cd1279cd75049eb8825846947e2a18cdda7fc38137f2ac74ba9afd4e7e"
+    },
+    {
+      "path": ".cadre/patterns/isolated-release-verification.md",
+      "sha256": "7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"
+    },
+    {
+      "path": ".cadre/patterns/rehearsal-recovery-ownership.md",
+      "sha256": "1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "e548348238a607c9e465e5d746506fc6d2074744ff8edafc69f91df52e743111"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "070d4bf833eb611bdfcff9666069a518c8b9758f66c654dc0a5b2e31dc32f3a6"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/bugs/review-1.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/bugs/review-2.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/bugs/review-3.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/dependency-context.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/executions/execution-2026-11-02T06-39-45-854Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/executions/execution-2026-11-02T08-03-09-159Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/executions/execution-2026-11-02T09-16-20-231Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/executions/execution-2026-11-02T09-53-25-214Z.json",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/learning.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/plan.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/spec.md",
+      "sha256": null
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/state.json",
+      "sha256": null
+    }
+  ]
+}
