@@ -6,11 +6,11 @@ Read this seed at each root phase. Later phases read the learning from every dec
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":3,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
+{"schemaVersion":1,"specRevision":1,"planRevision":4,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/browser-contract-consistency.md","sha256":"85449fd4523c3f17cb692d2cfaea42497ef85870884f2795d963fe4a17d6931d"},{"path":"patterns/credential-publication.md","sha256":"28346d9e885a27b8d0334138788cb40eaee2f1b1f395b670d33cf1bd74dfb7b3"},{"path":"patterns/isolated-release-verification.md","sha256":"3453134357e4efd47faaca9080982f997ea6485ff7b9297504f11339e85dbd5a"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 1
-- Plan revision: 3
+- Plan revision: 4
 
 | Pattern | Relevance to this track | Constraints to carry forward |
 | --- | --- | --- |
@@ -229,3 +229,36 @@ no product drift and the working tree was clean at approval recording. Reuse the
 verified evidence and retained original HTTPS/OAuth/provider limits. This approval
 satisfies the Track-mode final implementation gate; ordinary review still owns
 findings and clean completion. Finish and reconcile implementation bookkeeping.
+
+
+## Review cycle 3 — Ownership registration and recovery exclusion
+
+Reviewed completed execution2026-11-02T09-16-20-231Z, range04656bd..5caf554,
+and Cadre-only completion193f4ba. All seven changed product files and affected
+callers/tests/runbooks were read. The existing process suite passes11/11 again in
+149.99s. Strict script TypeScript/format and actual archive/image/site notice-byte
+checks pass. Unchanged Rust/UI/licensing inputs retain prior artifact and
+HTTPS/native OAuth evidence and public-provider limits. No new trust is created.
+
+BUG-008's original signal leak is prevented by the tested normal paths. New
+BUG-009 shows that failed post-spawn identity capture leaves no registered handle
+or owner: cleanup reports clean while the generated child is alive. The reviewer
+stopped only that exact child after recording the outcome. BUG-010 shows two
+stale-lock contenders both acquiring cleanup ownership; a separate interrupted
+acquisition leaves a zero-byte lock that blocks retry with a parse error. These
+are verification-harness defects, not confirmed production OAuth regressions.
+
+Controlled probes, results and logs are retained beneath the completed execution's
+owned cache in review3-llrmvais. All13 generated review scopes are clean; the exact
+probe child and recovery processes were reconciled, with no production targets or
+certificate changes. Canonical source/state remains unchanged pending approval.
+The proposal preserves all completed P1–P11 and appends P12 and final P13 only.
+
+Reassessed the five seed patterns for spec1/plan4. Isolated release verification
+requires truthful cleanup and retained immutable creators; owned transports require
+ownership to survive registration errors and confirmed exact shutdown. Credential
+publication requires stopped writers and serialized cleanup with no broad Keychain
+removal. Authorization leases and browser contract consistency remain constraints
+on unchanged product behavior. All approved pattern bytes/hashes remain current;
+no dependency or specification scope changed. Implement only after this review's
+exact bug/plan/learning/dependency/state proposal is approved and reconciled.

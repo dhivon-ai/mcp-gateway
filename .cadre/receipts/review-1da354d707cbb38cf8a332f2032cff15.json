@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-1da354d707cbb38cf8a332f2032cff15",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "b5ed72bd1f45930f6bd479e8b296469f2d8c022b346cccead341aacb0ca09d7b",
+  "baseCommit": "193f4ba7202f06ba457ffc738e18e57b11db8007",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "f70505f910c1432340890d4d99f8bb69b044d0412ae0cf8891d13c5e268f641a"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/bugs/review-3.md",
+      "sha256": "2a717576d53977a84994c44f036e9cf139095f7eadb78d8b13b5235aa2fcb631"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/dependency-context.json",
+      "sha256": "d926bc7665ac37a2a6d0aa0017d2425bff6ed26c822466c833b4c09538d5aa9e"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/learning.md",
+      "sha256": "50197d80d906c0abae1d1b6e11460c4461738e0916bee436b53a47ebd9461694"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/plan.md",
+      "sha256": "e50a61412aefebacc3b8a64b8b7c79474868d770aed5eacfac415e98d37cdf76"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/state.json",
+      "sha256": "05b92a982b3f40d7112ce8dcfd3729dcaedfde7feebafa794a3cb2b0ff5d8250"
+    }
+  ]
+}
