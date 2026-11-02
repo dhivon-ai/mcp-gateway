@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-535ddd99f064bdfb7a53a981c9ba3367",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "36af72d10595196c795fceccdf345c1031399a887ba9e1843059c57ca19d527c",
+  "baseCommit": "e3a168d51db17255b0d5b7eb5b4da4ea574d4c02",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "4fd29e86957c131f7322d5b9f3640e7707ca6387b8ec52d5f2480ef9fe053a1f"
+    },
+    {
+      "path": ".cadre/tracks/dhivon-brand-site-docs/state.json",
+      "sha256": "2b1effc6412d2a7ffb998624b5671a102335dd1e95462d3eb1158d1a6cd83dfb"
+    }
+  ]
+}
