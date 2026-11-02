@@ -19,5 +19,7 @@
   },
   "devDependencies": {
     "prettier": "3.9.10"
-  }
+  },
+  "license": "Apache-2.0",
+  "author": "Dhivon AI"
 }
