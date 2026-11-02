@@ -14,6 +14,7 @@ const mime: Record<string, string> = {
   ".ttf": "font/ttf",
   ".jpg": "image/jpeg",
   ".webp": "image/webp",
+  ".txt": "text/plain; charset=utf-8",
 };
 await stat(join(root, "index.html"));
 createServer(async (request, response) => {

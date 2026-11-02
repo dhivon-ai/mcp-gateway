@@ -1,7 +1,8 @@
 # Dhivon release verification
 
 Version 0.1.0 was built and exercised locally on 2026-11-02 as Dhivon MCP Gateway,
-a product of Dhivon AI. This report records the current renamed artifacts.
+a product of Dhivon AI. The initial renamed artifacts are retained below;
+the notice-bearing remediation build supersedes them for current distribution.
 The [original MVP report](release.md) preserves the earlier artifact identities.
 
 ## Artifacts and environment
@@ -24,6 +25,41 @@ The final archive includes the current compatibility guide. Its executable is
 byte-identical to the extracted binary used by the packaged checks.
 The archive is unsigned and locally built. Signing, notarization and public
 distribution remain [roadmap candidates](roadmap.md).
+
+## Notice-bearing remediation build — 2026-11-02
+
+Review cycle 1, BUG-007, adds the owner-selected Apache-2.0 source license and
+Dhivon AI copyright/ownership, without changing third-party licenses.
+
+| Item | Current identity |
+| --- | --- |
+| Archive SHA-256 | `95b9aa68baaecbd19ca97c9a3d9b18d56e09d4e6063a29d90771877f5078b2d6` |
+| Extracted executable SHA-256 | `b789e155ce8251e9cfc5b13fe8abeb23010782a3abf64b1b83413b4aba960b22` |
+| Service image ID | `sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07` |
+
+The archive and runtime image carry project LICENSE/NOTICE and the unchanged
+full Manrope OFL at the [documented locations](licensing.md). The static website
+publishes readable text notices and a licensing page linked from every footer.
+Checks compare all three emitted notice files against exact source bytes. The
+previous archive is rejected by the new check, demonstrating the missing-notice
+case. The CI website and deployment entry points run their respective checks.
+
+The final archive checksum and extracted executable equality pass. The extracted
+CLI all-authentication/owned-process suite passes in 34.28 seconds. A fresh run
+of the notice-bearing image and extracted Mac completes login, install, explicit
+enablement, a Node STDIO tool call and disable denial, plus restart, actual dump
+and fresh restore, independent wrong/matching vault keys and redacted logs.
+Native credentials, generated stacks and volumes are cleaned by their fixtures.
+The public licensing page and Apache text link were exercised in in-app Chromium;
+1280px and 390px layouts have no page-level horizontal overflow or relevant
+console warnings/errors. The guide's table scrolls within its own container.
+
+Rust application behavior and embedded UI source are unchanged by this phase.
+The initial full workspace/database/frontend evidence below remains applicable;
+the focused packaging, artifact, site, type/format and current packaged/deployment
+checks above verify the changed delivery paths. Builds use pinned Rust 1.95.0,
+Node 24.19.0 and pnpm 11.4.0. An initial local Node 26 invocation was repeated
+with the pinned Node toolchain before final evidence was recorded.
 
 ## Verified user journey and recovery
 

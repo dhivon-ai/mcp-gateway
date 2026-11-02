@@ -23,6 +23,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
     && groupadd --gid 10001 dhivon && useradd --uid 10001 --gid dhivon --no-create-home dhivon
 COPY --from=rust /source/target/release/dhivon-mcp-gateway-server /usr/local/bin/dhivon-mcp-gateway-server
 COPY deploy/healthcheck.sh /usr/local/bin/dhivon-mcp-gateway-healthcheck
+COPY LICENSE NOTICE /usr/share/doc/dhivon-mcp-gateway/
+COPY assets/brand/fonts/OFL.txt /usr/share/doc/dhivon-mcp-gateway/licenses/Manrope-OFL.txt
 USER 10001:10001
 ENV DHIVON_MCP_GATEWAY_BIND=0.0.0.0:8080
 EXPOSE 8080

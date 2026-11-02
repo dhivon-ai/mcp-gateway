@@ -20,9 +20,13 @@ mkdir "$staging/$name"
 cp "$CARGO_TARGET_DIR/aarch64-apple-darwin/release/dhivon-mcp-gateway" "$staging/$name/dhivon-mcp-gateway"
 cp docs/mac-install.md "$staging/$name/README.md"
 cp docs/compatibility.md "$staging/$name/COMPATIBILITY.md"
+cp LICENSE NOTICE "$staging/$name/"
+mkdir "$staging/$name/licenses"
+cp assets/brand/fonts/OFL.txt "$staging/$name/licenses/Manrope-OFL.txt"
 file "$staging/$name/dhivon-mcp-gateway" | grep -q 'Mach-O 64-bit executable arm64'
 "$staging/$name/dhivon-mcp-gateway" --version
 COPYFILE_DISABLE=1 tar -czf "$DHIVON_MCP_GATEWAY_BUILD_CACHE/releases/$name.tar.gz" -C "$staging" "$name"
+node scripts/check-notices.ts --archive "$DHIVON_MCP_GATEWAY_BUILD_CACHE/releases/$name.tar.gz"
 (cd "$DHIVON_MCP_GATEWAY_BUILD_CACHE/releases" && shasum -a 256 "$name.tar.gz" > "$name.tar.gz.sha256" && shasum -a 256 -c "$name.tar.gz.sha256")
 # Only the mktemp directory created by this invocation is removed.
 rm -r "$staging"

@@ -18,12 +18,14 @@ import { createServer } from "node:net";
 import { createInterface } from "node:readline";
 import { setTimeout as pause } from "node:timers/promises";
 import { join, resolve } from "node:path";
+import { verifyImageNotices } from "./check-notices.ts";
 
 const cache = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE;
 assert(cache, "Set the owned DHIVON_MCP_GATEWAY_BUILD_CACHE");
 const directory = mkdtempSync(join(realpathSync(cache), "release-rehearsal-"));
 const root = resolve(import.meta.dirname, "..");
 const image = "dhivon-mcp-gateway-server:0.1.0";
+verifyImageNotices(image);
 const id = randomUUID().replaceAll("-", "");
 const projects = [`gw-rehearsal-${id}`, `gw-restore-${id}`];
 const key = join(directory, "vault-keys.json");

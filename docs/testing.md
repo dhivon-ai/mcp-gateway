@@ -54,6 +54,19 @@ HTTP fixtures are test-only exceptions; production adapters require verified TLS
 
 ## Release checks
 
+Project and font notices are checked in the actual outputs. Mac packaging checks
+its archive; the deployment rehearsal checks the runtime image; website CI checks
+the published files and licensing links. To check existing builds directly:
+
+```sh
+node scripts/check-notices.ts --archive /absolute/path/dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz
+node scripts/check-notices.ts --image dhivon-mcp-gateway-server:0.1.0
+node scripts/check-notices.ts --site "$DHIVON_MCP_GATEWAY_BUILD_CACHE/site"
+```
+
+These checks compare exact source bytes, including the full unchanged Manrope
+OFL. See [license and ownership](licensing.md) for readable notice locations.
+
 Build the container with `docker build -f deploy/Dockerfile -t dhivon-mcp-gateway-server:0.1.0 .`.
 With an existing owned DHIVON_MCP_GATEWAY_BUILD_CACHE, run `node scripts/verify-deployment.ts`
 using Node24 to rehearse two isolated Compose stacks and external-key recovery.

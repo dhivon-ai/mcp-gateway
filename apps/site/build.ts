@@ -12,6 +12,8 @@ await cp(join(root, "assets/brand"), join(output, "brand"), {
   recursive: true,
 });
 await cp(join(root, "apps/site/style.css"), join(output, "style.css"));
+await cp(join(root, "LICENSE"), join(output, "LICENSE.txt"));
+await cp(join(root, "NOTICE"), join(output, "NOTICE.txt"));
 
 const escape = (value: string) =>
   value
@@ -35,6 +37,7 @@ const navigation = [
   ["compatibility", "Compatibility"],
   ["contributing", "Contributing"],
   ["roadmap", "Roadmap"],
+  ["licensing", "License and ownership"],
 ];
 const header = `<header class="site-header">
 <a class="identity" href="/" aria-label="Dhivon MCP Gateway home">
@@ -57,7 +60,9 @@ const footer = `<footer>
 <a href="/docs/index.html">Documentation</a>
 <a href="/docs/compatibility.html">Compatibility</a>
 <a href="/docs/roadmap.html">Roadmap</a>
+<a href="/docs/licensing.html">License and ownership</a>
 </nav>
+<p>Copyright 2026 Dhivon AI · <a href="/LICENSE.txt">Apache-2.0</a> · <a href="/NOTICE.txt">Notices</a></p>
 </footer>`;
 function page(title: string, description: string, body: string) {
   return `<!doctype html>
@@ -227,7 +232,12 @@ async function renderDirectory(relative = "") {
           return `<h${depth} id="${escape(id)}">${text}</h${depth}>\n`;
         },
         link({ href, title, tokens }) {
-          const url = href.replace(/\.md(?=#|$)/, ".html");
+          const notices: Record<string, string> = {
+            "../LICENSE": "/LICENSE.txt",
+            "../NOTICE": "/NOTICE.txt",
+            "../assets/brand/fonts/OFL.txt": "/brand/fonts/OFL.txt",
+          };
+          const url = notices[href] ?? href.replace(/\.md(?=#|$)/, ".html");
           if (/^(javascript|data):/i.test(url))
             throw new Error("Unsafe documentation URL");
           return `<a href="${escape(url)}"${title ? ' title="' + escape(title) + '"' : ""}>${this.parser.parseInline(tokens)}</a>`;
