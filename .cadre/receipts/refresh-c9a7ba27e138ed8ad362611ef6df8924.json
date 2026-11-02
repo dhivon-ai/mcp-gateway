@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "operationId": "refresh-c9a7ba27e138ed8ad362611ef6df8924",
+  "kind": "refresh",
+  "status": "completed",
+  "approvalDigest": "88f0f6f01e38cc5500a0728055fd4d51512b2044d22e88d7a00720665b453939",
+  "baseCommit": "6e75dfdfb1610557d8744eb3864ab629c84fd48f",
+  "artifacts": [
+    {
+      "path": ".cadre/.gitignore",
+      "sha256": "df85675758b7363ee66be34ecc8c4fa10776c6922982fb70ee6c55422a1119e0"
+    },
+    {
+      "path": ".cadre/guidelines.md",
+      "sha256": "3d3fbe4197e7e4a8827c8eb01dbb80b28c28c35686b6e717542b83c969623de4"
+    },
+    {
+      "path": ".cadre/product.md",
+      "sha256": "0dea87033bdb27993b0c7bf07b24a123c11e5fc4015afde93992ebeb0f3b4acf"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "12f38fec285680d2ed690770d3ea41ab16277c9154cc598fb67330b2d4962b25"
+    },
+    {
+      "path": ".cadre/refreshes/refresh-20261102-dhivon-baseline.md",
+      "sha256": "f8357005af71c21a42fd22e464249ded07caa9609a21c10260938d849f7a5d5b"
+    },
+    {
+      "path": ".cadre/styleguides/general.md",
+      "sha256": "41fef752d314db52b8ec7b86ab5ab7deeb1446b9809915103fbec97194700302"
+    },
+    {
+      "path": ".cadre/styleguides/html-css.md",
+      "sha256": "e6684c5c4a565215fde54e65b4d501937fc346c135ee9ae68a137db05cd00991"
+    },
+    {
+      "path": ".cadre/tech-stack.md",
+      "sha256": "d616bdf0e0cc54f386fb18efe2d3309c1f40f523eb420d2c6049acc4c44a2fbe"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "070d4bf833eb611bdfcff9666069a518c8b9758f66c654dc0a5b2e31dc32f3a6"
+    },
+    {
+      "path": ".cadre/workflow.md",
+      "sha256": "caab130fa953c38bb67696998bb0e6dd271a20ac2d0f1f2f96fc708d9e4b54de"
+    }
+  ]
+}

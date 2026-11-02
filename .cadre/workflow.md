@@ -105,18 +105,31 @@ drafting-spec -> drafting-plan -> planned -> in_progress -> ready_for_review
 
 ## Delivered repository baseline
 
-- mac-mvp is archived at .cadre/archive/mac-mvp with completed spec/plan, execution,
-  learning, revision, finding and approved-review provenance preserved. New work
-  uses new tracks; project context describes the delivered baseline and does not
-  reopen completed tasks or grant authority for deferred features.
-- Consult patterns/index.md and read full semantically applicable bodies before
-  seeding future tracks; retain source fingerprints and documented tradeoffs.
-- Use docs/testing.md for real isolated database/native/browser/release commands,
-  docs/release.md for actual acceptance evidence and docs/compatibility.md for
-  validated limits. A context refresh alone is not another application test run.
-- During execution, use runtime-returned owned build outputs. Preserve protected
-  fixture ownership and creating-binary Keychain cleanup; no broad deletion of
-  production or unrelated state. Read-only retained worker paths in archived
-  journals are provenance, not evidence of active workers.
-- This baseline update changes no approval mode, completion rule, receipt contract,
-  Autonomous finding/retry history or archived artifact. Existing rules above apply.
+- Dhivon MCP Gateway is a product of Dhivon AI. Both mac-mvp and
+  dhivon-brand-site-docs are archived under .cadre/archive with completed intent,
+  executions, approvals, reviews, findings and commit provenance preserved.
+  Current context covers the self-hosted Mac MVP, clean Dhivon rename, both branded
+  management surfaces, public site/docs, Apache-2.0 ownership/distributed notices,
+  controlled HTTPS/native OAuth and fail-closed rehearsal recovery follow-ups.
+- New work uses new approved tracks and current Dhivon identifiers. Keep historical
+  names/hashes/receipts and archived Pattern Seeds unchanged. Project classification
+  greenfield records origin; it does not reset the delivered repository.
+- Consult patterns/index.md by semantic applicability and read relevant full bodies
+  before seeding future tracks. The seven-pattern catalog includes rejected-token
+  refresh ordering, notice/TLS boundaries, rehearsal recovery ownership and canonical
+  product guides, with provenance and tested limits. No active track needs reseeding
+  at this refresh; historical seed hashes remain evidence of their own baseline.
+- Use docs/testing.md for commands, docs/dhivon-release.md for current artifact and
+  acceptance evidence, docs/https-oauth-rehearsal.md for controlled TLS/recovery,
+  and docs/compatibility.md for limits. Original docs/release.md and acceptance.md
+  retain MVP provenance. A context refresh adds no application test run.
+- During execution use runtime-returned owned outputs and generated private scopes.
+  Retain creating binaries until verified native cleanup. Unknown ownership fails
+  closed and failed attempts remain recoverable; certificate trust stays separately
+  operator-owned. Retained archived worker paths are provenance: all 13 paths and
+  branches are absent at this quiescent boundary, with only main registered.
+- No follow-on product track, hosting target, physical checkout move, signing,
+  public distribution, extra provider/platform or SAML/SaaS work is authorized by
+  this metadata refresh. Candidate roadmap directions require scoped approval.
+- This context update preserves every approval mode, lifecycle/clean-completion
+  rule, receipt contract and historical execution/review finding/attempt record.

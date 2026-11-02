@@ -22,3 +22,17 @@
   succeeded before confirmation; retries must not replay side effects.
 - Match persistence reader/writer invariants and capacity checks. Keep credentials
   write-only in public flows, with fixed safe errors and redacted diagnostics.
+
+## Dhivon product and evidence conventions
+
+- Use current product identifiers for authored source/examples and retain the names
+  and hashes in historical evidence. Describe Dhivon MCP Gateway as a Dhivon AI
+  product, with Apache-2.0 project ownership and original third-party attribution.
+- Keep guide content canonical and role/control labels precise. State which
+  artifact/environment proves a claim; separate verified delivery, approved next
+  work and candidate ideas. Never turn controlled fixture results into universal
+  provider, browser or public-hosting claims.
+- Model child intent/handle ownership and recovery lock lifetime explicitly.
+  Missing identity is uncertainty; failed registration must retain actual handles.
+  Cleanup results distinguish verified resource absence from retained recovery and
+  preserve failed attempts. Diagnostic failure cannot erase cleanup ownership.

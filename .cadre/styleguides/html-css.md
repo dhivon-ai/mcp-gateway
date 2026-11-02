@@ -37,3 +37,18 @@ Apply `general.md` first. Preserve the repository's approved formatter, CSS arch
 - [MDN: HTML accessibility](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/HTML)
 - [MDN: CSS and JavaScript accessibility best practices](https://developer.mozilla.org/en-US/docs/Learn_web_development/Core/Accessibility/CSS_and_JavaScript)
 - [W3C: How to Meet WCAG](https://www.w3.org/WAI/WCAG22/quickref/)
+
+## Dhivon presentation conventions
+
+- Use approved local Soft Gate assets, Manrope and shared tokens from assets/brand,
+  respecting USAGE.txt variants, clear space and minimum size. Preserve original
+  font copyright/full OFL delivery. Keep public output and protected app assets
+  independently buildable, with appropriate role-specific navigation.
+- Navy/white and darker semantic tokens carry text, actions, focus and status.
+  Emerald on white is an accent (2.90:1), not normal text or a sufficient control
+  boundary. Recheck each new color pair; retain explicit labels/icons for status.
+- Emit external SVG asset URLs where the protected CSP rejects inlined data URLs;
+  verify actual compiled/embedded delivery without weakening the security policy.
+- Public diagrams need text equivalents explaining policy and execution location.
+  Check rendered Markdown anchors, direct refresh, local fonts, deep links and
+  tables at desktop/390px with keyboard/focus and console inspection.

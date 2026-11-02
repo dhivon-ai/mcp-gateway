@@ -21,7 +21,7 @@
 - Exercise macOS installation success/failure, re-enable behavior, executable/argument handling, local UI protection, and separation of gateway stdout from logs.
 - Test React flows through user-visible interactions and accessibility; include login, assigned catalog visibility, installation feedback, and enable/disable controls.
 - Run an end-to-end self-hosted/macOS journey with an agent connected only to the gateway before claiming the initial release is ready.
-- Reuse passing evidence only while relevant source, inputs and verification policy are unchanged. Archived mac-mvp records the completed baseline; current context refresh does not claim a new application test run.
+- Reuse passing evidence only while relevant source, inputs and verification policy are unchanged. Archived mac-mvp and dhivon-brand-site-docs record the delivered baseline; current context refresh does not claim a new application test run.
 - Keep fixture namespaces private and generated. Retain the immutable creating CLI until its Keychain cleanup is confirmed; remove only exact owned databases/processes/Compose stacks and retain recovery journals after failure.
 
 ## Security and privacy
@@ -75,8 +75,8 @@
 ## Repository-specific commands
 
 Use pinned Node 24.19.0/pnpm 11.4.0 and Rust 1.95.0; Cargo/pnpm lockfiles are authoritative.
-During Cadre execution use its returned owned GATEWAY_BUILD_CACHE/CARGO_TARGET_DIR;
-compile embedded assets with GATEWAY_WEB_ASSETS pointing at the current web output.
+During Cadre execution use its returned owned DHIVON_MCP_GATEWAY_BUILD_CACHE/CARGO_TARGET_DIR;
+compile embedded assets with DHIVON_MCP_GATEWAY_WEB_ASSETS pointing at the current web output.
 See docs/testing.md for isolated fixtures and exact environment setup.
 
 - Rust: cargo fmt --all -- --check; cargo clippy --locked --workspace --all-targets
@@ -84,14 +84,14 @@ See docs/testing.md for isolated fixtures and exact environment setup.
 - Frontend: pnpm install --frozen-lockfile; pnpm format:check; pnpm lint;
   pnpm typecheck; pnpm test; pnpm build. No application JavaScript.
 - Contracts: bash scripts/check-contracts.sh. Never hand-edit generated TS.
-- Database: explicitly run cargo test --locked -p gateway-server -- --ignored with
+- Database: explicitly run cargo test --locked -p dhivon-mcp-gateway-server -- --ignored with
   the isolated TEST_DATABASE_URL. Normal cargo test skips these external cases;
   the CLI ignored native_cache_child marker is invoked by its actual Mac parent.
 - Browser: exercise compiled central/local assets with controlled services,
   desktop/390px layout, keyboard/focus/feedback and console checks.
 - Release: build deploy/Dockerfile; bash scripts/package-macos.sh on Apple Silicon;
-  test the extracted GATEWAY_TEST_CLI with the CLI gateway suite; run
-  node scripts/verify-deployment.ts with GATEWAY_TEST_CLI/GATEWAY_FIXTURE_BIN for
+  test the extracted DHIVON_MCP_GATEWAY_TEST_CLI with the CLI gateway suite; run
+  node scripts/verify-deployment.ts with DHIVON_MCP_GATEWAY_TEST_CLI/DHIVON_MCP_GATEWAY_FIXTURE_BIN for
   the full container/Mac/Node/Keychain journey and fresh restore/key recovery.
 - shadcn: inspect components.json and current component docs before additions.
   Existing semantic primitives, strict TypeScript and accessibility remain required.
@@ -100,7 +100,48 @@ See docs/testing.md for isolated fixtures and exact environment setup.
 
 Consult .cadre/patterns/index.md by semantic applicability before planning new
 work; read relevant pattern bodies and preserve their provenance/limits. Archived
-mac-mvp resolves setup-era open decisions without rewriting its historical records.
+mac-mvp and dhivon-brand-site-docs resolve delivered scope without rewriting their
+historical records.
 Actual supported platforms/providers/protocol/browsers are in docs/compatibility.md;
-release/test evidence is in docs/release.md and docs/acceptance.md. Do not infer
+current release/test evidence is in docs/dhivon-release.md, with original MVP
+evidence retained in docs/release.md and docs/acceptance.md. Do not infer
 unrun hosted CI, signing, real providers/agents or extra platform compatibility.
+
+## Delivered Dhivon product conventions
+
+- Dhivon MCP Gateway is a product of Dhivon AI. Keep current CLI/package/image,
+  `DHIVON_MCP_GATEWAY_*` and native namespace identifiers aligned with manifests.
+  Preserve standard external names and historical receipts/reports; fresh-install
+  scope grants no authority to migrate/delete unrelated older state.
+- `apps/site` renders canonical repository Markdown independently of protected
+  React admin/local assets. Maintain one source per guide and verify deep links,
+  anchors and copied assets after final evidence edits. Explain policy ownership,
+  opt-in and execution location with the documented first-call/denial journey.
+- Use vendored approved Soft Gate assets and local Manrope from assets/brand.
+  Preserve full original font notices and the existing CSP; check emitted SVG URLs
+  in compiled artifacts. Read the brand usage/contrast guidance before changes.
+- Retain Apache-2.0 project licensing, Copyright 2026 Dhivon AI and third-party
+  ownership. Verify actual archive/image/site LICENSE/NOTICE/OFL bytes with
+  scripts/check-notices.ts; source metadata alone is insufficient delivery proof.
+- Distinguish verified HTTPS service origins from native loopback callbacks.
+  Supported provider registrations/ports need evidence. Keep TLS checks enabled,
+  state/issuer/PKCE and explicit enablement intact; temporary trust requires its
+  separately authorized operator cleanup. Controlled simulation does not certify
+  public hosting, named providers or all browser behavior.
+- After validated online OAuth resolution, refresh expired records through the
+  existing lease/version CAS before publishing a rejected old binding. Never clear
+  rejection fences, refresh expired credentials offline or replay a tool call.
+- Verification harnesses retain handles before fallible post-spawn registration,
+  fail closed on unknown ownership, and hold exclusive recovery before journal
+  reads through final evidence writes. Drain cleanup-created children too. Stop
+  writers before creating-binary logout; verify native cleanup before stack removal.
+  Keep failed histories and exact recovery evidence; never reclaim locks through
+  stale-PID unlink/recreate. Python3/fcntl is a verification prerequisite only.
+- Public site checks: pnpm --filter @dhivon/mcp-gateway-site typecheck;
+  pnpm exec prettier --check apps/site; pnpm site:build; run the emitted notice
+  checker and rendered link/anchor/browser checks described in release evidence.
+  Root pnpm build/typecheck/test target the protected web workspace, not the site.
+- Run the 25-test rehearsal lifecycle/ownership suites with pinned Node 24, Docker,
+  Python3 and the extracted CLI only in runtime-owned generated scopes, following
+  docs/https-oauth-rehearsal.md. Reuse unaffected product evidence by exact inputs;
+  report script checks separately from full browser/OAuth acceptance.

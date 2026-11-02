@@ -3,7 +3,7 @@
   "runtimeVersion": "4.0.0",
   "templateSetVersion": "v6",
   "project": {
-    "name": "MCP Gateway",
+    "name": "Dhivon MCP Gateway",
     "context": "greenfield"
   },
   "setup": {
@@ -24,8 +24,8 @@
     "operation": null
   },
   "lastRefresh": {
-    "refreshPath": "refreshes/refresh-20261015-mvp-baseline.md",
-    "commit": "op:refresh-3db8cc346c0bc402e13d729a68f15a66"
+    "refreshPath": "refreshes/refresh-20261102-dhivon-baseline.md",
+    "commit": "op:refresh-c9a7ba27e138ed8ad362611ef6df8924"
   },
   "history": [
     {
@@ -50,6 +50,11 @@
         "dhivon-brand-site-docs"
       ],
       "commit": "op:archive-5cf1ff45e0787820765b577f23c97888"
+    },
+    {
+      "action": "refresh",
+      "commit": "op:refresh-c9a7ba27e138ed8ad362611ef6df8924",
+      "refreshPath": "refreshes/refresh-20261102-dhivon-baseline.md"
     }
   ]
 }
