@@ -2,6 +2,41 @@
 
 The gateway uses rmcp3.5.1's OAuth authorization manager for protected-resource and authorization-server discovery, authorization code with S256 PKCE, state and issuer validation, resource indicators, and rotating refresh tokens. Interactive consent belongs to the local management process; `dhivon-mcp-gateway mcp` never opens a consent page. The remote MCP transport receives only the scoped access token.
 
+## Hosted control plane and native callback
+
+The control plane runs at the enterprise's HTTPS origin. The developer starts
+the local client against that origin. Substitute the real deployment hostname
+in this example.
+
+```sh
+dhivon-mcp-gateway ui --server https://controlplane.example.com --port 19001
+```
+
+The local management origin is `http://127.0.0.1:19001` and its OAuth redirect
+URI is `http://127.0.0.1:19001/oauth/callback`. The callback uses the same
+listening port as the local management process. The client includes this URI in
+the upstream provider's authorization request.
+
+After authentication and consent, the provider redirects the user's browser
+to that local URI with an authorization code and state. The browser runs on the
+same machine as the client, so it reaches the client's loopback listener.
+The native client validates the pending response, exchanges the code over HTTPS
+using S256 PKCE, and persists credentials through the protected native/central
+flow. The code and state travel in the callback. Access and refresh tokens are
+obtained through the token exchange.
+
+This completes upstream MCP authorization. Dhivon account sign-in occurs before
+this flow, and MCP enablement still requires its explicit action.
+
+[RFC 8252 section 7.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-7.3)
+permits HTTP loopback IP callbacks and requires support for variable native
+loopback ports. Verify the provider's native-client registration behavior. A
+provider requiring an exact fixed callback can use the explicit port shown above.
+The current client uses preregistered public clients. Its tested provider
+profile and discovery requirements follow below.
+
+## Provider registration
+
 Register a **public native client** with the provider before configuring the catalog. Allow authorization-code and refresh grants, S256 PKCE, the configured scopes, and the callback `http://127.0.0.1:19001/oauth/callback`. Start management with `dhivon-mcp-gateway ui --server https://gateway.example --port 19001`. A different fixed port requires its matching callback registration. The CLI's default ephemeral port works only when the provider's native-client registration permits varying loopback ports. The management API never supplies an arbitrary callback URL.
 
 An administrator selects OAuth, enters this preregistered client ID and the allowed scopes, sets the canonical HTTPS MCP URL, and grants access. The client requires published protected-resource metadata with an exact matching `resource` and `authorization_servers`, validated issuer metadata, S256 support, public-client token authentication, bearer tokens and an explicit positive expiry. Both RFC8414 and OIDC metadata discovery are handled by the SDK. Legacy synthesized endpoints, client secrets, other grant types, implicit scope expansion, provider adapters, dynamic registration and client metadata hosting are outside this profile. Unsupported requirements produce a fixed setup error.
@@ -10,13 +45,13 @@ OAuth discovery requests carry no ambient authentication. Token POSTs are allowe
 
 The local routes are protected by the existing Host/Origin/cookie/CSRF boundary:
 
-| Route | Contract |
-| --- | --- |
-| `POST /api/oauth/{id}/connect` | `LocalAction<OAuthConnectInput>` with displayed generation and revision; returns a flow ID and provider authorization URL. |
-| `GET /oauth/callback` | Separate, exact callback URL; validates one pending state, duplicate parameters, issuer, native five-minute deadline, current identity/assignment/registration and online revision before code exchange. |
-| `POST /api/oauth/flows/{flowId}/cancel` | `LocalAction` with empty input; cancels a pending flow without changing a stored credential. |
-| `GET /api/oauth/{id}/status` | Generation header; returns central connection/version/expiry and native readiness only. |
-| `POST /api/oauth/{id}/disconnect` | `LocalAction<OAuthDisconnectInput>` with revision/version; confirms deletion and central disablement after complete synchronization. |
+| Route                                   | Contract                                                                                                                                                                                                 |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POST /api/oauth/{id}/connect`          | `LocalAction<OAuthConnectInput>` with displayed generation and revision; returns a flow ID and provider authorization URL.                                                                               |
+| `GET /oauth/callback`                   | Separate, exact callback URL; validates one pending state, duplicate parameters, issuer, native five-minute deadline, current identity/assignment/registration and online revision before code exchange. |
+| `POST /api/oauth/flows/{flowId}/cancel` | `LocalAction` with empty input; cancels a pending flow without changing a stored credential.                                                                                                             |
+| `GET /api/oauth/{id}/status`            | Generation header; returns central connection/version/expiry and native readiness only.                                                                                                                  |
+| `POST /api/oauth/{id}/disconnect`       | `LocalAction<OAuthDisconnectInput>` with revision/version; confirms deletion and central disablement after complete synchronization.                                                                     |
 
 Only one consent per MCP/generation remains pending; at most 16 are retained. A new connect action cancels the earlier pending flow, including an exchange already in progress. The callback consumes state once; a forged or missing required issuer cannot consume the legitimate flow. Login changes, cancellation and the exclusive 300-second native deadline invalidate pending consent. A successful consent does not silently enable the MCP.
 
