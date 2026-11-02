@@ -156,6 +156,44 @@ The full HTTPS/browser/OAuth journey was not repeated in this cleanup cycle.
 Manual certificate-trust ownership and the earlier public-hosting/provider limits
 remain explicit in the [cleanup and recovery instructions](https-oauth-rehearsal.md#interruption-cleanup-and-recovery).
 
+## Recovery ownership follow-ups — 2026-11-02
+
+Review cycle 3, BUG-009 and BUG-010, changes only rehearsal supervision, regression
+fixtures and recovery documentation. The Mac executable/archive, service image,
+product Rust/UI and license bytes retain the identities above. Prior controlled
+HTTPS/native OAuth acceptance and public-provider limits remain in effect. These
+cleanup checks install no certificate trust and do not repeat the browser journey.
+
+The combined pinned Node 24.19.0 suite passes 25/25 tests in 163.60 seconds. It
+retains the original actual Docker/PostgreSQL/extracted-Mac scenarios and adds
+process regressions for identity lookup failure, post-spawn persistence failure,
+SIGTERM during registration and a live interrupt-ignoring diagnostic child whose
+registration fails during cleanup. Each known child is confirmed exited before
+native logout, including children created by failed cleanup commands.
+
+An ambiguous-intent negative fixture correctly records `recovery_required` and
+skips native logout/stack removal. That controlled fixture never spawns its
+synthetic intent or creates a credential/container; its unresolved journal remains
+as failure evidence. Missing ownership no longer counts as confirmed absence.
+
+Simultaneous stale-lock contenders produce one owner and one rejection. Forced
+exit with an empty lock or a held lock permits retry on the same inode. Repeated
+release by an old owner cannot affect a live successor. Full recovery rejects a
+concurrent owner, then reads the latest journal after handover. Malformed lock bytes
+are harmless to acquisition, and missing Python refuses authority while leaving
+retry possible after the prerequisite is restored. A permanent kernel-held lock
+replaces stale-PID-file deletion. Python 3.15.2's standard-library `fcntl` bridges
+the descriptor operation on the validated Mac; no Python dependency is added to
+the distributed client or service.
+
+Private results, source/artifact fingerprints and logs are retained under owned
+execution `2026-11-02T09-53-25-214Z`: `recovery-tests-final.log`,
+`cleanup-test-results.json` and `ownership-test-results.json`. Actual Docker/native
+resource outcomes are checked independently; unrelated processes survive. Strict
+script TypeScript/format, site type/build/link checks and exact archive/image/site
+notice comparisons cover the changed source and documentation. See the updated
+[recovery runbook](https-oauth-rehearsal.md#interruption-cleanup-and-recovery).
+
 ## Verified user journey and recovery
 
 A fresh isolated Compose deployment applied schema initialization, generated

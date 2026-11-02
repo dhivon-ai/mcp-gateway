@@ -8,8 +8,12 @@ assert(
 );
 const rehearsal = Rehearsal.recover(cache, process.argv[2]);
 rehearsal.supervise();
-const clean = await rehearsal.cleanup();
-console.log(
-  `Cleanup ${clean ? "verified" : "incomplete"}; retained ${rehearsal.directory}/result.json. Remove approved temporary trust separately.`,
-);
-process.exitCode = clean && rehearsal.journal.cleanup.diagnostics?.ok ? 0 : 1;
+try {
+  const clean = await rehearsal.cleanup();
+  console.log(
+    `Cleanup ${clean ? "verified" : "incomplete"}; retained ${rehearsal.directory}/result.json. Remove approved temporary trust separately.`,
+  );
+  process.exitCode = clean && rehearsal.journal.cleanup.diagnostics?.ok ? 0 : 1;
+} finally {
+  rehearsal.close();
+}

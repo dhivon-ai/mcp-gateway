@@ -169,16 +169,20 @@ try {
 } catch {
   process.exitCode = 1;
 } finally {
-  r.save();
-  const first = r.cleanup();
-  assert.equal(
-    first,
-    r.cleanup(),
-    "Concurrent/repeated teardown shares one promise",
-  );
-  if (!(await first) || !r.journal.cleanup.diagnostics?.ok)
-    process.exitCode = 1;
-  if (r.journal.interrupted)
-    process.exitCode = r.journal.interrupted === "SIGINT" ? 130 : 143;
-  process.disconnect?.();
+  try {
+    r.save();
+    const first = r.cleanup();
+    assert.equal(
+      first,
+      r.cleanup(),
+      "Concurrent/repeated teardown shares one promise",
+    );
+    if (!(await first) || !r.journal.cleanup.diagnostics?.ok)
+      process.exitCode = 1;
+    if (r.journal.interrupted)
+      process.exitCode = r.journal.interrupted === "SIGINT" ? 130 : 143;
+  } finally {
+    r.close();
+    process.disconnect?.();
+  }
 }

@@ -14,11 +14,11 @@ import {
   readFileSync,
   realpathSync,
   renameSync,
-  unlinkSync,
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { setTimeout as pause } from "node:timers/promises";
+import { RehearsalLock } from "./rehearsal-lock.ts";
 
 type Owner = { pid: number; identity: string };
 type OwnedChild = {
@@ -26,6 +26,7 @@ type OwnedChild = {
   binary: string;
   args: string[];
   owner: Owner | null;
+  phase?: "intent" | "spawned" | "exited" | "not_spawned";
 };
 type Step = { ok: boolean; error?: string };
 type Journal = {
@@ -102,30 +103,28 @@ export class Rehearsal {
   private handles = new Map<string, ChildProcess>();
   private cleaning?: Promise<boolean>;
   private handlers: Array<[NodeJS.Signals, () => void]> = [];
-  private lock: string;
-  private constructor(journal: Journal) {
+  private lock: RehearsalLock;
+  private closed = false;
+  private constructor(journal: Journal, heldLock?: RehearsalLock) {
     this.journal = journal;
-    this.lock = join(journal.directory, "cleanup.lock");
-    if (existsSync(this.lock)) {
-      const previous = JSON.parse(readFileSync(this.lock, "utf8")) as Owner;
-      assert(
-        Number.isSafeInteger(previous.pid) &&
-          typeof previous.identity === "string",
-      );
-      assert(
-        !active(previous),
-        "An owned rehearsal/recovery process is still running",
-      );
-      unlinkSync(this.lock);
-    }
-    const fd = openSync(this.lock, "wx", 0o600);
+    this.lock = heldLock ?? new RehearsalLock(journal.directory);
     try {
-      writeFileSync(fd, JSON.stringify(owner()));
-      fsyncSync(fd);
-    } finally {
-      closeSync(fd);
+      this.log = openSync(join(journal.directory, "private.log"), "a", 0o600);
+    } catch (error) {
+      this.lock.close();
+      throw error;
     }
-    this.log = openSync(join(journal.directory, "private.log"), "a", 0o600);
+  }
+  close() {
+    if (this.closed) return;
+    this.closed = true;
+    for (const [signal, handler] of this.handlers)
+      process.removeListener(signal, handler);
+    try {
+      closeSync(this.log);
+    } finally {
+      this.lock.close();
+    }
   }
   static create(cache: string, cli: string) {
     const directory = mkdtempSync(join(realpathSync(cache), "https-oauth-"));
@@ -169,71 +168,84 @@ export class Rehearsal {
       realpathSync(join(directory, "dhivon-mcp-gateway")),
       join(directory, "dhivon-mcp-gateway"),
     );
-    const j = JSON.parse(
-      readFileSync(join(directory, "ownership.json"), "utf8"),
-    ) as Journal;
-    assert(
-      j.schema === 1 &&
-        j.directory === directory &&
-        /^gw-https-[a-f0-9]{32}$/.test(j.project),
-    );
-    assert(
-      j.cli === join(directory, "dhivon-mcp-gateway") &&
-        j.state === join(directory, "native"),
-    );
-    assert(
-      typeof j.cliHash === "string" && j.cliHash === digest(j.cli),
-      "Retain the exact creating binary",
-    );
-    assert(
-      j.supervisor &&
-        Number.isSafeInteger(j.supervisor.pid) &&
-        typeof j.supervisor.identity === "string",
-    );
-    assert(
-      !active(j.supervisor),
-      "Refusing recovery while the original supervisor is alive",
-    );
-    assert(j.files && typeof j.files === "object" && !Array.isArray(j.files));
-    for (const [file, hash] of Object.entries(j.files)) {
+    // Acquire before reading the snapshot: a waiter cannot overwrite a predecessor's final journal.
+    const heldLock = new RehearsalLock(directory);
+    try {
+      const j = JSON.parse(
+        readFileSync(join(directory, "ownership.json"), "utf8"),
+      ) as Journal;
       assert(
-        ["compose.yaml", "tls.yaml", "deployment.env", "nginx.conf"].includes(
-          file,
-        ),
+        j.schema === 1 &&
+          j.directory === directory &&
+          /^gw-https-[a-f0-9]{32}$/.test(j.project),
       );
-      assert.equal(
-        digest(join(directory, file)),
-        hash,
-        "Owned Compose inputs changed; reconcile before recovery",
+      assert(
+        j.cli === join(directory, "dhivon-mcp-gateway") &&
+          j.state === join(directory, "native"),
       );
+      assert(
+        typeof j.cliHash === "string" && j.cliHash === digest(j.cli),
+        "Retain the exact creating binary",
+      );
+      assert(
+        j.supervisor &&
+          Number.isSafeInteger(j.supervisor.pid) &&
+          typeof j.supervisor.identity === "string",
+      );
+      assert(
+        !active(j.supervisor),
+        "Refusing recovery while the original supervisor is alive",
+      );
+      assert(j.files && typeof j.files === "object" && !Array.isArray(j.files));
+      for (const [file, hash] of Object.entries(j.files)) {
+        assert(
+          ["compose.yaml", "tls.yaml", "deployment.env", "nginx.conf"].includes(
+            file,
+          ),
+        );
+        assert.equal(
+          digest(join(directory, file)),
+          hash,
+          "Owned Compose inputs changed; reconcile before recovery",
+        );
+      }
+      assert(Array.isArray(j.children));
+      for (const c of j.children) {
+        assert(
+          typeof c.id === "string" &&
+            typeof c.binary === "string" &&
+            Array.isArray(c.args) &&
+            c.args.every((a) => typeof a === "string"),
+        );
+        assert(
+          c.phase === undefined ||
+            ["intent", "spawned", "exited", "not_spawned"].includes(c.phase),
+        );
+        assert(
+          c.owner === null ||
+            (Number.isSafeInteger(c.owner.pid) &&
+              typeof c.owner.identity === "string"),
+        );
+      }
+      assert(
+        j.cleanup &&
+          typeof j.cleanup === "object" &&
+          Array.isArray(j.cleanupHistory),
+      );
+      assert(
+        j.details === undefined ||
+          (j.details !== null &&
+            typeof j.details === "object" &&
+            !Array.isArray(j.details) &&
+            Object.values(j.details).every(
+              (value) => typeof value === "string",
+            )),
+      );
+      return new Rehearsal(j, heldLock);
+    } catch (error) {
+      heldLock.close();
+      throw error;
     }
-    assert(Array.isArray(j.children));
-    for (const c of j.children) {
-      assert(
-        typeof c.id === "string" &&
-          typeof c.binary === "string" &&
-          Array.isArray(c.args) &&
-          c.args.every((a) => typeof a === "string"),
-      );
-      assert(
-        c.owner === null ||
-          (Number.isSafeInteger(c.owner.pid) &&
-            typeof c.owner.identity === "string"),
-      );
-    }
-    assert(
-      j.cleanup &&
-        typeof j.cleanup === "object" &&
-        Array.isArray(j.cleanupHistory),
-    );
-    assert(
-      j.details === undefined ||
-        (j.details !== null &&
-          typeof j.details === "object" &&
-          !Array.isArray(j.details) &&
-          Object.values(j.details).every((value) => typeof value === "string")),
-    );
-    return new Rehearsal(j);
   }
   get directory() {
     return this.journal.directory;
@@ -242,6 +254,7 @@ export class Rehearsal {
     return this.abort.signal;
   }
   save() {
+    this.lock.assertHeld();
     atomic(join(this.directory, "ownership.json"), this.journal);
   }
   seal(files: string[]) {
@@ -273,15 +286,29 @@ export class Rehearsal {
       args,
       owner: null,
     };
+    entry.phase = "intent";
     this.journal.children.push(entry);
     this.save();
     const p = spawn(binary, args, { stdio: ["pipe", "pipe", this.log] });
-    p.on("error", () => {}); // command/readiness reports a fixed non-secret failure
-    if (p.pid) {
-      entry.owner = { pid: p.pid, identity: identity(p.pid) };
-      this.save();
-    }
+    // Keep the live handle before *any* fallible post-spawn lookup/write.
     this.handles.set(entry.id, p);
+    p.on("error", () => {
+      if (!p.pid) entry.phase = "not_spawned";
+    });
+    try {
+      if (p.pid) {
+        entry.phase = "spawned";
+        entry.owner = { pid: p.pid, identity: "" };
+        this.save();
+        entry.owner.identity = identity(p.pid);
+        this.save();
+      }
+    } catch (error) {
+      // This known, just-spawned handle cannot be lost behind a lookup exception.
+      // The caller's cleanup awaits exit and escalates if needed.
+      p.kill("SIGINT");
+      throw error;
+    }
     return p;
   }
   async command(
@@ -332,6 +359,14 @@ export class Rehearsal {
       clearTimeout(timer);
       clearTimeout(escalation);
       signal?.removeEventListener("abort", cancel);
+      if (p.exitCode !== null || p.signalCode !== null || !p.pid) {
+        const entry = this.journal.children.find(
+          (c) => this.handles.get(c.id) === p,
+        );
+        assert(entry);
+        entry.phase = p.pid ? "exited" : "not_spawned";
+        this.save();
+      }
     }
   }
   compose(
@@ -370,20 +405,71 @@ export class Rehearsal {
     await this.stopOwned(entry);
   }
   private async stopOwned(c: OwnedChild) {
+    this.lock.assertHeld();
     const p = this.handles.get(c.id);
-    if (p && (p.exitCode !== null || p.signalCode !== null)) return;
-    if (!c.owner || !c.owner.identity || !active(c.owner)) return;
+    const exited = () => {
+      c.phase = "exited";
+    };
+    if (p && (p.exitCode !== null || p.signalCode !== null)) {
+      exited();
+      return;
+    }
+    if (c.phase === "exited" || c.phase === "not_spawned") return;
+    if (p?.pid) {
+      // This process still owns the ChildProcess handle, even if registration failed.
+      for (const [signal, timeout] of [
+        ["SIGINT", 5000],
+        ["SIGKILL", 3000],
+      ] as const) {
+        if (p.exitCode !== null || p.signalCode !== null) {
+          exited();
+          return;
+        }
+        p.kill(signal);
+        const end = Date.now() + timeout;
+        while (Date.now() < end) {
+          if (p.exitCode !== null || p.signalCode !== null) {
+            exited();
+            return;
+          }
+          await pause(100);
+        }
+      }
+      throw new Error(
+        "Known owned child did not stop; retain recovery directory",
+      );
+    }
+    // A missing intent/PID/birth identity is uncertainty, never evidence of absence.
+    assert(c.owner, "Unresolved spawn intent; retain exact recovery evidence");
     const original = c.owner;
+    const sameOrGone = () => {
+      const current = identity(original.pid);
+      if (!current) return false;
+      assert(
+        original.identity && current === original.identity,
+        "Child identity uncertain/changed; refuse unrelated signaling",
+      );
+      return true;
+    };
+    if (!sameOrGone()) {
+      exited();
+      return;
+    }
     for (const [signal, timeout] of [
       ["SIGINT", 5000],
       ["SIGKILL", 3000],
     ] as const) {
-      if (!active(original)) return;
+      if (!sameOrGone()) {
+        exited();
+        return;
+      }
       process.kill(original.pid, signal);
       const end = Date.now() + timeout;
       while (Date.now() < end) {
-        if (p && (p.exitCode !== null || p.signalCode !== null)) return;
-        if (!active(original)) return;
+        if (!sameOrGone()) {
+          exited();
+          return;
+        }
         await pause(100);
       }
     }
@@ -418,19 +504,23 @@ export class Rehearsal {
       }
       this.save();
     };
-    // Snapshot first: cleanup commands themselves are short-lived owned children.
-    const children = [...j.children].reverse();
-    await attempt("children", async () => {
-      let failed = false;
-      for (const c of children) {
+    // Cleanup commands can themselves fail after spawn. Drain each newly owned
+    // handle before native logout and after teardown, with one shutdown bound per child.
+    const checked = new Set<string>();
+    let childFailure = false;
+    const drainChildren = async () => {
+      for (const c of [...j.children].reverse()) {
+        if (checked.has(c.id)) continue;
+        checked.add(c.id);
         try {
           await this.stopOwned(c);
         } catch {
-          failed = true;
+          childFailure = true;
         }
       }
-      assert(!failed, "Some owned children remain");
-    });
+      assert(!childFailure, "Some owned children remain unresolved");
+    };
+    await attempt("children", drainChildren);
     await attempt("diagnostics", async () => {
       const diagnostics = await this.compose(["logs", "--no-color"], {
         cleanup: true,
@@ -438,6 +528,7 @@ export class Rehearsal {
       });
       writeFileSync(this.log, diagnostics);
     });
+    await attempt("children", drainChildren);
     await attempt("native", async () => {
       assert.equal(digest(j.cli), j.cliHash, "Creating CLI changed");
       if (!j.cleanup.children?.ok)
@@ -523,6 +614,7 @@ export class Rehearsal {
         );
       }
     });
+    await attempt("children", drainChildren);
     const clean = ["children", "native", "stack"].every(
       (k) => j.cleanup[k]?.ok,
     );
@@ -555,8 +647,7 @@ export class Rehearsal {
       certificateTrust:
         "Separate operator-owned action; this harness never changes OS/browser trust",
     });
-    unlinkSync(this.lock);
-    // Leave handlers installed until process exit: a repeated signal during finalization cannot bypass cleanup.
+    // Keep the kernel lock until the entry point finishes all evidence writes and closes.
     return clean;
   }
 }

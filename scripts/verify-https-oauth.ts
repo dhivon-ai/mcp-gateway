@@ -510,44 +510,50 @@ try {
   );
   process.exitCode = 1;
 } finally {
-  rehearsal.journal.workflowSucceeded = succeeded;
-  rehearsal.save();
-  const clean = await rehearsal.cleanup();
-  const result = object(
-    JSON.parse(readFileSync(join(directory, "result.json"), "utf8")) as unknown,
-  );
-  const redacted = !readFileSync(
-    join(directory, "private.log"),
-    "utf8",
-  ).includes(password);
-  if (!redacted) {
-    rehearsal.journal.workflowSucceeded = false;
+  try {
+    rehearsal.journal.workflowSucceeded = succeeded;
     rehearsal.save();
+    const clean = await rehearsal.cleanup();
+    const result = object(
+      JSON.parse(
+        readFileSync(join(directory, "result.json"), "utf8"),
+      ) as unknown,
+    );
+    const redacted = !readFileSync(
+      join(directory, "private.log"),
+      "utf8",
+    ).includes(password);
+    if (!redacted) {
+      rehearsal.journal.workflowSucceeded = false;
+      rehearsal.save();
+    }
+    writeFileSync(
+      join(directory, "result.json"),
+      JSON.stringify(
+        {
+          ...result,
+          succeeded: result.succeeded === true && redacted,
+          central,
+          upstream,
+          callback,
+          image,
+          proxyImage,
+          logsRedacted: redacted,
+          provider: "controlled fixture, not an external provider",
+        },
+        null,
+        2,
+      ),
+      { mode: 0o600 },
+    );
+    if (!clean || !redacted || !rehearsal.journal.cleanup.diagnostics?.ok)
+      process.exitCode = 1;
+    if (rehearsal.journal.interrupted)
+      process.exitCode = rehearsal.journal.interrupted === "SIGINT" ? 130 : 143;
+    console.log(
+      `Rehearsal evidence retained at ${directory}; remove temporary certificate trust separately.`,
+    );
+  } finally {
+    rehearsal.close();
   }
-  writeFileSync(
-    join(directory, "result.json"),
-    JSON.stringify(
-      {
-        ...result,
-        succeeded: result.succeeded === true && redacted,
-        central,
-        upstream,
-        callback,
-        image,
-        proxyImage,
-        logsRedacted: redacted,
-        provider: "controlled fixture, not an external provider",
-      },
-      null,
-      2,
-    ),
-    { mode: 0o600 },
-  );
-  if (!clean || !redacted || !rehearsal.journal.cleanup.diagnostics?.ok)
-    process.exitCode = 1;
-  if (rehearsal.journal.interrupted)
-    process.exitCode = rehearsal.journal.interrupted === "SIGINT" ? 130 : 143;
-  console.log(
-    `Rehearsal evidence retained at ${directory}; remove temporary certificate trust separately.`,
-  );
 }

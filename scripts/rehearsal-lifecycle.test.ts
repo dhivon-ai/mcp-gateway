@@ -59,7 +59,10 @@ function absent(directory: string) {
   assert.equal(metadata.active, null);
   assert.deepEqual(metadata.credentialAccounts, []);
   assert.deepEqual(metadata.pendingCleanup, []);
-  assert.equal(existsSync(join(directory, "cleanup.lock")), false);
+  assert(
+    existsSync(join(directory, "cleanup.lock")),
+    "Permanent lock inode retained after release",
+  );
 }
 async function probe(mode: string, signal?: NodeJS.Signals) {
   const p = spawn(
@@ -90,7 +93,10 @@ async function probe(mode: string, signal?: NodeJS.Signals) {
         { encoding: "utf8", timeout: 5000, env: process.env },
       );
       assert.notEqual(rejected.status, 0, "Active supervisor blocks recovery");
-      assert.match(rejected.stderr, /original supervisor is alive/);
+      assert.match(
+        rejected.stderr,
+        /original supervisor is alive|Another rehearsal\/recovery owns cleanup/,
+      );
       p.kill(signal);
       setTimeout(() => {
         if (p.exitCode === null) p.kill(signal);
