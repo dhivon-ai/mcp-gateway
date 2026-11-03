@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 2,
+  "trackId": "consumer-website",
+  "title": "A simpler product website and two-command setup",
+  "type": "feature",
+  "status": "planned",
+  "checkpoint": "ready",
+  "revision": 1,
+  "dependencies": [],
+  "commits": {
+    "spec": "op:track-b9eea37d850bb853e12e12fc408f4f88",
+    "plan": "op:track-b9eea37d850bb853e12e12fc408f4f88",
+    "dependencyContext": "op:track-b9eea37d850bb853e12e12fc408f4f88"
+  },
+  "artifactProgress": [],
+  "operation": null,
+  "lastExecution": null,
+  "reviewCycles": [],
+  "history": [
+    {
+      "action": "track",
+      "commit": "op:track-b9eea37d850bb853e12e12fc408f4f88"
+    }
+  ]
+}
