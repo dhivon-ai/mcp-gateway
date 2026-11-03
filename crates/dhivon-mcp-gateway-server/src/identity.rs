@@ -482,6 +482,17 @@ pub async fn bootstrap(
     raw_name: &str,
     password: String,
 ) -> Result<UserInfo, AppError> {
+    bootstrap_with_receipt(state, raw_email, raw_name, password, None).await
+}
+
+/// Managed setup commits its key verification record together with the only first admin.
+pub async fn bootstrap_with_receipt(
+    state: &AppState,
+    raw_email: &str,
+    raw_name: &str,
+    password: String,
+    receipt: Option<serde_json::Value>,
+) -> Result<UserInfo, AppError> {
     let email = email(raw_email)?;
     let name = display_name(raw_name)?;
     check_password(&password)?;
@@ -505,6 +516,12 @@ pub async fn bootstrap(
         .execute(&mut *tx)
         .await
         .map_err(email_write_error)?;
+    if let Some(receipt) = receipt {
+        sqlx::query("INSERT INTO compose_setup(singleton, proof) VALUES(true, $1)")
+            .bind(receipt)
+            .execute(&mut *tx)
+            .await?;
+    }
     bump_revision(&mut tx).await?;
     tx.commit().await?;
     Ok(UserInfo {
