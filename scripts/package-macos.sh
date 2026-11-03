@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
-: "${DHIVON_MCP_GATEWAY_BUILD_CACHE:?Set an absolute owned build directory}"
-case "$DHIVON_MCP_GATEWAY_BUILD_CACHE" in /*) ;; *) echo "Build directory must be absolute" >&2; exit 1;; esac
-[[ "$DHIVON_MCP_GATEWAY_BUILD_CACHE" != / ]]
 [[ "$(uname -s)" == Darwin && "$(uname -m)" == arm64 ]] || { echo "Build on an Apple Silicon Mac" >&2; exit 1; }
 cd "$(dirname "$0")/.."
+if [[ -z "${DHIVON_MCP_GATEWAY_BUILD_CACHE:-}" ]]; then
+  # Vite empties its output directory. Give each default build a private directory.
+  [[ ! -L dist ]] || { echo "dist must not be a symlink" >&2; exit 1; }
+  mkdir -p dist
+  DHIVON_MCP_GATEWAY_BUILD_CACHE=$(mktemp -d "$(pwd -P)/dist/macos-XXXXXXXX")
+else
+  case "$DHIVON_MCP_GATEWAY_BUILD_CACHE" in /*) ;; *) echo "Build directory must be absolute" >&2; exit 1;; esac
+  mkdir -p "$DHIVON_MCP_GATEWAY_BUILD_CACHE"
+  DHIVON_MCP_GATEWAY_BUILD_CACHE=$(cd "$DHIVON_MCP_GATEWAY_BUILD_CACHE" && pwd -P)
+  [[ "$DHIVON_MCP_GATEWAY_BUILD_CACHE" != / ]] || { echo "Build directory cannot be the filesystem root" >&2; exit 1; }
+fi
+export DHIVON_MCP_GATEWAY_BUILD_CACHE
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$DHIVON_MCP_GATEWAY_BUILD_CACHE/cargo}"
 export DHIVON_MCP_GATEWAY_WEB_ASSETS="$DHIVON_MCP_GATEWAY_BUILD_CACHE/web"
 export MACOSX_DEPLOYMENT_TARGET=27.0.1
@@ -31,3 +40,4 @@ node scripts/check-notices.ts --archive "$DHIVON_MCP_GATEWAY_BUILD_CACHE/release
 # Only the mktemp directory created by this invocation is removed.
 rm -r "$staging"
 printf 'Archive: %s/releases/%s.tar.gz\n' "$DHIVON_MCP_GATEWAY_BUILD_CACHE" "$name"
+printf 'Checksum: %s/releases/%s.tar.gz.sha256\n' "$DHIVON_MCP_GATEWAY_BUILD_CACHE" "$name"
