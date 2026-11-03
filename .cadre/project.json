@@ -24,8 +24,8 @@
     "operation": null
   },
   "lastRefresh": {
-    "refreshPath": "refreshes/refresh-20261102-dhivon-baseline.md",
-    "commit": "op:refresh-c9a7ba27e138ed8ad362611ef6df8924"
+    "refreshPath": "refreshes/refresh-20261103-gateway-delivery.md",
+    "commit": "op:refresh-f000be33e83d63478459907f31ea73f9"
   },
   "history": [
     {
@@ -63,6 +63,11 @@
         "single-key-endpoint-store"
       ],
       "commit": "op:archive-437a64cf8bd2028d0906c25d5f78a8a2"
+    },
+    {
+      "action": "refresh",
+      "commit": "op:refresh-f000be33e83d63478459907f31ea73f9",
+      "refreshPath": "refreshes/refresh-20261103-gateway-delivery.md"
     }
   ]
 }

@@ -36,3 +36,7 @@
   Missing identity is uncertainty; failed registration must retain actual handles.
   Cleanup results distinguish verified resource absence from retained recovery and
   preserve failed attempts. Diagnostic failure cannot erase cleanup ownership.
+
+- Keep consumer setup instructions in the maintained guide for that task and
+  internal findings in Cadre. Verify the same links from the packaged archive
+  outside the checkout. Publish the final archive checksum outside its inputs.

@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "operationId": "refresh-f000be33e83d63478459907f31ea73f9",
+  "kind": "refresh",
+  "status": "completed",
+  "approvalDigest": "ec81b9956d94fc12de12f985060617abade72394444a3b82ba1bb4b1b68520cf",
+  "baseCommit": "e1ff21992a640046a147102744fd744477ff24f2",
+  "artifacts": [
+    {
+      "path": ".cadre/.gitignore",
+      "sha256": "df85675758b7363ee66be34ecc8c4fa10776c6922982fb70ee6c55422a1119e0"
+    },
+    {
+      "path": ".cadre/guidelines.md",
+      "sha256": "127b6aa8cd187adae2863f64fad8ea3ca2e0bc179f59b2eec64d849f46dd25d0"
+    },
+    {
+      "path": ".cadre/product.md",
+      "sha256": "bbec172ba28f6eedfc768cfb7d47fb17fe387b535ad02e613fa1d22eb98c00d4"
+    },
+    {
+      "path": ".cadre/project.json",
+      "sha256": "03a75146b023518a93d3bf3083bb2c7bd2a6e0b0f4a9e72a3519cbef5787b38e"
+    },
+    {
+      "path": ".cadre/refreshes/refresh-20261103-gateway-delivery.md",
+      "sha256": "e8993a7ad936287097ad61ef22fbbe9c98a65caf5b608ac780f4a727d31ad867"
+    },
+    {
+      "path": ".cadre/styleguides/general.md",
+      "sha256": "96da2756f25353a2d790a0e0d8b51f473f3ba8b76824fa57c448a7f9edb1d633"
+    },
+    {
+      "path": ".cadre/styleguides/html-css.md",
+      "sha256": "161ee4b3c782e429122fe184ae3c5e2eac1193af14410fb8cf5c29142c721a7a"
+    },
+    {
+      "path": ".cadre/tech-stack.md",
+      "sha256": "016fc6ec417b569ac7b8147420025cc1a7cfcdcbddd9e04064a59375cd76d1aa"
+    },
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "fcdc203a8aec305f2cacad06b8f9694b67bfea5d7ee1b4e94fafa9dc7f0945a4"
+    },
+    {
+      "path": ".cadre/workflow.md",
+      "sha256": "7bb1c9752ad3f093ee14180b2132a305f9dd9dcd78a6288a1e6da925c22ae624"
+    }
+  ]
+}

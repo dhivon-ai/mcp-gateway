@@ -21,7 +21,7 @@
 - Exercise macOS installation success/failure, re-enable behavior, executable/argument handling, local UI protection, and separation of gateway stdout from logs.
 - Test React flows through user-visible interactions and accessibility; include login, assigned catalog visibility, installation feedback, and enable/disable controls.
 - Run an end-to-end self-hosted/macOS journey with an agent connected only to the gateway before claiming the initial release is ready.
-- Reuse passing evidence only while relevant source, inputs and verification policy are unchanged. Archived mac-mvp and dhivon-brand-site-docs record the delivered baseline; current context refresh does not claim a new application test run.
+- Reuse passing evidence only while relevant source, inputs and verification policy are unchanged. The four archived tracks record the delivered baseline; current context refresh does not claim a new application test run.
 - Keep fixture namespaces private and generated. Retain the immutable creating CLI until its Keychain cleanup is confirmed; remove only exact owned databases/processes/Compose stacks and retain recovery journals after failure.
 
 ## Security and privacy
@@ -29,7 +29,7 @@
 - Default deny MCP access. Authenticate principals and enforce administrator/user separation centrally; validate all externally supplied definitions and configuration on the endpoint.
 - User enablement never bypasses assignment or tool restrictions. Recheck current protected authorization at dispatch and completion. Complete-only durable refresh renews a lease of at most 3,600 seconds; equality expires, known session rejection invalidates immediately, and uncertain clocks/cache state require online recovery.
 - Use salted Argon2id password hashing with reviewed parameters, login throttling, and expiring/revocable sessions. Do not persist user passwords locally.
-- Store native credentials and cache keys in macOS Keychain. Encrypt/authenticate the local timestamped configuration file in a private user-scoped directory; bind stable identity/installation/generation/revision/expiry and protect rollback/publication checkpoints. Ordinary central configuration stays plaintext; server user-secret/OAuth values use owner/version-bound AEAD with external keys.
+- Store one random master in macOS Keychain. Publish synced encrypted records and index before switching the protected account identifier and key together. Pin the credential selection and refusal stamp across network I/O, including a first fetch. Use private user-scoped storage; bind stable identity/installation/generation/revision/expiry and protect rollback/publication checkpoints. Ordinary central configuration stays plaintext; server user-secret/OAuth values use owner/version-bound AEAD with external keys.
 - Protect loopback HTTP against untrusted origins, DNS rebinding, and CSRF. Bind local management to loopback; use short-lived local authorization and keep sessions/secrets out of URLs and frontend storage.
 - Use verified TLS for central/remote production connections. Model upstream credential scope explicitly and minimize inherited environment variables and secrets passed to child processes.
 - Installation runs with the user's privileges after their explicit action. Catalog browsing, login, and agent startup must not silently execute installation commands. Validate command definitions and report failures without enabling the MCP.
@@ -82,7 +82,7 @@ See docs/testing.md for isolated fixtures and exact environment setup.
 - Rust: cargo fmt --all -- --check; cargo clippy --locked --workspace --all-targets
   -- -D warnings; cargo test --locked --workspace; cargo build --locked --workspace.
 - Frontend: pnpm install --frozen-lockfile; pnpm format:check; pnpm lint;
-  pnpm typecheck; pnpm test; pnpm build. No application JavaScript.
+  pnpm typecheck; pnpm test; pnpm build. Protected web applications use strict TypeScript.
 - Contracts: bash scripts/check-contracts.sh. Never hand-edit generated TS.
 - Database: explicitly run cargo test --locked -p dhivon-mcp-gateway-server -- --ignored with
   the isolated TEST_DATABASE_URL. Normal cargo test skips these external cases;
@@ -103,7 +103,7 @@ work; read relevant pattern bodies and preserve their provenance/limits. Archive
 mac-mvp and dhivon-brand-site-docs resolve delivered scope without rewriting their
 historical records.
 Actual supported platforms/providers/protocol/browsers are in docs/compatibility.md;
-current release/test evidence is in docs/dhivon-release.md, with original MVP
+dated release/test evidence is in docs/checksums.md, docs/consumer-setup-verification.md and docs/dhivon-release.md, with original MVP
 evidence retained in docs/release.md and docs/acceptance.md. Do not infer
 unrun hosted CI, signing, real providers/agents or extra platform compatibility.
 
@@ -136,12 +136,19 @@ unrun hosted CI, signing, real providers/agents or extra platform compatibility.
   reads through final evidence writes. Drain cleanup-created children too. Stop
   writers before creating-binary logout; verify native cleanup before stack removal.
   Keep failed histories and exact recovery evidence; never reclaim locks through
-  stale-PID unlink/recreate. Python3/fcntl is a verification prerequisite only.
+  stale-PID unlink/recreate. The private recovery harness uses Python3/fcntl. The separate operator setup helper also requires Python 3.8 or later.
 - Public site checks: pnpm --filter @dhivon/mcp-gateway-site typecheck;
-  pnpm exec prettier --check apps/site; pnpm site:build; run the emitted notice
+  pnpm exec prettier --check apps/site; pnpm site:build; node apps/site/check.ts; run the emitted notice
   checker and rendered link/anchor/browser checks described in release evidence.
   Root pnpm build/typecheck/test target the protected web workspace, not the site.
 - Run the 25-test rehearsal lifecycle/ownership suites with pinned Node 24, Docker,
   Python3 and the extracted CLI only in runtime-owned generated scopes, following
   docs/https-oauth-rehearsal.md. Reuse unaffected product evidence by exact inputs;
   report script checks separately from full browser/OAuth acceptance.
+
+- Keep setup prompts and the service health probe consistent with the server’s
+  origin parser. Test with different database and operator UIDs, an interrupted
+  setup, and a failed export that must preserve the last complete backup.
+- Verify the static publication allowlist, missing routes and current stylesheet
+  on the production hostname. Keep public guides and assets static; the scoped
+  Pages Function serves a non-cacheable 404 for unpublished documentation.

@@ -105,31 +105,16 @@ drafting-spec -> drafting-plan -> planned -> in_progress -> ready_for_review
 
 ## Delivered repository baseline
 
-- Dhivon MCP Gateway is a product of Dhivon AI. Both mac-mvp and
-  dhivon-brand-site-docs are archived under .cadre/archive with completed intent,
-  executions, approvals, reviews, findings and commit provenance preserved.
-  Current context covers the self-hosted Mac MVP, clean Dhivon rename, both branded
-  management surfaces, public site/docs, Apache-2.0 ownership/distributed notices,
-  controlled HTTPS/native OAuth and fail-closed rehearsal recovery follow-ups.
-- New work uses new approved tracks and current Dhivon identifiers. Keep historical
-  names/hashes/receipts and archived Pattern Seeds unchanged. Project classification
-  greenfield records origin; it does not reset the delivered repository.
-- Consult patterns/index.md by semantic applicability and read relevant full bodies
-  before seeding future tracks. The seven-pattern catalog includes rejected-token
-  refresh ordering, notice/TLS boundaries, rehearsal recovery ownership and canonical
-  product guides, with provenance and tested limits. No active track needs reseeding
-  at this refresh; historical seed hashes remain evidence of their own baseline.
-- Use docs/testing.md for commands, docs/dhivon-release.md for current artifact and
-  acceptance evidence, docs/https-oauth-rehearsal.md for controlled TLS/recovery,
-  and docs/compatibility.md for limits. Original docs/release.md and acceptance.md
-  retain MVP provenance. A context refresh adds no application test run.
-- During execution use runtime-returned owned outputs and generated private scopes.
-  Retain creating binaries until verified native cleanup. Unknown ownership fails
-  closed and failed attempts remain recoverable; certificate trust stays separately
-  operator-owned. Retained archived worker paths are provenance: all 13 paths and
-  branches are absent at this quiescent boundary, with only main registered.
-- No follow-on product track, hosting target, physical checkout move, signing,
-  public distribution, extra provider/platform or SAML/SaaS work is authorized by
-  this metadata refresh. Candidate roadmap directions require scoped approval.
-- This context update preserves every approval mode, lifecycle/clean-completion
-  rule, receipt contract and historical execution/review finding/attempt record.
+Four cleanly reviewed tracks are archived: mac-mvp, dhivon-brand-site-docs,
+single-key-endpoint-store and consumer-website. The project retains its
+greenfield setup provenance. Start new work under the normal track workflow.
+Consult the seven-pattern catalog for relevant guidance, including single-key
+publication, archive guide links and private deployment recovery. Archived
+journals, approvals and seed hashes describe the evidence at their own revisions.
+
+Use docs/testing.md for commands, docs/consumer-setup-verification.md for operator
+and native journeys, docs/checksums.md for artifact identity and docs/compatibility.md
+for scope. Keep internal tickets in Cadre. Verify only owned fixtures and retain
+the creating executable until native cleanup is confirmed. Certificate trust
+requires separate authorization. See docs/https-oauth-rehearsal.md for the
+controlled provider and recovery procedure.

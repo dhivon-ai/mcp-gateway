@@ -52,3 +52,8 @@ Apply `general.md` first. Preserve the repository's approved formatter, CSS arch
 - Public diagrams need text equivalents explaining policy and execution location.
   Check rendered Markdown anchors, direct refresh, local fonts, deep links and
   tables at desktop/390px with keyboard/focus and console inspection.
+
+- Give the public stylesheet a content-derived filename when rendering HTML.
+  Verify guide navigation occupies the narrow left column and the article the
+  wider column on desktop. On mobile, verify the article comes first without
+  horizontal overflow. Check a real navigation with an older stylesheet cached.

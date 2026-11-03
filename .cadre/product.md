@@ -7,11 +7,11 @@ Copyright 2026 Dhivon AI. The bundled Manrope font retains its original SIL OFL
 copyright and full license. The repository began as a greenfield project on
 2026-10-14; that setup classification remains historical provenance.
 
-Both `mac-mvp` and `dhivon-brand-site-docs` are implemented, cleanly reviewed,
-approved and archived under `.cadre/archive/`. Version 0.1.0 has locally verified
-Mac/service artifacts, branded administrator and developer interfaces, a standalone
-public product/documentation site and detailed role-based guides. The archive is
-unsigned and unpublished. No active product track or approved follow-on exists.
+Four tracks are archived: `mac-mvp`, `dhivon-brand-site-docs`,
+`single-key-endpoint-store` and `consumer-website`. The public guides are live at
+https://mcp.gateway.dhivon.ai. Teams host their own gateway. The verified 0.1.0
+Apple Silicon CLI archive is unsigned and distributed through a trusted channel
+or built from source. No product track is active.
 
 ## Users and purpose
 
@@ -49,7 +49,11 @@ One enterprise runs each self-hosted control-plane deployment.
   preregistered public-client OAuth profile. The central per-user key/value store
   encrypts secret values; users select their own stable secret IDs for bearer MCPs.
   OAuth credentials are separately managed/encrypted per user/MCP/installation.
-  Native keys/tokens live in Keychain; ordinary central configuration is plaintext.
+  One Keychain master item per initialized installation selects the encrypted
+  local index. Sessions, upstream tokens and configuration are protected in private
+  files. Logout fences the login and retains the installation master. Authenticated
+  repair preserves refusal, expiry and lease evidence. Independent online sign-in
+  can rebuild an unreadable identity. Ordinary central configuration is plaintext.
 - Optional structured installation commands execute as the Mac user only after an
   explicit action. Failure never enables. A successful install with failed server
   confirmation can retry enable separately; a receipt is not current enablement.
@@ -74,11 +78,15 @@ One enterprise runs each self-hosted control-plane deployment.
   upstreams per agent, central policy ownership, explicit developer opt-in and
   local/remote execution. Its grant→enable→call→disable example links role-specific
   quickstart, administration, deployment/recovery and agent setup routes.
-- Canonical `docs/*.md` guides render into public pages with deep links and local
-  assets, without requiring product services or credentials. Documentation covers
-  configuration, transports/auth, security/leases, troubleshooting, compatibility,
-  contributing/testing, licensing and an undated roadmap separating delivered
-  evidence, approved next work and candidate ideas.
+- The guide directory separates joining a team from hosting a gateway. Only
+  explicitly selected guides and assets are published. Internal tickets belong in
+  Cadre. Supported old links redirect; unpublished doc paths return 404.
+- After preparing DNS, TLS and private administrator inputs, operators run
+  `bash scripts/configure-gateway.sh` once, then `docker compose up -d --build --wait`
+  from the root. The stack provisions private PostgreSQL, vault keys and the first
+  admin. Mac developers can build the CLI and its embedded console with
+  `bash scripts/package-macos.sh`. The extracted archive includes offline guides.
+
 - Project LICENSE/NOTICE and unchanged full Manrope OFL accompany the extracted
   Mac archive, runtime image and static output; publication checks compare bytes
   against source and expose readable notice paths.
@@ -97,7 +105,7 @@ checks, protected persistence, explicit enablement, tool use, refresh and discon
 with subsequent denial. The resolver refreshes a validated online expired record
 through the existing lease/version CAS before attempting to publish its rejected
 old binding. It preserves the rejection fence, generation/policy gates, offline
-denial and no call replay. Public hosting and named external providers are unverified.
+denial and no call replay. The hosted documentation site is public. The control-plane test used a controlled provider.
 
 Rehearsal supervision and recovery persist generated private ownership and immutable
 creating binaries/configuration. Child handles survive failed registration; unknown
@@ -128,7 +136,7 @@ publication, legacy HTTP+SSE and non-tool MCP features remain later work. Do not
 claim arbitrary provider/commercial-agent/browser/older-Mac compatibility,
 hosted CI execution, actual machine sleep/reboot, HA, compliance certification or
 enterprise-scale performance. Cancellation cannot undo side effects; the OS and
-Keychain are trusted. See `docs/compatibility.md` and current `docs/dhivon-release.md`;
+Keychain are trusted. See `docs/compatibility.md`, `docs/checksums.md` and `docs/consumer-setup-verification.md`;
 `docs/release.md` retains original MVP evidence.
 
 ## Domain language
@@ -142,21 +150,14 @@ Keychain are trusted. See `docs/compatibility.md` and current `docs/dhivon-relea
 
 ## Recorded verification and current evidence
 
-`docs/dhivon-release.md` records the dated current archive/executable/image
-identities and the successive rebrand, notice, HTTPS/OAuth and cleanup checks.
-Evidence includes 83 Rust workspace tests, 11 explicitly run isolated PostgreSQL
-cases, 44 frontend tests, compiled desktop/390px flows, the final 34-page link/anchor
-crawl, extracted-client/all-auth and deployment/restart/fresh-restore/key-recovery
-checks. The final review reran 25/25 cleanup/ownership process tests in 161.11s and
-strict script/notice checks against unchanged product identities. These counts
-belong to the documented runs; a metadata refresh adds no application test run.
-
-The current archive SHA-256 is
-`e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799`;
-service image ID is
-`sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07`.
-The clean review is 7249c26 and archive is 6e75dfd. Original reports and archived
-learning retain the historical names and artifact hashes they actually tested.
+The endpoint review at `aab0881` covers a real Mac Keychain, concurrent first
+fetch and refusal, cold restart, damaged index/marker and authenticated recovery.
+The consumer guide review at `6ea16ed` covers the extracted Mac journey and the
+root Compose stack, including restart, HTTPS sign-in, and credential recovery from
+a restored database with its matching keys. The checksums in `docs/checksums.md`
+identify the exact tested archives. `docs/dhivon-release.md` remains the record of
+earlier artifacts and tests. Public Pages routing and desktop/mobile stylesheet
+delivery were checked after those reviews at `ad1daed` and `4ce8326`.
 
 ## Future decisions
 

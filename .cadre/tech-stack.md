@@ -28,7 +28,7 @@ Cargo manifests/lockfile govern exact versions and features. Current dependencie
 include Tokio 1.53.3, Axum 0.8.9, SQLx 0.9.0 (PostgreSQL/rustls/migrate), official
 rmcp=3.5.1 (client/server/STDIO/child/StreamableHTTP/auth), reqwest 0.13.5 with rustls,
 clap 4.6.7, Serde/tracing, ts-rs 12.0.1, Argon2 0.6.0 and AES-GCM 0.11.1.
-OAuth uses oauth2=5.0.0. Mac adapters use security-framework=3.7.0, nix=0.31.3,
+Native record key derivation uses hkdf=0.13.0 (HKDF-SHA-256). OAuth uses oauth2=5.0.0. Mac adapters use security-framework=3.7.0, nix=0.31.3,
 rustix=1.1.5, sysctl=0.7.1 and libproc=0.14.11. Preserve explicit bounds, exact
 destinations, no-replay SDK settings and safe nonblocking descriptor adapters.
 
@@ -38,10 +38,10 @@ are pinned. shadcn/Radix uses the radix-nova style, semantic CSS variables, Luci
 icons and locally bundled Manrope; `components.json` and pnpm-lock.yaml define
 the component setup. Navy #102C4C, emerald #00AD78 and white form the approved brand palette;
 semantic tokens provide readable actions/status. Vitest/Testing Library/jsdom,
-ESLint/TypeScript-aware rules and Prettier provide checks. Application/configuration
-source is strict TypeScript. The static site runs
+ESLint/TypeScript-aware rules and Prettier provide checks. Protected web application and configuration source is strict TypeScript. The static site runs
 Node TypeScript independently of React/Vite and uses its own build/type checks.
-Verification/recovery scripts use Python3 stdlib fcntl for a kernel-held lock on
+First-time operator configuration uses Bash and Python 3.8+ standard library on the host.
+Verification/recovery scripts also use Python3 stdlib fcntl for a kernel-held lock on
 the validated Mac; Python is not a distributed client/service dependency.
 
 ## Data, security and protocol
@@ -52,9 +52,11 @@ include explicit safe refusal of populated pre-email identity schemas. Argon2id,
 opaque 12h sessions, roles, CSRF/Host/Origin checks and canonical email implement auth.
 Server vault keys are external private files, separately backed up from PostgreSQL.
 
-Native sessions/upstream tokens/cache keys use Mac Keychain. Private user-scoped
-files hold authenticated encrypted snapshots and ordinary bounded metadata,
-atomic publication/cleanup journals and installation receipts. Darwin continuous
+One 32-byte Mac Keychain master item selects the encrypted endpoint index.
+Purpose-separated keys protect records on disk, including sessions, credentials,
+refusals and install receipts. Account records bind the authenticated origin and
+identity. The encrypted policy snapshot retains its own lease checks. See
+`docs/endpoint-identity.md` for ownership, key transitions and recovery limits. Darwin continuous
 clock/boot identity and protected watermarks bound the one-hour lease across
 same-boot restart and conservatively reject uncertainty. No offline mutation queue.
 
@@ -77,29 +79,21 @@ Apache LICENSE/Dhivon AI NOTICE/full Manrope OFL. Static output publishes them t
 Release `strip=false` preserves
 loadable proc-macro dylibs with the pinned toolchain on that Mac.
 
-Local evidence: 83 workspace Rust tests, 11 explicit real-PG cases, 44 frontend tests,
-quality/contracts/build checks, compiled browser flows and extracted all-auth MCP
-client suite pass. Actual container→Mac→Node STDIO, Keychain cleanup, restart,
-dump/fresh restore and wrong/matching-key recovery pass. CI configuration exists
-for Linux/Mac/web/database/deployment; no hosted run is claimed. See `docs/testing.md`,
-`docs/dhivon-release.md` and `docs/compatibility.md` for current commands/evidence
-and validated limits; `docs/release.md` remains original MVP provenance.
+The root Compose project builds the server, provisions the first administrator and
+keeps PostgreSQL private. See `docs/deployment.md` for DNS/TLS and setup, and
+`docs/operations.md` for private backups and restore. The default Mac packaging
+command reuses a private Cargo target and prints a distinct archive and checksum.
+`docs/checksums.md` identifies the tested archive with offline guides (SHA-256
+`8d40699ffb6480488edad6460fd57c2d566112596371145f81ffe7db1aac4383`).
 
-The final static build/crawl covers 34 pages. Exact notice checks read the extracted
-archive, actual runtime image and emitted site bytes. Docker HTTPS/nginx with a
-controlled MCP/issuer and actual extracted Mac callback was verified in Safari;
-public DNS/hosting and named external-provider registrations remain unverified.
-The expiry/rejection resolver fix retains scoped fences and central refresh CAS.
-The final cleanup/ownership suite passes 25/25, covering real Docker/native signal
-cleanup plus registration uncertainty, exclusive lock/crash retry and journal
-freshness. See scripts/rehearsal-lifecycle.ts, rehearsal-lock.ts, their process
-tests and docs/https-oauth-rehearsal.md. These focused runs reuse earlier unaffected
-Rust/UI/HTTPS evidence only while relevant source/artifact fingerprints match.
+The existing Cloudflare Pages project `dhivon-mcp-gateway` builds GitHub main
+with `pnpm site:build` and publishes `apps/site/dist`. `apps/site/publication.ts`
+selects content. The build emits versioned CSS, redirects and a route manifest;
+`functions/docs/[[path]].js` handles unpublished docs before Pages can return a
+retained asset. Public documentation hosting is separate from the team's service.
 
-Current Mac archive SHA-256:
-`e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799`.
-Current extracted executable SHA-256:
-`f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7`.
-Current service image ID:
-`sha256:7c6b562735589c7dbed0552c26a7d3f3fda20e6eb5fa773589c7364ae7ae0b07`.
-Metadata archival/refresh does not rebuild or change these historical artifacts.
+For evidence use `docs/consumer-setup-verification.md`, the two November 3
+archived tracks and the seven-pattern catalog. Earlier service image, executable,
+browser and controlled-provider results belong to the specific runs in
+`docs/dhivon-release.md` and `docs/https-oauth-rehearsal.md`. See
+`docs/compatibility.md` for supported environments.
