@@ -3,8 +3,8 @@
   "trackId": "consumer-website",
   "title": "Simpler product guides and two-command setup",
   "type": "feature",
-  "status": "in_progress",
-  "checkpoint": "ready",
+  "status": "ready_for_review",
+  "checkpoint": "ready_for_review",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -15,14 +15,14 @@
   "artifactProgress": [],
   "operation": null,
   "lastExecution": {
-    "executionId": "2026-11-03T06-06-11-584Z",
-    "journal": "executions/execution-2026-11-03T06-06-11-584Z.json",
+    "executionId": "2026-11-03T06-43-11-012Z",
+    "journal": "executions/execution-2026-11-03T06-43-11-012Z.json",
     "approvalMode": "track",
     "approvalPolicyVersion": 2,
-    "planRevision": 2,
-    "graphDigest": "c7c5a718a6ebf7b88bb70a3cfc73b81efd141555fd970b618195f9a9af61ef7d",
-    "headCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
-    "completedAt": "2026-11-03T06:34:28.842Z"
+    "planRevision": 3,
+    "graphDigest": "396346562b3af217ccc407dbc018fb6ad9a532b4ae9907a7b0c7f3e04bfe1cfb",
+    "headCommit": "be6570c62bf88048a74f30545de77088e9410904",
+    "completedAt": "2026-11-03T06:54:38.564Z"
   },
   "reviewCycles": [
     {
@@ -54,6 +54,10 @@
     {
       "action": "review",
       "commit": "op:review-8a4ca46de97e79133805f473cc75f467"
+    },
+    {
+      "action": "implement",
+      "commit": "op:implement-699189b7f7b5006a68391d9b40869ebb"
     }
   ]
 }

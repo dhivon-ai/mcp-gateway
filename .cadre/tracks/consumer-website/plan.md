@@ -58,32 +58,32 @@ Review both detail-page journeys from the existing homepage, the two working com
 
 - Phase dependencies: P3
 
-- [ ] T4.1 Fix BUG-001 and BUG-002. Prove first start and restart in the pinned database image with normal Linux ownership, then probe help and errors with a synthetic database password. Keep secrets private and verify first-admin HTTPS sign-in.
+- [x] T4.1 Fix BUG-001 and BUG-002. Prove first start and restart in the pinned database image with normal Linux ownership, then probe help and errors with a synthetic database password. Keep secrets private and verify first-admin HTTPS sign-in. <!-- commit: 72784c8638fa207b36ae4ac160657b5c2dd70af4 -->
   - Task dependencies: none
   - Commit group: managed-runtime
-- [ ] T4.2 Fix BUG-003 and BUG-004. Publish complete private inputs safely under interruption and contention; reject invalid admin email and HTTPS origin before publishing. Exercise interrupted and concurrent first runs, corrected inputs, and protection of an existing deployment.
+- [x] T4.2 Fix BUG-003 and BUG-004. Publish complete private inputs safely under interruption and contention; reject invalid admin email and HTTPS origin before publishing. Exercise interrupted and concurrent first runs, corrected inputs, and protection of an existing deployment. <!-- commit: 58541fcc4e8702a3735f13a5b36caea46c795de5 -->
   - Task dependencies: none
   - Commit group: configuration-recovery
-- [ ] T4.3 Fix BUG-005. Rehearse the exact backup guide from the checkout: fail before and after output, retain a prior good backup, verify private off-checkout output, then restore a successful dump with matching keys and read a saved credential.
+- [x] T4.3 Fix BUG-005. Rehearse the exact backup guide from the checkout: fail before and after output, retain a prior good backup, verify private off-checkout output, then restore a successful dump with matching keys and read a saved credential. <!-- commit: bcbd099af26618aa783eccbde21d12f7e58e2b23 -->
   - Task dependencies: T4.1
   - Commit group: recoverable-backups
-- [ ] T4.4 User Manual Verification
+- [x] T4.4 User Manual Verification <!-- commit: 44704dd3ac0ddee74796fcc19859b3636de8da44 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `44704dd3ac0ddee74796fcc19859b3636de8da44`
 
 ## Phase 5: Repair repeat Mac builds and archive onboarding
 
 - Phase dependencies: P3
 
-- [ ] T5.1 Fix BUG-006. Build twice on the supported Mac, reuse Cargo compilation safely, measure target directories and disk usage, and verify the new archive embeds the current UI. Preserve release outputs, ownership and explicit overrides.
+- [x] T5.1 Fix BUG-006. Build twice on the supported Mac, reuse Cargo compilation safely, measure target directories and disk usage, and verify the new archive embeds the current UI. Preserve release outputs, ownership and explicit overrides. <!-- commit: 56af458cc814b04d94b5417b02f103a8e82b43d9 -->
   - Task dependencies: none
   - Commit group: repeat-mac-build
-- [ ] T5.2 Fix BUG-007. Verify guide links including upgrade and agent setup from the final extracted archive outside the checkout. Verify checksum, notices, version and embedded console; keep the source and public guides canonical.
+- [x] T5.2 Fix BUG-007. Verify guide links including upgrade and agent setup from the final extracted archive outside the checkout. Verify checksum, notices, version and embedded console; keep the source and public guides canonical. <!-- commit: 9e353dd2ed72704de519000b5543ee22de0a0bad -->
   - Task dependencies: T5.1
   - Commit group: archive-guide-links
-- [ ] T5.3 User Manual Verification
+- [x] T5.3 User Manual Verification <!-- commit: 9e353dd2ed72704de519000b5543ee22de0a0bad -->
 
-- Phase completion commit: pending
+- Phase completion commit: `be6570c62bf88048a74f30545de77088e9410904`
 
 ## Phase 6: Track-level User Manual Verification
 
@@ -91,9 +91,9 @@ Review both detail-page journeys from the existing homepage, the two working com
 
 Verify all seven blockers against bugs/review-1.md. Record platform, commit and artifact identity; run both published journeys, including authorized first tool call and denial after disable. Recheck public links/404s, desktop/mobile detail pages and the unchanged homepage. Keep review tickets and internal evidence outside the public guides. Require evidence for every blocker before release.
 
-- [ ] T6.1 User Manual Verification
+- [x] T6.1 User Manual Verification <!-- commit: be6570c62bf88048a74f30545de77088e9410904 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `be6570c62bf88048a74f30545de77088e9410904`
 
 ## Approval
 

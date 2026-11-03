@@ -34,3 +34,15 @@ The user approved track-level verification at a1b88eb on 2026-11-03 after receiv
 ## Review cycle 1 handoff
 
 All three seed patterns still apply. Include a Linux-native password-file permission test; test setup publication separately from database interruption. Test backup failure before restore and the distributed guide links outside the checkout. Measure the second default Mac build. An OrbStack bind mount and a site crawl alone did not exercise these cases.
+
+## Phase 4: Repair operator setup and backup
+
+At phase head 44704dd, fresh Linux permissions with distinct operator and database UIDs established what the Mac bind mount missed. Pass an inherited private FD into a pipe opened by the database user. Keep the database URL out of generated CLI help. Kernel-held directory locks and exclusive publication let the same checkout resume incomplete private setup without taking another deployment's state. Verified the Python regression cases under both Mac and Linux. The backup helper keeps completed 0600 dumps separate from temporary output; the documented restore recovered a saved bearer on a new cluster with matching keys. See docs/consumer-setup-verification.md.
+
+## Phase 5: Repair repeat Mac builds and archive onboarding
+
+At phase head 9e353dd, a checkout-local private Cargo target served two default builds with independent UI and archive directories. Test two different embedded UI builds, not just equal version strings. Follow links from README.md and COMPATIBILITY.md in an extracted archive outside the checkout and compare the generated guide bytes with the integrated source. Keep the published checksum in its own unbundled guide. All 37 links passed and the native agent call and disable denial were verified against the root Compose stack.
+
+## Phase 6: Track-level User Manual Verification
+
+The user approved the integrated product at be6570c after reviewing the seven remediation results. Regenerating the archive guides from that commit matched the extracted bytes. The final site crawl, desktop and mobile checks passed. See docs/consumer-setup-verification.md for environment and coverage.
