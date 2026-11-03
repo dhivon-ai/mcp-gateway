@@ -48,3 +48,17 @@ The user approved the AC-001 through AC-005 verification evidence for 43bae33. A
 ## Review cycle 1: Fresh-install recovery
 
 Retain the same six patterns and hashes. Apply credential-publication and authorization-leases to the refusal itself even when both the credential and its recovery evidence are unreadable. Exercise missing private files and damaged format markers through the packaged UI with an explicit server. Review scope is current-format installations only, per the owner; legacy migration is not a remediation task. Keep the completed historical verification intact.
+
+## Phase 5: Current-format refusal and sign-in recovery
+
+At integrated product commit `519aa1973ced5137070d630c995cd446ee0504c0`, the encrypted index can record a control-plane refusal without opening either the selected credential file or its recovery evidence. Each refusal has a new identifier. An already-running request checks the decision it observed before it may publish. An authorized response still checks policy, version, fingerprint, provider rejection and expiry. If neither credential nor recovery evidence authenticates, the gateway denies use until sufficient evidence is available or the user signs in independently.
+
+The packaged Mac gateway encountered an actual authenticated 403 with two damaged bearer files. Restoring those exact files during a 503 outage and starting a fresh STDIO process kept the bearer unavailable while another MCP worked. Separate native tests exercised repeated refusals, stale successes, independent MCPs, provider rejection, and repair from a fresh response using the surviving evidence.
+
+After losing the private directory with the master still present, the packaged loopback console served its sign-in page. A rejected password preserved the original master. Successful independent login rebuilt the store, and restoring the earlier directory did not restore the previous login. Damage confined to the private format marker preserved a healthy session. The native identity tests also rejected symlinks and unsafe permissions. Recovery fixtures were retired with their creating executable; no isolated Keychain database was created.
+
+The Apple Silicon archive SHA-256 is `9c90fbe4bc83b342d8889306b3d3714acd13481a9944c375189489a4353929ad`. Archive notices and checksum, formatting, CLI Clippy, and the PostgreSQL-backed consent, refresh and disconnect test passed. The current-format package checks use synthetic callers and a loopback control plane.
+
+## Phase 6: Track verification
+
+The owner approved final verification for integrated commit `519aa1973ced5137070d630c995cd446ee0504c0`. The 69 CLI tests and PostgreSQL OAuth regression passed. The extracted Mac package exercised both review findings, and its archive checksum was verified again at approval.

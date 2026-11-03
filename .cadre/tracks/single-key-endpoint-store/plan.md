@@ -77,15 +77,15 @@ Verify AC-001 through AC-005 using the packaged Mac flow and recorded failure/up
 
 A known server refusal remains effective when damaged credential files are restored. A fresh-format installation can open the console after losing its local files without trusting those files to authenticate. Verification uses only the current storage format; no migration or compatibility work is requested.
 
-- [ ] T5.1 Persist a scoped denial even if the bearer head and its recovery evidence are both unreadable. Bind it to the current identity, generation, MCP and binding, preserve unrelated grants, and require fresh authorized resolution before reuse. Test a real authenticated 403 followed by restoration of both files, an outage and process restart; the old bearer must stay unavailable. Also verify a delayed denial cannot affect a new identity or binding.
+- [x] T5.1 Persist a scoped denial even if the bearer head and its recovery evidence are both unreadable. Bind it to the current identity, generation, MCP and binding, preserve unrelated grants, and require fresh authorized resolution before reuse. Test a real authenticated 403 followed by restoration of both files, an outage and process restart; the old bearer must stay unavailable. Also verify a delayed denial cannot affect a new identity or binding. <!-- commit: cf7fcdf5721f93030043b5f0f310ad407197758b -->
   - Task dependencies: none
   - Commit group: durable-credential-denial
-- [ ] T5.2 Let a current-format console reach independent sign-in when the master is present but the private state directory is lost. When the encrypted index and identity are healthy, handle a damaged ordinary format marker without discarding them. Preserve ownership and symlink checks, deny offline access to unverified data and do not replace an inaccessible Keychain item. Test the packaged UI at an explicitly supplied server, failed and successful authentication after loss, and continued use of healthy encrypted state after marker damage.
+- [x] T5.2 Let a current-format console reach independent sign-in when the master is present but the private state directory is lost. When the encrypted index and identity are healthy, handle a damaged ordinary format marker without discarding them. Preserve ownership and symlink checks, deny offline access to unverified data and do not replace an inaccessible Keychain item. Test the packaged UI at an explicitly supplied server, failed and successful authentication after loss, and continued use of healthy encrypted state after marker damage. <!-- commit: 77a5d397866b580d33e800938ef467f4b22d4242 -->
   - Task dependencies: none
   - Commit group: current-store-recovery
-- [ ] T5.3 User Manual Verification
+- [x] T5.3 User Manual Verification <!-- commit: 519aa1973ced5137070d630c995cd446ee0504c0 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `519aa1973ced5137070d630c995cd446ee0504c0`
 
 ## Phase 6: Track-level User Manual Verification
 
@@ -93,9 +93,9 @@ A known server refusal remains effective when damaged credential files are resto
 
 Verify BUG-001 and BUG-002 on the current Mac package, including the scoped denial after disk restore and recovery through the loopback console. Record targeted regression results, fixture cleanup, and any remaining limits.
 
-- [ ] T6.1 User Manual Verification
+- [x] T6.1 User Manual Verification <!-- commit: 519aa1973ced5137070d630c995cd446ee0504c0 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `519aa1973ced5137070d630c995cd446ee0504c0`
 
 ## Approval
 
