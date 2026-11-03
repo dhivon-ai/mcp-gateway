@@ -36,6 +36,9 @@ pub struct Vault {
 struct Index {
     seed: [u8; 32],
     records: BTreeMap<String, Uuid>,
+    // A refusal belongs to a selected logical head, independently of its sealed files.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    refusals: BTreeMap<String, Uuid>,
 }
 
 impl Drop for Index {
@@ -208,7 +211,7 @@ impl Vault {
         let bytes = read_sealed(&self.index_path(id), &key, id, b"endpoint-index/v2")?;
         let index: Index =
             serde_json::from_slice(&bytes).map_err(|_| EndpointError::InvalidCache)?;
-        if index.records.len() > MAX_NAMES {
+        if index.records.len() > MAX_NAMES || index.refusals.len() > MAX_NAMES {
             return Err(EndpointError::InvalidCache);
         }
         Ok(index)
@@ -272,6 +275,7 @@ impl Vault {
             &Index {
                 seed: *random_key()?,
                 records: BTreeMap::new(),
+                refusals: BTreeMap::new(),
             },
         )
     }
@@ -293,6 +297,7 @@ impl Vault {
         let mut index = Index {
             seed: *random_key()?,
             records: BTreeMap::new(),
+            refusals: BTreeMap::new(),
         };
         for (name, value) in values {
             let id = Uuid::new_v4();
@@ -346,6 +351,9 @@ impl Vault {
         let mut obsolete = Vec::new();
         let mut wrote = false;
         for (name, value) in changes {
+            if value.is_none() {
+                wrote |= index.refusals.remove(&name).is_some();
+            }
             obsolete.extend(index.records.remove(&name));
             if let Some(value) = value {
                 if index.records.len() >= MAX_NAMES {
@@ -376,7 +384,9 @@ impl Vault {
             return Ok(());
         };
         let index = self.load(id)?;
-        if !index.records.keys().all(|k| allowed.contains(&k.as_str())) {
+        if !index.refusals.is_empty()
+            || !index.records.keys().all(|k| allowed.contains(&k.as_str()))
+        {
             return Err(EndpointError::Invalid);
         }
         self.collect_orphans(id, &index)?;
@@ -410,6 +420,26 @@ impl Vault {
     }
 }
 impl CredentialStore for Vault {
+    fn refusal_stamp(&self, account: &str) -> Result<Option<Uuid>> {
+        let _guard = self.lock()?;
+        let head = self.current()?.ok_or(EndpointError::LoginRequired)?;
+        Ok(self.load(head)?.refusals.get(account).copied())
+    }
+
+    fn refuse_cached_head(&self, account: &str) -> Result<()> {
+        if account.len() > 512 || guard_name(account).is_none() {
+            return Err(EndpointError::Invalid);
+        }
+        let _guard = self.lock()?;
+        let head = self.current()?.ok_or(EndpointError::LoginRequired)?;
+        let mut index = self.load(head)?;
+        if !index.refusals.contains_key(account) && index.refusals.len() >= MAX_NAMES {
+            return Err(EndpointError::CredentialCapacity);
+        }
+        index.refusals.insert(account.into(), Uuid::new_v4());
+        self.commit(Some(head), &index)
+    }
+
     fn get(&self, name: &str) -> Result<Option<Zeroizing<Vec<u8>>>> {
         self.read_record(name, false)
     }

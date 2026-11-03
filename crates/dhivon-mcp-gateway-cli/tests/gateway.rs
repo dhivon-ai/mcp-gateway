@@ -549,6 +549,20 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         };
         snapshot.mcps.push(oauth);
     }
+    let bearer_status = Arc::new(AtomicU16::new(200));
+    let response_status = bearer_status.clone();
+    let refused = Arc::new(AtomicUsize::new(0));
+    let refused_count = refused.clone();
+    let bearer = UpstreamCredential::Bearer {
+        token: "private-cli-bearer-fixture".into(),
+        secret_id,
+        version: 1,
+    };
+    // The guard has the same sealed envelope but serializes its credential as null.
+    let bearer_size_delta = serde_json::to_vec(&bearer)
+        .expect("serialize synthetic bearer")
+        .len()
+        - b"null".len();
     let app = Router::new()
         .route("/api/config", get(config))
         .route(
@@ -573,18 +587,21 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             post(
                 move |headers: axum::http::HeaderMap,
                       axum::Json(input): axum::Json<CredentialRequest>| {
-                    let secret_id = secret_id.clone();
+                    let bearer = bearer.clone();
+                    let code = response_status.load(Ordering::SeqCst);
+                    if code == 403 {
+                        refused_count.fetch_add(1, Ordering::SeqCst);
+                    }
                     async move {
                         assert_eq!(
                             headers["authorization"],
                             "Bearer private-native-central-fixture"
                         );
                         assert!(Uuid::parse_str(&input.installation_id).is_ok());
-                        axum::Json(UpstreamCredential::Bearer {
-                            token: "private-cli-bearer-fixture".into(),
-                            secret_id,
-                            version: 1,
-                        })
+                        (
+                            StatusCode::from_u16(code).expect("fixture HTTP status"),
+                            axum::Json(bearer),
+                        )
                     }
                 },
             ),
@@ -792,6 +809,30 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .is_err()
     );
+    let bearer_call = || {
+        CallToolRequestParams::new(dhivon_mcp_gateway_cli::aggregation::alias(
+            "bearer-fixture",
+            "echo",
+        ))
+    };
+    for _ in 0..100 {
+        if agent
+            .list_all_tools()
+            .await
+            .expect("live catalog")
+            .iter()
+            .any(|tool| {
+                tool.name == dhivon_mcp_gateway_cli::aggregation::alias("bearer-fixture", "echo")
+            })
+        {
+            break;
+        }
+        tokio::time::sleep(Duration::from_millis(30)).await;
+    }
+    agent
+        .call_tool(bearer_call())
+        .await
+        .expect("current bearer available before refusal");
     let began = std::time::Instant::now();
     nix::sys::signal::kill(
         nix::unistd::Pid::from_raw(gateway.id() as i32),
@@ -815,6 +856,29 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
     assert!(status.success());
     assert!(elapsed < Duration::from_secs(6));
     gone(&owned).await;
+    // This checkout's package owns its fixture Keychain entry. Select the two
+    // synthetic bearer files by their known framing sizes, without accessing its key.
+    let sealed: Vec<_> = std::fs::read_dir(files.state().join("endpoint-v2"))
+        .expect("sealed fixture directory")
+        .flatten()
+        .filter(|e| e.file_name().to_string_lossy().starts_with("record-"))
+        .filter_map(|e| std::fs::read(e.path()).ok().map(|bytes| (e.path(), bytes)))
+        .collect();
+    let pairs: Vec<_> = sealed
+        .iter()
+        .flat_map(|head| {
+            sealed.iter().filter_map(move |guard| {
+                (head.1.len() == guard.1.len() + bearer_size_delta).then_some([head, guard])
+            })
+        })
+        .collect();
+    assert_eq!(pairs.len(), 1, "unique synthetic bearer head and guard");
+    let records = pairs[0];
+    for (path, _) in records {
+        std::fs::write(path, b"corrupt").expect("damage bearer fixture");
+    }
+    bearer_status.store(403, Ordering::SeqCst);
+    control.code.store(503, Ordering::SeqCst);
     // Shutdown must also complete when an agent stops reading a response larger than its pipe buffer.
     {
         use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
@@ -840,7 +904,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
                 .expect("raw discovery");
             let frame: Value = serde_json::from_str(&line).expect("stdout protocol only");
             if frame["id"] == 2 {
-                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 3);
+                assert_eq!(frame["result"]["tools"].as_array().expect("tools").len(), 2);
                 break;
             }
         }
@@ -885,6 +949,14 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
         drop(read);
         drop(write);
     }
+    assert!(
+        refused.load(Ordering::SeqCst) > 0,
+        "the server refused this bearer"
+    );
+    for (path, bytes) in records {
+        std::fs::write(path, bytes).expect("restore saved ciphertext");
+    }
+    bearer_status.store(503, Ordering::SeqCst);
     let _ = ui
         .terminate(Duration::from_secs(5))
         .await
@@ -907,7 +979,7 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .expect("offline cached tools")
             .len(),
-        3
+        2
     );
     assert!(
         agent
@@ -917,6 +989,11 @@ async fn actual_cli_one_stdio_entry_supports_local_remote_shared_changes_offline
             .await
             .is_ok()
     );
+    assert!(
+        agent.call_tool(bearer_call()).await.is_err(),
+        "restored bearer denied after restart"
+    );
+    bearer_status.store(200, Ordering::SeqCst);
     let polls = control.polls.load(Ordering::Relaxed);
     {
         let mut snapshot = control.snapshot.lock().expect("server policy");

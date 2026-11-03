@@ -126,6 +126,7 @@ impl CredentialResolver for RemoteCredentials {
             match response {
                 Ok(response) if response.status().is_success() => {
                     online_resolution = true;
+                    let mut superseded = false;
                     let prepared = async {
                         let bytes = bounded_body(response).await.map_err(category)?;
                         let credential: UpstreamCredential =
@@ -139,15 +140,16 @@ impl CredentialResolver for RemoteCredentials {
                         {
                             return self.refresh_expired(outcome, &mcp.definition.id).await.map(Some);
                         }
-                        self.native
-                            .publish(&scope, credential, start)
-                            .map_err(category)?;
+                        let publication = self.native.publish(&scope, credential, start);
+                        superseded = matches!(publication, Err(EndpointError::IdentityChanged));
+                        publication.map_err(category)?;
                         Ok(None)
                     }
                     .await;
                     match prepared {
                         Ok(Some(lease)) => return Ok(lease),
                         Ok(None) => (),
+                        Err(error) if superseded => return Err(error),
                         Err(error) => {
                             let _ = self.native.reject(&scope, None, CredentialFault::Required);
                             return Err(error);

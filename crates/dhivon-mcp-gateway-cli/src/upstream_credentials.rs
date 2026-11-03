@@ -17,6 +17,7 @@ pub struct CredentialScope {
     pub mcp: EffectiveMcp,
     pub revision: u32,
     receipt: Uuid,
+    refusal: Option<Uuid>,
     binding: String,
 }
 impl CredentialScope {
@@ -157,6 +158,7 @@ impl NativeCredentials {
             return Err(EndpointError::UpstreamRequired);
         }
         Ok(CredentialScope {
+            refusal: self.refusal(&session.metadata, &mcp.definition.id)?,
             session,
             mcp: current.clone(),
             revision: latest.snapshot.revision,
@@ -164,12 +166,24 @@ impl NativeCredentials {
             binding,
         })
     }
+    fn refusal(&self, metadata: &Metadata, mcp_id: &str) -> Result<Option<Uuid>> {
+        match metadata.upstream_heads.get(mcp_id) {
+            Some(account) => self
+                .cache
+                .sessions
+                .store
+                .credentials()
+                .refusal_stamp(account),
+            None => Ok(None),
+        }
+    }
     pub fn load(&self, scope: &CredentialScope) -> Result<CredentialHead> {
         self.cache.sessions.store.locked(|metadata| {
             self.check_scope(metadata, scope)?;
             if metadata
                 .upstream_publication_pending
                 .contains(&scope.mcp.definition.id)
+                || self.refusal(metadata, &scope.mcp.definition.id)?.is_some()
             {
                 return Err(EndpointError::UpstreamRequired);
             }
@@ -368,35 +382,36 @@ impl NativeCredentials {
             {
                 return Err(EndpointError::UpstreamRejected);
             }
+            let refusal = self.refusal(metadata, &scope.mcp.definition.id)?;
+            if refusal != scope.refusal {
+                return Err(EndpointError::IdentityChanged);
+            }
+            let pending = metadata
+                .upstream_publication_pending
+                .contains(&scope.mcp.definition.id);
+            if pending
+                && !scope
+                    .session
+                    .metadata
+                    .upstream_publication_pending
+                    .contains(&scope.mcp.definition.id)
+            {
+                return Err(EndpointError::IdentityChanged);
+            }
             let mut old = match metadata.upstream_heads.get(&scope.mcp.definition.id) {
                 None => None,
-                Some(account) => match self.read_raw(
-                    account,
-                    scope,
-                    metadata
-                        .upstream_publication_pending
-                        .contains(&scope.mcp.definition.id),
-                ) {
+                Some(account) => match self.read_raw(account, scope, pending) {
                     Ok(record) => Some(record),
-                    Err(EndpointError::UpstreamRequired)
-                        if metadata
-                            .upstream_publication_pending
-                            .contains(&scope.mcp.definition.id) =>
-                    {
-                        None
-                    }
+                    Err(EndpointError::UpstreamRequired) if pending => None,
                     Err(EndpointError::InvalidCache)
                         if self.cache.sessions.store.is_protected() =>
                     {
-                        Some(self.read_component(account, scope, false, true)?)
+                        Some(self.read_component(account, scope, pending, true)?)
                     }
                     Err(error) => return Err(error),
                 },
             };
-            if metadata
-                .upstream_publication_pending
-                .contains(&scope.mcp.definition.id)
-            {
+            if pending {
                 let prefix = format!(
                     "{}upstream-head:",
                     StateStore::account_prefix(
@@ -452,12 +467,11 @@ impl NativeCredentials {
                         observed = old.observed;
                     }
                     if anchor_valid
+                        && refusal.is_none()
                         && old.credential.is_some()
                         && old.fault.is_none()
                         && old.source_revision == scope.revision
-                        && !metadata
-                            .upstream_publication_pending
-                            .contains(&scope.mcp.definition.id)
+                        && !pending
                     {
                         return Ok(());
                     }
@@ -495,7 +509,19 @@ impl NativeCredentials {
     ) -> Result<()> {
         self.cache.sessions.store.locked(|metadata| {
             self.check_scope(metadata, scope)?;
-            let old = metadata
+            if expected_signature.is_none()
+                && fault != CredentialFault::Rejected
+                && self.cache.sessions.store.is_protected()
+                && let Some(account) = metadata.upstream_heads.get(&scope.mcp.definition.id)
+            {
+                return self
+                    .cache
+                    .sessions
+                    .store
+                    .credentials()
+                    .refuse_cached_head(account);
+            }
+            let previous = metadata
                 .upstream_heads
                 .get(&scope.mcp.definition.id)
                 .map(|account| match self.read_raw(account, scope, false) {
@@ -506,7 +532,20 @@ impl NativeCredentials {
                     }
                     other => other,
                 })
-                .transpose()?;
+                .transpose();
+            let old = match previous {
+                Ok(old) => old,
+                Err(_)
+                    if fault == CredentialFault::Rejected
+                        && let Some(signature) = expected_signature
+                        && self.cache.sessions.store.is_protected() =>
+                {
+                    // A provider rejected only this signature, even if a newer
+                    // head for the same MCP was published while the call ran.
+                    return self.remember_rejection(metadata, scope, signature);
+                }
+                Err(error) => return Err(error),
+            };
             let old_bound = old
                 .as_ref()
                 .filter(|old| old.runtime_binding == scope.binding);
@@ -518,28 +557,7 @@ impl NativeCredentials {
             if fault == CredentialFault::Rejected
                 && let Some(old) = old_bound
             {
-                let account = rejection_account(scope, &old.signature())?;
-                if !metadata.credential_accounts.contains(&account) {
-                    if metadata.credential_accounts.len() >= 2048 {
-                        return Err(EndpointError::Storage);
-                    }
-                    metadata.credential_accounts.push(account.clone());
-                    self.cache.sessions.store.write(metadata)?;
-                }
-                if self
-                    .cache
-                    .sessions
-                    .store
-                    .credentials()
-                    .get(&account)?
-                    .is_none()
-                {
-                    self.cache
-                        .sessions
-                        .store
-                        .credentials()
-                        .set(&account, b"rejected")?;
-                }
+                self.remember_rejection(metadata, scope, &old.signature())?;
             }
             if old_bound.is_some_and(|old| {
                 old.fault == Some(fault) && old.source_revision == scope.revision
@@ -570,6 +588,26 @@ impl NativeCredentials {
             };
             self.replace(metadata, scope, record)
         })
+    }
+    fn remember_rejection(
+        &self,
+        metadata: &mut Metadata,
+        scope: &CredentialScope,
+        signature: &str,
+    ) -> Result<()> {
+        let store = &self.cache.sessions.store;
+        let account = rejection_account(scope, signature)?;
+        if !metadata.credential_accounts.contains(&account) {
+            if metadata.credential_accounts.len() >= 2048 {
+                return Err(EndpointError::Storage);
+            }
+            metadata.credential_accounts.push(account.clone());
+            store.write(metadata)?;
+        }
+        if store.credentials().get(&account)?.is_none() {
+            store.credentials().set(&account, b"rejected")?;
+        }
+        Ok(())
     }
     fn check_scope(&self, metadata: &Metadata, scope: &CredentialScope) -> Result<()> {
         check_identity(metadata, scope)?;
@@ -609,6 +647,7 @@ impl NativeCredentials {
             return Err(EndpointError::UpstreamRequired);
         }
         let scope = CredentialScope {
+            refusal: self.refusal(&session.metadata, &mcp.definition.id)?,
             session,
             mcp: mcp.clone(),
             revision: snapshot.snapshot.revision,

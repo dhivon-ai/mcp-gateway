@@ -21,6 +21,13 @@ impl CredentialKind {
 
 /// Small safe seam for deterministic tests; production has no plaintext fallback.
 pub trait CredentialStore: Send + Sync {
+    /// Protected per-head decision observed at the start of an online request.
+    fn refusal_stamp(&self, _account: &str) -> Result<Option<uuid::Uuid>> {
+        Ok(None)
+    }
+    fn refuse_cached_head(&self, _account: &str) -> Result<()> {
+        Err(EndpointError::Unsupported)
+    }
     fn get(&self, account: &str) -> Result<Option<Zeroizing<Vec<u8>>>>;
     fn set(&self, account: &str, value: &[u8]) -> Result<()>;
     fn delete(&self, account: &str) -> Result<()>;

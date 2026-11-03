@@ -404,6 +404,7 @@ fn switching_keys_can_restart_the_version_and_late_old_rejection_cannot_poison_i
         .cached_scope(&proof, &fixture.snapshot.mcps[0])
         .expect("scope");
     let old = fixture.native.load(&scope).expect("old head").signature();
+    let superseded = scope;
     fixture.snapshot.mcps[0].secret = Some(SecretRef {
         id: Uuid::new_v4().to_string(),
         key: "OTHER_OWNED_KEY".into(),
@@ -415,6 +416,12 @@ fn switching_keys_can_restart_the_version_and_late_old_rejection_cannot_poison_i
         .native
         .cached_scope(&proof, &fixture.snapshot.mcps[0])
         .expect("new key scope");
+    assert!(matches!(
+        fixture
+            .native
+            .reject(&superseded, None, CredentialFault::Required),
+        Err(EndpointError::IdentityChanged)
+    ));
     fixture
         .native
         .reject(&scope, Some(&old), CredentialFault::Rejected)
@@ -686,8 +693,8 @@ fn invalid_metadata_write_preserves_the_last_readable_identity() {
 }
 
 #[cfg(target_os = "macos")]
-#[tokio::test]
-async fn one_authenticated_pull_repairs_only_damaged_bearer_and_preserves_rejection() {
+mod native_http {
+    use super::*;
     use axum::{
         Router,
         http::{HeaderMap, StatusCode},
@@ -698,84 +705,277 @@ async fn one_authenticated_pull_repairs_only_damaged_bearer_and_preserves_reject
         remote_credentials::RemoteCredentials,
         sync::{NativeTransport, SyncEngine},
     };
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
-        .await
-        .expect("fixture port");
-    let origin = format!("http://{}", listener.local_addr().expect("address"));
-    let f = Fixture::with_store(false, true, &origin);
-    let reads = Arc::new(AtomicUsize::new(0));
-    let count = reads.clone();
-    let reply = serde_json::to_value(f.credential(1)).expect("synthetic bearer");
-    let app = Router::new().route(
-        "/api/endpoint/credentials/{id}",
-        post(move |headers: HeaderMap| {
-            let reply = reply.clone();
-            let count = count.clone();
-            async move {
-                assert_eq!(headers["authorization"], "Bearer private-central-fixture");
-                let n = count.fetch_add(1, Ordering::SeqCst);
-                (
-                    if n == 1 {
-                        StatusCode::SERVICE_UNAVAILABLE
-                    } else {
-                        StatusCode::OK
-                    },
-                    axum::Json(reply),
+    use std::{
+        path::Path,
+        sync::atomic::{AtomicU16, AtomicUsize, Ordering},
+    };
+
+    async fn endpoint(second_mcp: bool) -> (Fixture, Arc<AtomicU16>, Arc<AtomicUsize>) {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("fixture port");
+        let origin = format!("http://{}", listener.local_addr().expect("address"));
+        let mut f = Fixture::with_store(false, true, &origin);
+        if second_mcp {
+            let mut second = f.snapshot.mcps[0].clone();
+            second.definition.id = "another-mcp".into();
+            f.snapshot.mcps.push(second);
+            f.change(true);
+        }
+        let status = Arc::new(AtomicU16::new(StatusCode::OK.as_u16()));
+        let response_status = status.clone();
+        let reads = Arc::new(AtomicUsize::new(0));
+        let count = reads.clone();
+        let reply = serde_json::to_value(f.credential(1)).expect("synthetic bearer");
+        let app = Router::new().route(
+            "/api/endpoint/credentials/{id}",
+            post(move |headers: HeaderMap| {
+                let reply = reply.clone();
+                let count = count.clone();
+                let status = response_status.load(Ordering::SeqCst);
+                async move {
+                    assert_eq!(headers["authorization"], "Bearer private-central-fixture");
+                    count.fetch_add(1, Ordering::SeqCst);
+                    (
+                        StatusCode::from_u16(status).expect("fixture HTTP status"),
+                        axum::Json(reply),
+                    )
+                }
+            }),
+        );
+        tokio::spawn(async move {
+            axum::serve(listener, app).await.expect("fixture service");
+        });
+        (f, status, reads)
+    }
+
+    fn sealed_file(store: &StateStore, name: &str) -> PathBuf {
+        let len = store
+            .credentials()
+            .get(name)
+            .expect("read protected fixture")
+            .expect("current record")
+            .len() as u64
+            + 36;
+        let matches: Vec<_> = std::fs::read_dir(store.root().join("endpoint-v2"))
+            .expect("sealed fixture directory")
+            .flatten()
+            .filter(|e| {
+                e.file_name().to_string_lossy().starts_with("record-")
+                    && e.metadata().expect("record size").len() == len
+            })
+            .map(|e| e.path())
+            .collect();
+        assert_eq!(
+            matches.len(),
+            1,
+            "fixture must identify exactly one sealed record"
+        );
+        matches.into_iter().next().expect("unique matching path")
+    }
+    fn damage(path: PathBuf) -> (PathBuf, Vec<u8>) {
+        let original = std::fs::read(&path).expect("read sealed fixture record");
+        std::fs::write(&path, b"damaged").expect("damage fixture record");
+        (path, original)
+    }
+
+    fn resolver(cache: SnapshotCache) -> RemoteCredentials {
+        RemoteCredentials::new(SyncEngine::new(cache, Arc::new(NativeTransport)))
+    }
+
+    #[tokio::test]
+    async fn one_authenticated_pull_repairs_only_damaged_bearer_and_preserves_rejection() {
+        let (f, status, reads) = endpoint(false).await;
+        let resolver = resolver(f.cache.clone());
+        let snapshot = f.cache.latest().expect("validated config");
+        let mcp = &f.snapshot.mcps[0];
+        let first = resolver
+            .resolve(&snapshot, mcp)
+            .await
+            .expect("online resolution");
+        let store = &f.cache.sessions.store;
+        let account = &store.read().expect("identity").upstream_heads[&mcp.definition.id];
+        let damaged = sealed_file(store, account);
+        std::fs::write(&damaged, b"corrupt").expect("damage bearer fixture");
+        status.store(503, Ordering::SeqCst);
+        assert!(
+            resolver.resolve(&snapshot, mcp).await.is_err(),
+            "unavailable control plane cannot repair"
+        );
+        status.store(200, Ordering::SeqCst);
+        let repaired = resolver
+            .resolve(&snapshot, mcp)
+            .await
+            .expect("fresh authenticated pull");
+        assert_eq!(first.binding, repaired.binding);
+        assert!(!damaged.exists());
+        assert_eq!(reads.load(Ordering::SeqCst), 3);
+        resolver.rejected(snapshot.generation, &mcp.definition.id, &repaired.binding);
+        assert!(
+            resolver.resolve(&snapshot, mcp).await.is_err(),
+            "same rejected token remains fenced"
+        );
+        f.time.advance(3600, true);
+        assert!(
+            f.cache.latest().is_err(),
+            "repair did not extend configuration lease"
+        );
+    }
+
+    #[tokio::test]
+    async fn server_refusal_survives_restored_ciphertexts_and_an_offline_restart() {
+        let (f, status, _) = endpoint(true).await;
+        let client = resolver(f.cache.clone());
+        let snapshot = f.cache.latest().expect("current policy");
+        let mcp = &snapshot.snapshot.mcps[0];
+        let unrelated = &snapshot.snapshot.mcps[1];
+        let lease = client
+            .resolve(&snapshot, mcp)
+            .await
+            .expect("first authorized bearer");
+        let store = &f.cache.sessions.store;
+        let account = &store.read().expect("current head").upstream_heads[&mcp.definition.id];
+        // Identify the two fixture files before provisioning the other MCP.
+        let body = sealed_file(store, account);
+        let guard = sealed_file(
+            store,
+            &account.replace(":upstream-head:", ":upstream-guard:"),
+        );
+        let unrelated_lease = client
+            .resolve(&snapshot, unrelated)
+            .await
+            .expect("independent bearer");
+        let before_denial = client
+            .native
+            .scope(&snapshot, mcp)
+            .expect("request in flight");
+        let records = [body, guard].map(damage);
+        status.store(403, Ordering::SeqCst);
+        assert!(client.resolve(&snapshot, mcp).await.is_err());
+        let before_second_denial = client
+            .native
+            .scope(&snapshot, mcp)
+            .expect("request during repair");
+        assert!(client.resolve(&snapshot, mcp).await.is_err());
+        for (path, bytes) in &records {
+            std::fs::write(path, bytes).expect("restore ciphertext");
+        }
+        for stale in [before_denial, before_second_denial] {
+            assert!(matches!(
+                client
+                    .native
+                    .publish(&stale, f.credential(1), f.time.sample().expect("clock")),
+                Err(EndpointError::IdentityChanged)
+            ));
+        }
+        status.store(503, Ordering::SeqCst);
+        assert!(!client.cached_ready(&snapshot, mcp, &lease.binding));
+        assert_eq!(
+            client
+                .resolve(&snapshot, unrelated)
+                .await
+                .expect("healthy offline grant")
+                .binding,
+            unrelated_lease.binding
+        );
+        let output =
+            tokio::process::Command::new(std::env::current_exe().expect("current test executable"))
+                .args(["--exact", "native_http::offline_reader", "--ignored"])
+                .env("DHIVON_TEST_REFUSAL_ROOT", &f.root)
+                .env(
+                    "DHIVON_TEST_REFUSAL_CLOCK",
+                    serde_json::to_string(&f.time.sample().expect("sample fixture clock"))
+                        .expect("encode clock"),
                 )
-            }
-        }),
-    );
-    let server = tokio::spawn(async move {
-        axum::serve(listener, app).await.expect("fixture service");
-    });
-    let resolver =
-        RemoteCredentials::new(SyncEngine::new(f.cache.clone(), Arc::new(NativeTransport)));
-    let snapshot = f.cache.latest().expect("validated config");
-    let mcp = &f.snapshot.mcps[0];
-    let first = resolver
-        .resolve(&snapshot, mcp)
-        .await
-        .expect("online resolution");
-    let store = &f.cache.sessions.store;
-    let account = &store.read().expect("identity").upstream_heads[&mcp.definition.id];
-    let size = store
-        .credentials()
-        .get(account)
-        .expect("read")
-        .expect("current head")
-        .len()
-        + 36;
-    let matching: Vec<_> = std::fs::read_dir(f.root.join("endpoint-v2"))
-        .expect("records")
-        .flatten()
-        .filter(|e| {
-            e.file_name().to_string_lossy().starts_with("record-")
-                && e.metadata().is_ok_and(|m| m.len() == size as u64)
-        })
-        .collect();
-    assert_eq!(matching.len(), 1);
-    std::fs::write(matching[0].path(), b"corrupt").expect("inject dedicated record damage");
-    assert!(
-        resolver.resolve(&snapshot, mcp).await.is_err(),
-        "unavailable control plane cannot repair"
-    );
-    let repaired = resolver
-        .resolve(&snapshot, mcp)
-        .await
-        .expect("fresh authenticated pull");
-    assert_eq!(first.binding, repaired.binding);
-    assert!(!matching[0].path().exists());
-    assert_eq!(reads.load(Ordering::SeqCst), 3);
-    resolver.rejected(snapshot.generation, &mcp.definition.id, &repaired.binding);
-    assert!(
-        resolver.resolve(&snapshot, mcp).await.is_err(),
-        "same rejected token remains fenced"
-    );
-    f.time.advance(3600, true);
-    assert!(
-        f.cache.latest().is_err(),
-        "repair did not extend configuration lease"
-    );
-    server.abort();
+                .output()
+                .await
+                .expect("run restarted reader");
+        assert!(
+            output.status.success() && String::from_utf8_lossy(&output.stdout).contains("1 passed"),
+            "{}",
+            String::from_utf8_lossy(&output.stdout)
+        );
+        // Only the guard needs to survive for a fresh, checked publication.
+        std::fs::write(&records[0].0, b"damaged").expect("damage bearer again");
+        status.store(200, Ordering::SeqCst);
+        assert_eq!(
+            client
+                .resolve(&snapshot, mcp)
+                .await
+                .expect("fresh authorization")
+                .binding,
+            lease.binding
+        );
+
+        // An upstream refusal is permanent for the exact provider signature.
+        let account = &store.read().expect("current head").upstream_heads[&mcp.definition.id];
+        let paths = [
+            sealed_file(store, account),
+            sealed_file(
+                store,
+                &account.replace(":upstream-head:", ":upstream-guard:"),
+            ),
+        ];
+        let saved = paths.map(damage);
+        client.rejected(snapshot.generation, &mcp.definition.id, &lease.binding);
+        for (path, bytes) in saved {
+            std::fs::write(path, bytes).expect("restore ciphertext");
+        }
+        assert!(!client.cached_ready(&snapshot, mcp, &lease.binding));
+        assert!(client.resolve(&snapshot, mcp).await.is_err());
+        assert!(client.cached_ready(&snapshot, unrelated, &unrelated_lease.binding));
+        let old_scope = client
+            .native
+            .scope(&snapshot, mcp)
+            .expect("current request scope");
+        store
+            .locked(|m| store.clear_locked(m))
+            .expect("invalidate login");
+        assert!(matches!(
+            client
+                .native
+                .reject(&old_scope, None, CredentialFault::Required),
+            Err(EndpointError::IdentityChanged)
+        ));
+    }
+
+    #[test]
+    #[ignore = "started by the refusal test with its private fixture"]
+    fn offline_reader() {
+        let root = std::env::var("DHIVON_TEST_REFUSAL_ROOT").expect("parent fixture root");
+        let clock = serde_json::from_str(
+            &std::env::var("DHIVON_TEST_REFUSAL_CLOCK").expect("parent fixture clock"),
+        )
+        .expect("decode clock sample");
+        let keys = dhivon_mcp_gateway_cli::credentials::MacKeychain::fixture(Path::new(&root))
+            .expect("fixture service");
+        let cache = SnapshotCache::new(
+            SessionManager::new(
+                StateStore::native(root.into(), keys).expect("open existing installation"),
+                true,
+            ),
+            Arc::new(Time(Mutex::new(clock))),
+        );
+        let snapshot = cache.latest().expect("restart policy");
+        let native = NativeCredentials::new(cache);
+        let scopes: Vec<_> = snapshot
+            .snapshot
+            .mcps
+            .iter()
+            .map(|mcp| {
+                native
+                    .cached_scope(&snapshot, mcp)
+                    .expect("authorized scope")
+            })
+            .collect();
+        assert!(matches!(
+            native.load(&scopes[0]),
+            Err(EndpointError::UpstreamRequired)
+        ));
+        native
+            .load(&scopes[1])
+            .expect("unrelated cached record")
+            .access(clock)
+            .expect("usable offline bearer");
+    }
 }
