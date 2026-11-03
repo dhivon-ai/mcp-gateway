@@ -107,7 +107,10 @@ async fn server() -> Server {
             "/api/endpoint/login",
             post(
                 |State(s): State<Central>, axum::Json(input): axum::Json<LoginRequest>| async move {
-                    axum::Json(EndpointSession {
+                    if input.password != "never-persist-this-password" {
+                        return Err(StatusCode::UNAUTHORIZED);
+                    }
+                    Ok(axum::Json(EndpointSession {
                         token: format!(
                             "private-central-token-{}",
                             input.email.split('@').next().expect("fixture local part")
@@ -125,7 +128,7 @@ async fn server() -> Server {
                         },
                         deployment_id: s.deployment,
                         expires_at: epoch().expect("clock") + 43200,
-                    })
+                    }))
                 },
             ),
         )
@@ -836,6 +839,12 @@ fn mcp_stdout_and_command_contract() {
         assert!(!output.status.success());
         assert!(output.stdout.is_empty());
     }
+    let retired = std::process::Command::new(binary)
+        .args(["fixture-retire", "--fixture-state-path"])
+        .arg(&root)
+        .status()
+        .expect("retire cold fixture");
+    assert!(retired.success());
     std::fs::remove_dir_all(root).expect("owned cold fixture cleanup");
 }
 
@@ -993,6 +1002,12 @@ async fn real_cli_loopback_development_page_and_clean_stdio() {
         .expect("status");
     assert!(status.status.success());
     assert!(String::from_utf8_lossy(&status.stdout).contains("login_required"));
+    let retired = std::process::Command::new(binary)
+        .args(["fixture-retire", "--fixture-state-path"])
+        .arg(fixture_home.join("state"))
+        .status()
+        .expect("retire UI fixture");
+    assert!(retired.success());
     std::fs::remove_dir_all(fixture_home).expect("clean fixture home");
 }
 
@@ -1188,4 +1203,111 @@ async fn unreadable_index_requires_independent_online_sign_in() {
     manager.logout().await.expect("logout");
     StateStore::retire_fixture(root.clone()).expect("verified cleanup");
     std::fs::remove_dir_all(root).expect("fixture cleanup");
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn damaged_marker_preserves_session_and_lost_directory_requires_new_login() {
+    use std::{
+        fs,
+        os::unix::fs::{DirBuilderExt, PermissionsExt, symlink},
+    };
+    let fixture = std::env::temp_dir()
+        .canonicalize()
+        .expect("temp")
+        .join(format!("dhivon-bootstrap-{}", Uuid::new_v4()));
+    let root = fixture.join("active");
+    let saved = fixture.join("saved");
+    let recovered = fixture.join("recovered");
+    fs::DirBuilder::new()
+        .recursive(true)
+        .mode(0o700)
+        .create(&root)
+        .expect("private fixture");
+    let open = || StateStore::native(root.clone(), MacKeychain::fixture(&root).expect("scope"));
+    let server = server().await;
+    let manager = SessionManager::new(open().expect("new store"), true);
+    manager
+        .login(&server.client, login("alice"))
+        .await
+        .expect("original login");
+    let previous = manager.load().expect("original session").metadata;
+    let marker = root.join("identity.json");
+    let fence = fs::read(&marker).expect("format marker");
+    fs::write(&marker, vec![b'X'; 65537]).expect("oversized marker");
+    fs::set_permissions(&marker, fs::Permissions::from_mode(0o644)).expect("unsafe mode");
+    assert!(matches!(open(), Err(EndpointError::Storage)));
+    fs::set_permissions(&marker, fs::Permissions::from_mode(0o600)).expect("restore mode");
+    let target = fixture.join("original-marker");
+    fs::rename(&marker, &target).expect("move ordinary file");
+    symlink(&target, &marker).expect("unsafe symlink");
+    assert!(matches!(open(), Err(EndpointError::Storage)));
+    fs::remove_file(&marker).expect("unlink symlink");
+    fs::rename(&target, &marker).expect("return ordinary file");
+
+    let restart = SessionManager::new(open().expect("healthy encrypted state"), true);
+    assert_eq!(fs::read(&marker).expect("repaired marker"), fence);
+    let retained = restart.load().expect("original session still usable");
+    assert_eq!(retained.metadata.generation, previous.generation);
+    assert_eq!(retained.credentials.user.id, server.state.alice);
+
+    fs::rename(&root, &saved).expect("lose entire directory");
+    fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&root)
+        .expect("empty fixture");
+    let restart = SessionManager::new(open().expect("recovery bootstrap"), true)
+        .select_server(&server.client)
+        .await
+        .expect("explicit server selection");
+    assert_eq!(
+        restart.status().expect("recovery status").state,
+        "login_required"
+    );
+    let rejected = LoginRequest {
+        password: "wrong-password".into(),
+        ..login("bob")
+    };
+    assert!(matches!(
+        restart.login(&server.client, rejected).await,
+        Err(EndpointError::Rejected)
+    ));
+    assert!(restart.load().is_err());
+
+    // The original encrypted session still authenticates with the untouched
+    // master after a refused login. After a successful rebuild it must not.
+    fs::rename(&root, &recovered).expect("set aside empty store");
+    fs::rename(&saved, &root).expect("return original store");
+    assert_eq!(
+        manager
+            .load()
+            .expect("master preserved")
+            .metadata
+            .generation,
+        previous.generation
+    );
+    fs::rename(&root, &saved).expect("set aside original store");
+    fs::rename(&recovered, &root).expect("return empty store");
+    restart
+        .login(&server.client, login("bob"))
+        .await
+        .expect("independent login");
+    let new_session = restart.load().expect("rebuilt session");
+    assert_ne!(
+        new_session.metadata.installation_id,
+        previous.installation_id
+    );
+    assert_eq!(new_session.credentials.user.id, server.state.bob);
+    fs::rename(&root, &recovered).expect("set aside rebuilt store");
+    fs::rename(&saved, &root).expect("replay original store");
+    let replay = SessionManager::new(open().expect("replay bootstrap"), true);
+    assert_eq!(
+        replay.status().expect("restored files denied").state,
+        "login_required"
+    );
+    fs::rename(&root, &saved).expect("remove stale store");
+    fs::rename(&recovered, &root).expect("return rebuilt store");
+    restart.logout().await.expect("logout");
+    StateStore::retire_fixture(root).expect("verified key cleanup");
+    fs::remove_dir_all(fixture).expect("fixture cleanup");
 }
