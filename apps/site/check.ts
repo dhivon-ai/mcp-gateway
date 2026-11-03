@@ -63,6 +63,8 @@ try {
   const expected = new Set([
     "index.html",
     "404.html",
+    "sitemap.xml",
+    "robots.txt",
     "_redirects",
     "_routes.json",
     "style.css",

@@ -28,6 +28,23 @@ const escape = (value: string) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
+const origin = "https://mcp.gateway.dhivon.ai";
+const guidePath = (slug: string) =>
+  slug === "index" ? "/docs/" : "/docs/" + slug;
+const pagePaths = ["/", ...Object.keys(guides).map(guidePath)];
+await writeFile(
+  join(output, "sitemap.xml"),
+  '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    pagePaths
+      .map((path) => `  <url><loc>${origin}${escape(path)}</loc></url>`)
+      .join("\n") +
+    "\n</urlset>\n",
+);
+await writeFile(
+  join(output, "robots.txt"),
+  `User-agent: *\nAllow: /\n\nSitemap: ${origin}/sitemap.xml\n`,
+);
+
 const navigation = [
   "index",
   "quickstart",
@@ -54,6 +71,7 @@ const footer = `<footer>
 <span>MCP Gateway, a product of Dhivon AI.</span>
 </a>
 <nav aria-label="Footer">
+<a href="https://dhivon.ai/sitemap">Dhivon sites</a>
 <a href="/docs/index.html">Documentation</a>
 <a href="/docs/compatibility.html">Compatibility</a>
 <a href="/docs/roadmap.html">Roadmap</a>
@@ -61,7 +79,7 @@ const footer = `<footer>
 </nav>
 <p>Copyright 2026 Dhivon AI · <a href="/LICENSE.txt">Apache-2.0</a> · <a href="/NOTICE.txt">Notices</a></p>
 </footer>`;
-function page(title: string, description: string, body: string) {
+function page(title: string, description: string, body: string, path?: string) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -69,6 +87,7 @@ function page(title: string, description: string, body: string) {
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escape(title)} · Dhivon MCP Gateway</title>
 <meta name="description" content="${escape(description)}">
+${path ? `<link rel="canonical" href="${origin}${escape(path)}">` : '<meta name="robots" content="noindex">'}
 <meta name="theme-color" content="#102C4C">
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
@@ -190,6 +209,7 @@ await writeFile(
     "One connection. Clear control.",
     "Self-hosted MCP access for teams. Administrators set policy, developers opt in, and agents connect through one local gateway.",
     home,
+    "/",
   ),
 );
 
@@ -248,13 +268,25 @@ for (const current of Object.keys(guides)) {
         `<a href="/docs/${slug}.html"${current === slug ? ' aria-current="page"' : ""}>${guides[slug]}</a>`,
     )
     .join("");
+  const directory =
+    current === "index"
+      ? '<h2 id="all-guides">All guides</h2><ul>' +
+        Object.entries(guides)
+          .filter(([slug]) => slug !== "index")
+          .map(
+            ([slug, label]) =>
+              `<li><a href="/docs/${slug}.html">${escape(label)}</a></li>`,
+          )
+          .join("") +
+        "</ul>"
+      : "";
   const body = `<main id="main" class="docs-layout">
-<article class="docs-article">${html}</article>
+<article class="docs-article">${html}${directory}</article>
 <aside><nav aria-label="Documentation">${sidebar}</nav></aside>
 </main>`;
   await writeFile(
     target,
-    page(title, title + " for Dhivon MCP Gateway.", body),
+    page(title, title + " for Dhivon MCP Gateway.", body, guidePath(current)),
   );
 }
 const redirects = Object.entries(movedGuides).flatMap(([old, destination]) =>

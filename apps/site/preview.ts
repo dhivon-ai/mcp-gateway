@@ -7,6 +7,7 @@ const root = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE
   ? resolve(process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE, "site")
   : resolve(import.meta.dirname, "dist");
 const mime: Record<string, string> = {
+  ".xml": "application/xml; charset=utf-8",
   ".html": "text/html; charset=utf-8",
   ".css": "text/css",
   ".svg": "image/svg+xml",
