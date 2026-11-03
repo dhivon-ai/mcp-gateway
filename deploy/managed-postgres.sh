@@ -28,7 +28,8 @@ else
   [[ ! -L $stage ]] || refuse "invalid staging path"
   rm -rf -- "$stage"
   install -d -o postgres -g postgres -m 700 "$stage"
-  gosu postgres initdb -D "$stage" -U dhivon --pwfile=/dev/stdin --auth-local=trust --auth-host=scram-sha-256 < "$auth"
+  # initdb reopens its pwfile. Give it a postgres-owned pipe backed by the inherited private fd.
+  gosu postgres bash -o pipefail -c 'cat | initdb -D "$1" -U dhivon --pwfile=/dev/stdin --auth-local=trust --auth-host=scram-sha-256' _ "$stage" < "$auth"
   echo 'host all all all scram-sha-256' >> "$stage/pg_hba.conf"
   echo "listen_addresses = '*'" >> "$stage/postgresql.conf"
   gosu postgres pg_ctl -D "$stage" -o "-c listen_addresses=''" -w start

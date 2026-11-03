@@ -5,6 +5,34 @@ use std::{process::Stdio, time::Duration};
 use tokio::{io::AsyncWriteExt, process::Command};
 use uuid::Uuid;
 
+#[test]
+fn help_and_usage_errors_hide_database_credentials() {
+    let password = "database-password-sentinel";
+    let dsn = format!("postgres://dhivon:{password}@postgres:5432/dhivon");
+    for (args, success) in [
+        (&["--help"][..], true),
+        (&["bootstrap-admin", "--help"][..], true),
+        (&["--unknown"][..], false),
+        (&["bootstrap-admin"][..], false),
+    ] {
+        let output = std::process::Command::new(env!("CARGO_BIN_EXE_dhivon-mcp-gateway-server"))
+            .env("DATABASE_URL", &dsn)
+            .args(args)
+            .output()
+            .expect("server invocation");
+        assert_eq!(output.status.success(), success);
+        for stream in [&output.stdout, &output.stderr] {
+            assert!(
+                !String::from_utf8_lossy(stream).contains(password),
+                "{args:?}"
+            );
+        }
+        if args == ["--help"] {
+            assert!(String::from_utf8_lossy(&output.stdout).contains("--database-url"));
+        }
+    }
+}
+
 #[tokio::test]
 #[ignore = "requires isolated TEST_DATABASE_URL"]
 async fn operator_commands_and_live_http_keep_credentials_private() {

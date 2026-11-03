@@ -18,7 +18,7 @@ struct Args {
         default_value = "127.0.0.1:8080"
     )]
     bind: SocketAddr,
-    #[arg(long, env = "DATABASE_URL")]
+    #[arg(long, env = "DATABASE_URL", hide_env_values = true)]
     database_url: Option<String>,
     #[arg(long, env = "DHIVON_MCP_GATEWAY_PUBLIC_URL")]
     public_url: Option<String>,
