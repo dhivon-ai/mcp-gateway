@@ -13,3 +13,19 @@ Internal verification for the guides and root Compose stack at product commit `0
 The guide paths are rendered independently of the authenticated applications. The HTTPS check used a local test certificate trusted by the test client. The separate native tool journey used the documented isolated loopback test exception. Neither test provisions public DNS or certifies a named commercial agent. The local public-site preview was used for the Chrome review.
 
 Reproduction checks include `bash scripts/verify-compose-setup.sh` with an owned build directory, `pnpm --filter @dhivon/mcp-gateway-site typecheck`, `pnpm exec prettier --check apps/site`, `pnpm site:build`, `node apps/site/check.ts` and the emitted notice checker. Server rustfmt, strict Clippy, ordinary server tests and all 11 isolated PostgreSQL-backed cases passed.
+
+## Release blocker verification, November 3
+
+The operator changes were verified at `44704dd`. Mac packaging used the repeat-build changes at `56af458`, the offline guide packager, and the same canonical deployment and backup guides. The verified archive is identified by its SHA-256 below.
+
+| Case | Verification |
+| --- | --- |
+| Linux first start and restart | In the pinned Postgres 18.6 linux/arm64 image, the operator owned the private directory (0700) and password (0600) as UID 1001. PostgreSQL ran as UID 999. Two starts on Linux tmpfs accepted authenticated TCP queries and retained the same password and cluster identity. |
+| Database URL disclosure | The built server and managed image passed top-level help, subcommand help and two invalid invocations without the synthetic password in stdout or stderr. |
+| Configuration interrupted or contested | Killed the helper before and after private publication. The same checkout recovered. Concurrent checkouts, a second config location and a foreign directory could not replace the owner’s inputs. The eight setup regression cases passed on Linux and macOS. |
+| Invalid email or origin | A double-dot email and port 99999 failed before settings publication. From the actual guide, a plus-addressed administrator signed in at an explicit HTTPS port. The private deployment survived a restart and authenticated reads of a saved bearer credential. |
+| Backup failure and restore | Immediate failure, partial output, interruption, name collision and repeated success preserved earlier dumps. A real stopped-database export also preserved the prior archive. Restored the successful owner-only dump to fresh PostgreSQL, invalidated copied sessions and verified the same saved credential through HTTPS using the matching separately held vault. |
+| Repeat Mac build | With pinned tools on Apple Silicon macOS 27.0.1, two default builds took 58.34 s and 25.52 s. The second compiled one crate. Both used the same 767,248 KiB Cargo target and produced independent release directories. Each extracted CLI served the expected UI for that build. Explicit output overrides preserved unrelated files. |
+| Archive onboarding | The final unsigned archive had SHA-256 `8d40699ffb6480488edad6460fd57c2d566112596371145f81ffe7db1aac4383`. Extracted outside the checkout, 37 local links and anchors resolved across all 14 bundled guides. Checksum, notices and version passed. From the extracted CLI the assigned echo tool returned its message, and the same alias was denied after disable. The creating CLI logged out and retired its isolated Keychain item. |
+
+Both guide journeys passed keyboard and navigation checks in Chrome at 1440×900 and 390×844. Homepage screenshots and destinations matched the baseline. The static publication check covered 33 files and the retired ticket returned 404. The HTTPS test used a local test certificate and the native STDIO test used the isolated loopback fixture described above.
