@@ -3,8 +3,8 @@
   "trackId": "single-key-endpoint-store",
   "title": "Single Keychain master key for all local gateway state",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "completed",
+  "checkpoint": "completed",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -48,6 +48,23 @@
       "bugs": [
         "tracks/single-key-endpoint-store/bugs/review-2.md"
       ]
+    },
+    {
+      "cycle": 3,
+      "reviewedAt": "2026-11-03T05:17:07.006Z",
+      "outcome": "clean",
+      "executionId": "2026-11-03T05-05-27-563Z",
+      "planRevision": 3,
+      "graphDigest": "cb73910eb97d30432bf3f75d2a93479a51f4ba84117cfbd64dec44b9f364c091",
+      "reviewedHead": "41d8c65a1ac2720a0b1919b91172ce00e21345f2",
+      "commitRange": "6ad4dae471d13815d7ca808968adb1090ed87d5d..41d8c65a1ac2720a0b1919b91172ce00e21345f2",
+      "reviewEvidence": "Review cycle 3 found no outstanding issues in the approved current-format scope. Inspected 6ad4dae..41d8c65, credential publication, refusal and recovery callers, and both regression suites. Four focused regressions passed on rerun. The checksum-verified arm64 package rejected the delayed first 200, the later 403 and cold 503, then permitted a fresh 200 while preserving unrelated access in all four processes. The packaged console served sign-in for three damaged marker variants with an unreadable index, preserved the master on a wrong password, rebuilt on independent authentication, and denied directory replay. Synthetic fixtures retired. Prior integrated validation at the same product HEAD passed 72 CLI tests, PostgreSQL OAuth, formatting and Clippy.",
+      "approvalConfirmation": {
+        "status": "approved",
+        "proposalDigest": "2354a5c0947f93935e6c1f5c728339e0ab3bac702cc4fc16322eef6832a9b54b",
+        "confirmedAt": "2026-11-03T05:18:37.212Z",
+        "method": "explicit-apply"
+      }
     }
   ],
   "history": [
@@ -74,6 +91,10 @@
     {
       "action": "implement",
       "commit": "op:implement-22ac7e9e3602e7acdddad97a7fd887e3"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-217b48cf489b8b0184eadf95794130d1"
     }
   ]
 }
