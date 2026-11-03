@@ -445,6 +445,48 @@ fn switching_keys_can_restart_the_version_and_late_old_rejection_cannot_poison_i
 }
 
 #[test]
+fn interrupted_first_refusal_fences_an_already_pending_first_fetch() {
+    let f = Fixture::new(false);
+    *f.memory.fail_head.lock().expect("inject head write fault") = true;
+    assert!(f.publish(f.credential(1)).is_err());
+    let snapshot = f.cache.latest().expect("policy");
+    let scope = f
+        .native
+        .scope(&snapshot, &f.snapshot.mcps[0])
+        .expect("pending first fetch");
+    assert!(scope.session.metadata.upstream_heads.is_empty());
+    assert!(
+        f.native
+            .reject(&scope, None, CredentialFault::Required)
+            .is_err()
+    );
+    *f.memory.fail_head.lock().expect("restore writes") = false;
+    assert!(matches!(
+        f.native
+            .publish(&scope, f.credential(1), f.time.sample().expect("clock")),
+        Err(EndpointError::IdentityChanged)
+    ));
+    f.publish(f.credential(1)).expect("authorized recovery");
+}
+
+#[test]
+fn concurrent_identical_first_grants_reuse_the_selected_head() {
+    let f = Fixture::new(false);
+    let snapshot = f.cache.latest().expect("policy");
+    let scope = f
+        .native
+        .scope(&snapshot, &f.snapshot.mcps[0])
+        .expect("first fetch");
+    f.publish(f.credential(1)).expect("concurrent grant");
+    let store = &f.cache.sessions.store;
+    let selected = store.read().expect("identity").upstream_heads;
+    f.native
+        .publish(&scope, f.credential(1), f.time.sample().expect("clock"))
+        .expect("identical response");
+    assert_eq!(store.read().expect("identity").upstream_heads, selected);
+}
+
+#[test]
 fn failed_keychain_publication_denies_until_complete_online_recovery() {
     let fixture = Fixture::new(false);
     fixture.publish(fixture.credential(1)).expect("token");
@@ -710,7 +752,16 @@ mod native_http {
         sync::atomic::{AtomicU16, AtomicUsize, Ordering},
     };
 
-    async fn endpoint(second_mcp: bool) -> (Fixture, Arc<AtomicU16>, Arc<AtomicUsize>) {
+    #[derive(Default)]
+    struct HeldResponse {
+        entered: tokio::sync::Notify,
+        release: tokio::sync::Notify,
+    }
+
+    async fn endpoint(
+        second_mcp: bool,
+        hold_first: Option<Arc<HeldResponse>>,
+    ) -> (Fixture, Arc<AtomicU16>, Arc<AtomicUsize>) {
         let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
             .await
             .expect("fixture port");
@@ -731,11 +782,15 @@ mod native_http {
             "/api/endpoint/credentials/{id}",
             post(move |headers: HeaderMap| {
                 let reply = reply.clone();
-                let count = count.clone();
+                let first = count.fetch_add(1, Ordering::SeqCst) == 0;
+                let hold = hold_first.clone();
                 let status = response_status.load(Ordering::SeqCst);
                 async move {
                     assert_eq!(headers["authorization"], "Bearer private-central-fixture");
-                    count.fetch_add(1, Ordering::SeqCst);
+                    if first && let Some(hold) = hold {
+                        hold.entered.notify_one();
+                        hold.release.notified().await;
+                    }
                     (
                         StatusCode::from_u16(status).expect("fixture HTTP status"),
                         axum::Json(reply),
@@ -785,7 +840,7 @@ mod native_http {
 
     #[tokio::test]
     async fn one_authenticated_pull_repairs_only_damaged_bearer_and_preserves_rejection() {
-        let (f, status, reads) = endpoint(false).await;
+        let (f, status, reads) = endpoint(false, None).await;
         let resolver = resolver(f.cache.clone());
         let snapshot = f.cache.latest().expect("validated config");
         let mcp = &f.snapshot.mcps[0];
@@ -822,9 +877,92 @@ mod native_http {
         );
     }
 
+    async fn assert_offline_restart(f: &Fixture) {
+        let output =
+            tokio::process::Command::new(std::env::current_exe().expect("current test executable"))
+                .args(["--exact", "native_http::offline_reader", "--ignored"])
+                .env("DHIVON_TEST_REFUSAL_ROOT", &f.root)
+                .env(
+                    "DHIVON_TEST_REFUSAL_CLOCK",
+                    serde_json::to_string(&f.time.sample().expect("sample fixture clock"))
+                        .expect("encode clock"),
+                )
+                .output()
+                .await
+                .expect("run restarted reader");
+        assert!(
+            output.status.success() && String::from_utf8_lossy(&output.stdout).contains("1 passed"),
+            "{}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    #[tokio::test]
+    async fn first_fetch_cannot_publish_after_an_authenticated_refusal() {
+        let hold = Arc::new(HeldResponse::default());
+        let (f, status, reads) = endpoint(true, Some(hold.clone())).await;
+        let client = resolver(f.cache.clone());
+        let snapshot = f.cache.latest().expect("current policy");
+        let mcp = &snapshot.snapshot.mcps[0];
+        let unrelated = &snapshot.snapshot.mcps[1];
+        assert!(
+            f.cache
+                .sessions
+                .store
+                .read()
+                .expect("identity")
+                .upstream_heads
+                .is_empty()
+        );
+
+        let refusal = async {
+            hold.entered.notified().await;
+            client
+                .resolve(&snapshot, unrelated)
+                .await
+                .expect("independent grant");
+            status.store(403, Ordering::SeqCst);
+            let refused = client.resolve(&snapshot, mcp).await;
+            hold.release.notify_one();
+            refused
+        };
+        let (late, refused) = tokio::time::timeout(std::time::Duration::from_secs(30), async {
+            tokio::join!(client.resolve(&snapshot, mcp), refusal)
+        })
+        .await
+        .expect("overlapping fixture requests completed");
+        assert!(matches!(
+            refused,
+            Err(dhivon_mcp_gateway_cli::aggregation::AggregateError::Authentication)
+        ));
+        assert!(matches!(
+            late,
+            Err(dhivon_mcp_gateway_cli::aggregation::AggregateError::Denied)
+        ));
+        status.store(503, Ordering::SeqCst);
+        assert!(client.resolve(&snapshot, mcp).await.is_err());
+        assert_offline_restart(&f).await;
+        assert_eq!(reads.load(Ordering::SeqCst), 6);
+        status.store(200, Ordering::SeqCst);
+        let fresh = client
+            .resolve(&snapshot, mcp)
+            .await
+            .expect("fresh authorized pull");
+        status.store(503, Ordering::SeqCst);
+        assert_eq!(
+            client
+                .resolve(&snapshot, mcp)
+                .await
+                .expect("offline grant after reauthorization")
+                .binding,
+            fresh.binding
+        );
+    }
+
     #[tokio::test]
     async fn server_refusal_survives_restored_ciphertexts_and_an_offline_restart() {
-        let (f, status, _) = endpoint(true).await;
+        let (f, status, _) = endpoint(true, None).await;
         let client = resolver(f.cache.clone());
         let snapshot = f.cache.latest().expect("current policy");
         let mcp = &snapshot.snapshot.mcps[0];
@@ -878,23 +1016,7 @@ mod native_http {
                 .binding,
             unrelated_lease.binding
         );
-        let output =
-            tokio::process::Command::new(std::env::current_exe().expect("current test executable"))
-                .args(["--exact", "native_http::offline_reader", "--ignored"])
-                .env("DHIVON_TEST_REFUSAL_ROOT", &f.root)
-                .env(
-                    "DHIVON_TEST_REFUSAL_CLOCK",
-                    serde_json::to_string(&f.time.sample().expect("sample fixture clock"))
-                        .expect("encode clock"),
-                )
-                .output()
-                .await
-                .expect("run restarted reader");
-        assert!(
-            output.status.success() && String::from_utf8_lossy(&output.stdout).contains("1 passed"),
-            "{}",
-            String::from_utf8_lossy(&output.stdout)
-        );
+        assert_offline_restart(&f).await;
         // Only the guard needs to survive for a fresh, checked publication.
         std::fs::write(&records[0].0, b"damaged").expect("damage bearer again");
         status.store(200, Ordering::SeqCst);
@@ -939,9 +1061,9 @@ mod native_http {
         ));
     }
 
-    #[test]
-    #[ignore = "started by the refusal test with its private fixture"]
-    fn offline_reader() {
+    #[tokio::test]
+    #[ignore = "started by a refusal test with its private fixture"]
+    async fn offline_reader() {
         let root = std::env::var("DHIVON_TEST_REFUSAL_ROOT").expect("parent fixture root");
         let clock = serde_json::from_str(
             &std::env::var("DHIVON_TEST_REFUSAL_CLOCK").expect("parent fixture clock"),
@@ -957,25 +1079,16 @@ mod native_http {
             Arc::new(Time(Mutex::new(clock))),
         );
         let snapshot = cache.latest().expect("restart policy");
-        let native = NativeCredentials::new(cache);
-        let scopes: Vec<_> = snapshot
-            .snapshot
-            .mcps
-            .iter()
-            .map(|mcp| {
-                native
-                    .cached_scope(&snapshot, mcp)
-                    .expect("authorized scope")
-            })
-            .collect();
-        assert!(matches!(
-            native.load(&scopes[0]),
-            Err(EndpointError::UpstreamRequired)
-        ));
-        native
-            .load(&scopes[1])
-            .expect("unrelated cached record")
-            .access(clock)
-            .expect("usable offline bearer");
+        let client = resolver(cache);
+        assert!(
+            client
+                .resolve(&snapshot, &snapshot.snapshot.mcps[0])
+                .await
+                .is_err()
+        );
+        client
+            .resolve(&snapshot, &snapshot.snapshot.mcps[1])
+            .await
+            .expect("independent offline grant");
     }
 }
