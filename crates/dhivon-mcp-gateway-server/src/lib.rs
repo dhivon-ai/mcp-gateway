@@ -46,23 +46,25 @@ pub fn epoch() -> Result<i64, AppError> {
         .as_secs();
     i64::try_from(value).map_err(|_| AppError::internal())
 }
-impl AppState {
-    pub async fn connect(database_url: &str, options: Options) -> anyhow::Result<Self> {
-        let url = dhivon_mcp_gateway_core::validate_remote_url(
-            &options.public_url,
-            options.allow_loopback_http,
-        )
-        .map_err(|_| {
+pub fn public_origin(raw: &str, allow_loopback_http: bool) -> anyhow::Result<url::Url> {
+    let url =
+        dhivon_mcp_gateway_core::validate_remote_url(raw, allow_loopback_http).map_err(|_| {
             anyhow::anyhow!(
                 "Public URL must use verified HTTPS or explicitly allowed loopback test HTTP"
             )
         })?;
+    if url.path() != "/" || url.query().is_some() {
+        anyhow::bail!("Public URL must be an origin without a path or query");
+    }
+    Ok(url)
+}
+
+impl AppState {
+    pub async fn connect(database_url: &str, options: Options) -> anyhow::Result<Self> {
+        let url = public_origin(&options.public_url, options.allow_loopback_http)?;
         let host = url
             .host_str()
             .ok_or_else(|| anyhow::anyhow!("Missing public hostname"))?;
-        if url.path() != "/" || url.query().is_some() {
-            anyhow::bail!("Public URL must be an origin without a path or query");
-        }
         let authority = match url.port() {
             Some(port) => format!("{host}:{port}"),
             None => host.to_string(),

@@ -6,7 +6,8 @@ root=$(cd "$(dirname "$0")/.." && pwd -P)
 cache=$(cd "${DHIVON_MCP_GATEWAY_BUILD_CACHE:?Set the owned build cache directory}" && pwd -P)
 dir=$(mktemp -d "$cache/compose-setup.XXXXXXXX")
 project="dhivon-setup-$(openssl rand -hex 12)"
-export DHIVON_MCP_GATEWAY_PUBLIC_URL=https://gateway.example.test
+# Exercise the shipped probe with an origin saved by an earlier setup helper.
+export DHIVON_MCP_GATEWAY_PUBLIC_URL=https://xn--fa-hia.example.test:08443
 export DHIVON_MCP_GATEWAY_SETUP_DIR=$dir DHIVON_MCP_GATEWAY_PORT=0
 export DHIVON_MCP_GATEWAY_UID="$(id -u)" DHIVON_MCP_GATEWAY_GID="$(id -g)"
 compose() { docker compose --env-file /dev/null -p "$project" -f "$root/compose.yaml" "$@"; }

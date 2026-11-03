@@ -32,6 +32,8 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Print the configured public origin as used by the HTTP service.
+    PublicOrigin,
     /// Generate a private external encryption key file without displaying its value.
     GenerateVaultKey {
         #[arg(long)]
@@ -61,6 +63,15 @@ async fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let args = Args::parse();
+    if matches!(args.command, Some(Command::PublicOrigin)) {
+        let raw = args
+            .public_url
+            .as_deref()
+            .ok_or_else(|| anyhow::anyhow!("Set DHIVON_MCP_GATEWAY_PUBLIC_URL"))?;
+        let url = dhivon_mcp_gateway_server::public_origin(raw, args.allow_loopback_http)?;
+        println!("{}", url.origin().ascii_serialization());
+        return Ok(());
+    }
     if let Some(Command::GenerateVaultKey { output }) = &args.command {
         use std::io::Write;
         #[cfg(unix)]

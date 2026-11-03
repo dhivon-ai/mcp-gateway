@@ -1,6 +1,7 @@
 """Exercise the published helper, including hard stops at private publication boundaries."""
 import os
 from pathlib import Path
+import runpy
 import shutil
 import signal
 import stat
@@ -66,13 +67,40 @@ class Configure(unittest.TestCase):
                 self.assertNotEqual(self.run_helper(email=email), 0)
         for origin in ("https://gateway.test:99999", "https://gateway.test:0",
                        "https://gateway..test", "https://gateway.test/path", "https://a@b",
-                       "https://1.2.3.999", "https://xn--a.test", "https://host.0x80", "http://gateway.test"):
+                       "https://1.2.3.999", "https://host.0x80", "http://gateway.test"):
             with self.subTest(origin=origin):
                 self.assertNotEqual(self.run_helper(origin=origin), 0)
         self.assertEqual(list(self.config.iterdir()), [])
         self.assertFalse((self.repo / ".env").exists())
         self.assertEqual(self.run_helper(), 0)
         self.assert_complete()
+
+    def test_saved_default_and_nondefault_ports(self):
+        for index, (port, expected) in enumerate((("00443", ""), ("000443", ""), ("443", ""),
+                                                  ("08443", ":8443"), ("8443", ":8443"))):
+            repo = self.checkout(f"ports-{index}")
+            config = self.fixture / f"config-{index}"
+            self.assertEqual(self.run_helper(origin=f"https://Gateway.test:{port}",
+                                             repo=repo, config=config), 0)
+            self.assertIn(f"DHIVON_MCP_GATEWAY_PUBLIC_URL='https://gateway.test{expected}'\n",
+                          (repo / ".env").read_text())
+
+    def test_resume_settings_saved_with_an_older_port_spelling(self):
+        self.assertEqual(self.run_helper(), 0)
+        (self.repo / ".env").unlink()
+        saved = self.private / "compose.env"
+        previous = saved.read_text().replace(":18443", ":08443")
+        saved.write_text(previous)
+        self.assertEqual(self.run_helper(), 0)
+        self.assertEqual((self.repo / ".env").read_text(), previous)
+        self.assertEqual((self.private / "admin-password").read_text(), PASSWORD)
+
+    def test_gateway_idna_rules(self):
+        validate = runpy.run_path(str(SCRIPTS / "configure-gateway.py"))["origin_value"]
+        self.assertEqual(validate("https://xn--fa-hia.example.test:08443"),
+                         "https://xn--fa-hia.example.test:8443")
+        with self.assertRaisesRegex(ValueError, "valid HTTPS hostname"):
+            validate("https://xn--a.example.test")
 
     def test_hard_stop_before_private_commit(self):
         fault = """from pathlib import Path

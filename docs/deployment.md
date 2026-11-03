@@ -24,7 +24,7 @@ From the repository root, run:
 bash scripts/configure-gateway.sh
 ```
 
-Enter the HTTPS address, first administrator’s email and a password of 12–128 bytes at the prompts. The password is hidden. Keep the **private deployment directory** printed by the command. It holds the keys and database credentials your installation needs.
+Enter the HTTPS address, first administrator’s email and a password of 12–128 bytes at the prompts. The password is hidden. If your domain is internationalized, enter its ASCII spelling (for example, `xn--fa-hia.example.test` for `faß.example.test`). Keep the **private deployment directory** printed by the command. It holds the keys and database credentials your installation needs.
 
 If first-time configuration is interrupted, rerun the helper from the same checkout with the same config location. For an existing deployment, keep using its original checkout and `.env`. If the settings are missing, restore the matching `.env` and private directory from backup.
 

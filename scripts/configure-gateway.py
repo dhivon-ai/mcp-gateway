@@ -7,10 +7,12 @@ import os
 from pathlib import Path
 import re
 import stat
+import subprocess
 import sys
 import tempfile
 import warnings
 from contextlib import contextmanager
+from functools import lru_cache
 
 RECOVERY = "Unrecognized private setup. Restore the matching .env and private directory, or choose a fresh XDG_CONFIG_HOME."
 EXISTING = "Keeping the existing .env. To start its deployment, run docker compose up -d --build --wait."
@@ -31,26 +33,46 @@ def email_value(raw):
     return value.lower()
 
 
+@lru_cache(maxsize=1)
+def internationalized_origin(raw):
+    # Python's built-in IDNA codec and the gateway accept different hostnames.
+    # Use the same service image Compose builds, before writing private inputs.
+    root = Path(__file__).resolve().parent.parent
+    print("Checking the internationalized hostname with the gateway image…", file=sys.stderr)
+    image = subprocess.run(["docker", "build", "--load", "--quiet", "-f", "deploy/Dockerfile", "."],
+                           cwd=root, stdout=subprocess.PIPE, text=True)
+    if image.returncode:
+        raise ValueError("Could not build the gateway to validate the hostname. Check Docker and retry.")
+    result = subprocess.run(["docker", "run", "--rm", "--network", "none", "--read-only",
+                             image.stdout.strip(), "--public-url", raw, "public-origin"],
+                            stdout=subprocess.PIPE, text=True)
+    if result.returncode == 1:
+        raise ValueError("Enter a valid HTTPS hostname.")
+    if result.returncode:
+        raise ValueError("Could not run gateway hostname validation. Check Docker and retry.")
+    return result.stdout.strip()
+
+
 def origin_value(raw):
-    match = re.fullmatch(r"https://([A-Za-z0-9.-]+)(?::([0-9]{1,5}))?", raw)
-    if match:
-        host, port = match.groups()
-        if domain_ok(host) and (port is None or 1 <= int(port) <= 65535):
-            # WHATWG URL parsing treats numeric final labels (including hex) as IPv4.
-            # Require canonical dotted IPv4 there so the server uses the same host.
-            if re.fullmatch(r"[0-9]+|0[xX][0-9a-fA-F]*", host.split(".")[-1]):
-                try:
-                    if str(ipaddress.IPv4Address(host)) != host:
-                        raise ValueError
-                except ValueError:
-                    raise ValueError("Enter a valid IPv4 address.") from None
-            # Reject invalid ASCII-encoded internationalized domain names.
-            try:
-                host.lower().encode("ascii").decode("idna")
-            except UnicodeError:
-                raise ValueError("Enter a valid HTTPS hostname.") from None
-            return raw
-    raise ValueError("Enter an HTTPS hostname and optional port (1–65535), without a path.")
+    match = re.fullmatch(r"https://([A-Za-z0-9.-]+)(?::([0-9]+))?", raw)
+    if not match or not domain_ok(match[1]):
+        raise ValueError("Enter an HTTPS hostname and optional port, without a path.")
+    host = match[1].lower()
+    port = (match[2] or "443").lstrip("0")
+    if not port or len(port) > 5 or int(port) > 65535:
+        raise ValueError("Enter an HTTPS port between 1 and 65535.")
+
+    # Numeric final labels (including hex) are parsed as IPv4 by the server.
+    if re.fullmatch(r"[0-9]+|0x[0-9a-f]*", host.split(".")[-1]):
+        try:
+            if str(ipaddress.IPv4Address(host)) != host:
+                raise ValueError
+        except ValueError:
+            raise ValueError("Enter a valid IPv4 address.") from None
+    origin = "https://" + host + ("" if port == "443" else ":" + port)
+    if any(label.startswith("xn--") for label in host.split(".")):
+        return internationalized_origin(origin)
+    return origin
 
 
 def prompt(message):
@@ -181,8 +203,10 @@ def resume(directory, owner):
     raw = (directory / "compose.env").read_text()
     first = re.fullmatch(r"DHIVON_MCP_GATEWAY_PUBLIC_URL='([^']+)'", raw.partition("\n")[0])
     if not (12 <= len(password) <= 128 and not password.endswith((b"\r", b"\n"))
-            and first and raw == settings(origin_value(first[1]), directory)):
+            and first and raw == settings(first[1], directory)):
         raise ValueError(RECOVERY)
+    # A previous interrupted run may have saved an equivalent spelling.
+    origin_value(first[1])
     return raw
 
 

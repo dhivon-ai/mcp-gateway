@@ -29,3 +29,11 @@ The operator changes were verified at `44704dd`. Mac packaging used the repeat-b
 | Archive onboarding | The final unsigned archive had SHA-256 `8d40699ffb6480488edad6460fd57c2d566112596371145f81ffe7db1aac4383`. Extracted outside the checkout, 37 local links and anchors resolved across all 14 bundled guides. Checksum, notices and version passed. From the extracted CLI the assigned echo tool returned its message, and the same alias was denied after disable. The creating CLI logged out and retired its isolated Keychain item. |
 
 Both guide journeys passed keyboard and navigation checks in Chrome at 1440×900 and 390×844. Homepage screenshots and destinations matched the baseline. The static publication check covered 33 files and the retired ticket returned 404. The HTTPS test used a local test certificate and the native STDIO test used the isolated loopback fixture described above.
+
+## HTTPS origin verification, November 3
+
+Two disposable root Compose deployments exercised `https://xn--fa-hia.example.test:08443` and `https://xn--fa-hia.example.test:00443`. The configuration helper saved port 8443 for the first and omitted the default HTTPS port for the second. Each deployment passed `docker compose up -d --build --wait`, the shipped container health check and first-admin sign-in with a verified local test certificate for that hostname. The client connected to a loopback proxy while preserving the public hostname, TLS server name and origin.
+
+After stopping and starting each project, admin sign-in and an authenticated read of the same saved bearer succeeded. The database password, vault keys and deployment ID matched their pre-restart values. The container also passed its health check when supplied the earlier padded spelling directly. A malformed ASCII hostname (`xn--a.example.test`) failed before the helper created the private deployment or checkout settings.
+
+Eleven setup tests passed, including ordinary and padded ports, malformed inputs, interrupted setup and recovery of an older settings file. The managed Compose suite passed distinct Linux UID checks, first-admin provisioning, stable restart and wrong-key refusal. The publication check covered 33 public files, and the deployment guide’s ASCII hostname example appeared in both the rendered site and packaged guides.
