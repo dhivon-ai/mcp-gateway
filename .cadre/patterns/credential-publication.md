@@ -11,8 +11,8 @@ OAuth response must survive failure to persist it centrally.
   runtime or binding version. Ordinary browser reads return metadata, never values.
   Administrative permission does not grant another user's secret-resolution access.
 - Bind owner/record/version/key identity to authenticated ciphertext centrally;
-  retain encryption keys separately from PostgreSQL. Native keys/tokens live in
-  Keychain; transient secret buffers are zeroized.
+  retain encryption keys separately from PostgreSQL. In the current Mac store only the master item lives in
+  Keychain. Tokens and configuration are authenticated encrypted records on disk.
 - Journal exact owned accounts before insertion. Publish immutable protected heads
   using atomic metadata pointers and pending/retirement barriers. Partial publication
   denies old authorization until complete online recovery; retain cleanup journals.
@@ -25,6 +25,24 @@ OAuth response must survive failure to persist it centrally.
   Disconnect and cancellation fence late saves even before a record exists.
 - Pin authenticated I/O to validated destinations and reject redirects/unrelated
   origins. Never forward a control-plane session as upstream authentication.
+
+## Single-key endpoint publication and recovery
+
+- Stage the encrypted index and its records before switching the protected master
+  selection. On the tested Mac, updating a password under a stable Keychain
+  account could leave a running reader with retired bytes. Switch the random
+  account identifier and 32-byte key together. Verify rollback with two running
+  processes and a restored copy of the entire private directory.
+- Persist each authenticated refusal independently of the credential it denies.
+  Before the first fetch there may be no credential or refusal stamp. Pin the
+  selected head as well as the refusal stamp before I/O and compare both before
+  publishing a response. Restoration, an outage, or a delayed first success must
+  not reverse a newer refusal or deny an unrelated credential.
+- Distinguish damaged private files from an inaccessible Keychain. The console
+  may offer independent sign-in after file loss; a failed login preserves the
+  existing master. Rebuild only after successful independent authentication.
+  A refetch cannot extend a lease or clear a provider rejection for the same
+  binding. Restoring the OS Keychain itself was outside the rollback test.
 
 ## Expired records and rejection fences
 
@@ -42,8 +60,8 @@ prove the refreshed binding is authorized for dispatch.
 
 Immutable heads increase publication/cleanup work. The tested native limit is 128
 MCP identities per login generation, including retired ones; logout/login clears
-that generation. Do not loosen readers to hide growth. Immutable heads address
-observed cross-process Keychain behavior on this Mac, not a universal OS claim.
+that generation. Do not loosen readers to hide growth. The earlier per-record Keychain heads are historical. The current store preserves
+selection and publication barriers through the encrypted index and master item.
 Public-client OAuth fixture coverage is not universal provider compatibility.
 
 ## Provenance
@@ -70,3 +88,14 @@ Public-client OAuth fixture coverage is not universal provider compatibility.
   disconnect and denial. This is a controlled provider, not general compatibility.
 - Archived at: 2026-11-02 (proposed archive batch).
 - Supersession: extends this pattern; original publication/CAS guidance remains.
+
+## Single-key provenance
+
+- Track `single-key-endpoint-store`, P1/T1.1–T1.2 (`2357e8a`), P2/T2.1–T2.2
+  (`dec44aa`), P5/T5.1–T5.2 (`cf7fcdf`, `77a5d39`), P7/T7.1–T7.2
+  (`e35171a`, `cbf5fbb`). Clean review `aab0881`.
+- CLI source: `vault.rs`, `upstream_credentials.rs`, `cutover.rs`. Regression
+  evidence: CLI tests `master_key.rs`, `upstream_credentials.rs`, `identity.rs`
+  and the packaged Mac verification at `41d8c65`.
+- Supersedes per-secret native Keychain placement for the current endpoint format.
+  The central vault, authorization checks and OAuth publication guarantees still apply.

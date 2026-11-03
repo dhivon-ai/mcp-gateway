@@ -3,8 +3,8 @@
   "trackId": "single-key-endpoint-store",
   "title": "Single Keychain master key for all local gateway state",
   "type": "feature",
-  "status": "completed",
-  "checkpoint": "completed",
+  "status": "archived",
+  "checkpoint": "archived",
   "revision": 1,
   "dependencies": [],
   "commits": {
@@ -95,6 +95,10 @@
     {
       "action": "review",
       "commit": "op:review-217b48cf489b8b0184eadf95794130d1"
+    },
+    {
+      "action": "archive",
+      "commit": "op:archive-437a64cf8bd2028d0906c25d5f78a8a2"
     }
   ]
 }

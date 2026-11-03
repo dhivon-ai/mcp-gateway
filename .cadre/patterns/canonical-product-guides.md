@@ -58,3 +58,17 @@ changes it; archival itself does not rewrite product pages or publish hosting.
 - Archived at: 2026-11-02 (proposed archive batch).
 - Supersession: none. Complements browser-contract-consistency for UI semantics
   and isolated-release-verification for artifact/notice/deployment proof.
+
+## Publish only consumer guides
+
+- Select public guides and assets explicitly. Add an unlisted fixture and crawl
+  the emitted files, links, fragments, redirects and notices. Keep internal bugs
+  and verification records out of the public navigation and build.
+- Exercise the two reader journeys from the actual entry links. For distributed
+  guides, open the extracted archive outside the checkout and check its relative
+  links and anchors. Put the final archive checksum outside its own inputs.
+- Track `consumer-website`, P2/T2.1–T2.3 (`0a6cdaf`, `a1b88eb`),
+  P5/T5.2–T5.3 (`9e353dd`), clean review `6ea16ed`. Evidence:
+  `apps/site/publication.ts`, `apps/site/check.ts`, `scripts/package-guides.ts`
+  and `docs/consumer-setup-verification.md`. The archive check covered 37 links.
+  A clean local build does not establish what a hosting cache is serving.

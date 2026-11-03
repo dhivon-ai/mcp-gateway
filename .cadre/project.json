@@ -55,6 +55,14 @@
       "action": "refresh",
       "commit": "op:refresh-c9a7ba27e138ed8ad362611ef6df8924",
       "refreshPath": "refreshes/refresh-20261102-dhivon-baseline.md"
+    },
+    {
+      "action": "archive",
+      "selectedTracks": [
+        "consumer-website",
+        "single-key-endpoint-store"
+      ],
+      "commit": "op:archive-437a64cf8bd2028d0906c25d5f78a8a2"
     }
   ]
 }

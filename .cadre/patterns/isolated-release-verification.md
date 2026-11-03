@@ -76,3 +76,25 @@ Test cleanup is not permission to delete live data.
   mac-mvp paths/identities above remain historical provenance after the rename.
 - Archived at: 2026-11-02 (proposed archive batch).
 - Supersession: extends this pattern; no earlier pattern or history is retired.
+
+## Exercise deployment and packaging boundaries
+
+- Test database initialization with distinct operator and database UIDs on a
+  Linux filesystem. Scan generated help and errors as well as runtime logs for
+  the synthetic database password. Test concurrent and interrupted first-time
+  configuration and retry from the same checkout with the same private inputs.
+- Follow the backup guide, interrupt the export, and confirm a previous complete
+  backup survives. Restore a successful dump into a fresh cluster and read a saved
+  credential with the matching vault material.
+- Compare setup validation with the origin the service actually accepts. Exercise
+  its shipped health check, TLS sign-in and restart on the same hostname. Include
+  padded default and nondefault ports and valid and malformed ASCII IDN labels.
+- Build twice with distinct UI inputs; prove the second executable serves the
+  new UI while reusing the private compiler cache. For a single-key endpoint,
+  measure one protected item while active and verify retirement with its creating
+  binary; check that replaying private files cannot undo the latest refusal.
+- Provenance: `consumer-website` P4/T4.1–T4.4 (`72784c8`, `58541fc`, `bcbd099`,
+  `44704dd`), P5/T5.1 (`56af458`), P7/T7.1–T7.2 (`43f9c18`), clean review
+  `6ea16ed`; `single-key-endpoint-store` P3/T3.1–T3.3 (`43bae33`) and P7/T7.3
+  (`41d8c65`), clean review `aab0881`. Evidence: managed Compose and
+  configuration regressions, backup helper, Mac packaging and extracted CLI tests.

@@ -3,8 +3,8 @@
   "trackId": "consumer-website",
   "title": "Simpler product guides and two-command setup",
   "type": "feature",
-  "status": "completed",
-  "checkpoint": "completed",
+  "status": "archived",
+  "checkpoint": "archived",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -99,6 +99,10 @@
     {
       "action": "review",
       "commit": "op:review-8f62b2aa216c6f97e90836a2871db435"
+    },
+    {
+      "action": "archive",
+      "commit": "op:archive-437a64cf8bd2028d0906c25d5f78a8a2"
     }
   ]
 }
