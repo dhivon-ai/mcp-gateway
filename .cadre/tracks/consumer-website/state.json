@@ -3,8 +3,8 @@
   "trackId": "consumer-website",
   "title": "Simpler product guides and two-command setup",
   "type": "feature",
-  "status": "planned",
-  "checkpoint": "ready",
+  "status": "ready_for_review",
+  "checkpoint": "ready_for_review",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -14,7 +14,16 @@
   },
   "artifactProgress": [],
   "operation": null,
-  "lastExecution": null,
+  "lastExecution": {
+    "executionId": "2026-11-03T06-06-11-584Z",
+    "journal": "executions/execution-2026-11-03T06-06-11-584Z.json",
+    "approvalMode": "track",
+    "approvalPolicyVersion": 2,
+    "planRevision": 2,
+    "graphDigest": "c7c5a718a6ebf7b88bb70a3cfc73b81efd141555fd970b618195f9a9af61ef7d",
+    "headCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+    "completedAt": "2026-11-03T06:34:28.842Z"
+  },
   "reviewCycles": [],
   "history": [
     {
@@ -24,6 +33,10 @@
     {
       "action": "revise",
       "commit": "op:revise-734748ee7e4644b3635a9069879e4e53"
+    },
+    {
+      "action": "implement",
+      "commit": "op:implement-044b7a084b4d7916dbc79bb77d459782"
     }
   ]
 }

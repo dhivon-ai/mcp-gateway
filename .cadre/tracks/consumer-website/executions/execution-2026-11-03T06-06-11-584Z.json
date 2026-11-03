@@ -1,0 +1,306 @@
+{
+  "executionContract": "cohesive-v1",
+  "schemaVersion": 1,
+  "executionId": "2026-11-03T06-06-11-584Z",
+  "trackId": "consumer-website",
+  "status": "completed",
+  "checkpoint": "completed",
+  "requestedMode": "parallel",
+  "effectiveMode": "parallel",
+  "approvalMode": "track",
+  "approvalPolicyVersion": 2,
+  "maxWorkers": 3,
+  "planRevision": 2,
+  "planCommit": "cd7253b598256b1d02cc9545c2cb5ce08a3632e7",
+  "planSource": ".cadre/tracks/consumer-website/plan.md",
+  "graphDigest": "c7c5a718a6ebf7b88bb70a3cfc73b81efd141555fd970b618195f9a9af61ef7d",
+  "baseCommit": "cd7253b598256b1d02cc9545c2cb5ce08a3632e7",
+  "startedAt": "2026-11-03T06:06:11.584Z",
+  "completedAt": "2026-11-03T06:34:28.842Z",
+  "headCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+  "nodes": {
+    "P1": {
+      "id": "P1",
+      "kind": "phase",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "6414c595d6b72867d5a486c125ec6a22d5891eda",
+      "mergeCommit": "6414c595d6b72867d5a486c125ec6a22d5891eda",
+      "verification": "Both task commits integrated. Mac archive, root Compose first admin, TLS sign-in, restart/interruption and recovery, real native agent echo/disable and scoped cleanup were verified.",
+      "approval": "Persisted track mode authorizes phase verification.",
+      "blocker": null
+    },
+    "T1.1": {
+      "commitGroup": "compose-setup",
+      "id": "T1.1",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/consumer-website/2026-11-03T06-06-11-584Z/tasks/P1--t1-1",
+      "branch": "cadre/consumer-website/2026-11-03T06-06-11-584Z/task-t1-1",
+      "workerCommit": "a4d6c5b612cb3850794909113afbcd6c4cd8d736",
+      "mergeCommit": "6414c595d6b72867d5a486c125ec6a22d5891eda",
+      "verification": "Integrated T1.1 into its registered parent worktree.",
+      "approval": "Revision 2 track mode. Coordinator reviewed and approved the scoped diff.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Prompt once for private input; root Compose provisions and validates an independent vault, DB and single first admin. Fresh restore binds a new physical cluster to the retained vault and restored logical deployment."
+        ],
+        "failedApproaches": [
+          "First launch exposed bind directory and PG parent ownership requirements. Restart exposed a dependency-readiness race; corrected and reran."
+        ],
+        "openQuestions": [],
+        "nextAction": "Document verified first use and restore separately.",
+        "sources": [
+          {
+            "path": "compose.yaml",
+            "sha256": "63cff65bbb87bf93cb219e8d311d8aad87a0a16403a0c6e77749f4813c52d5ee"
+          },
+          {
+            "path": "scripts/configure-gateway.sh",
+            "sha256": "34e92f87229bf02d5396f694b6fd475f8356b8c1791a3983c21634a334cb74ae"
+          }
+        ]
+      }
+    },
+    "T1.2": {
+      "commitGroup": "mac-build",
+      "id": "T1.2",
+      "kind": "task",
+      "phaseId": "P1",
+      "dependencies": [],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": "/Users/vishal/Projects/cadre-mcp-gateway/.cadre/.worktrees/consumer-website/2026-11-03T06-06-11-584Z/tasks/P1--t1-2",
+      "branch": "cadre/consumer-website/2026-11-03T06-06-11-584Z/task-t1-2",
+      "workerCommit": "d047acbd1b54cdf90b1661e39a451784a7cf6c58",
+      "mergeCommit": "d047acbd1b54cdf90b1661e39a451784a7cf6c58",
+      "verification": "Integrated T1.2 into its registered parent worktree.",
+      "approval": "Approved revision 2, track mode, coordinator-reviewed product diff.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Use a new private ignored dist/macos-XXXXXXXX per default build and preserve explicit cache and Cargo target overrides."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Use extracted CLI in the assigned tool journey, and rebuild archive after packaged guide edits.",
+        "sources": [
+          {
+            "path": "scripts/package-macos.sh",
+            "sha256": "6f7c2d6d020802fd4fd05921402060710605d5dc717dc8d579cb99c11b200312"
+          }
+        ]
+      }
+    },
+    "T1.3": {
+      "id": "T1.3",
+      "kind": "manual-verification",
+      "phaseId": "P1",
+      "dependencies": [
+        "T1.1",
+        "T1.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "6414c595d6b72867d5a486c125ec6a22d5891eda",
+      "mergeCommit": null,
+      "verification": "Both task commits integrated. Mac archive, root Compose first admin, TLS sign-in, restart/interruption and recovery, real native agent echo/disable and scoped cleanup were verified.",
+      "approval": "Persisted track mode authorizes phase verification.",
+      "blocker": null
+    },
+    "P2": {
+      "id": "P2",
+      "kind": "phase",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "mergeCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "verification": "Chrome live + Playwright desktop/mobile journeys, byte-identical home captures/links, 33 public files and regression crawl, 404s and redirects, exact notices, final archive + root Compose native echo/denial; fmt, clippy, site checks and 11 isolated PG cases passed. Evidence in docs/consumer-setup-verification.md.",
+      "approval": "Track mode, revision 2.",
+      "blocker": null
+    },
+    "T2.1": {
+      "commitGroup": "consumer-site",
+      "id": "T2.1",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "0a6cdafe0da93bd7bc00dd430840d06406261390",
+      "mergeCommit": null,
+      "verification": "Chrome role journeys reach Mac/host guides. Matched actual setup commands and final archive contents. 1440/390 px homepage pixels and link destinations equal baseline.",
+      "approval": "Track mode, revision 2.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Role choices first. Move operator recovery into a secondary guide."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Record final onboarding and deployment verification.",
+        "sources": [
+          {
+            "path": "docs/quickstart.md",
+            "sha256": "d3ba74a0f98a98f20c59f9412db5d8c29d4881b5a243e504f15a9dfc5eaa852e"
+          }
+        ]
+      }
+    },
+    "T2.2": {
+      "commitGroup": "consumer-site",
+      "id": "T2.2",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "0a6cdafe0da93bd7bc00dd430840d06406261390",
+      "mergeCommit": null,
+      "verification": "33 public files checked, synthetic unlisted guide/image/brand assets excluded, all rendered links/anchors and notices passed, 404/redirect routes verified.",
+      "approval": "Track mode, revision 2.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Explicitly choose allowed docs and assets; retire internal URLs and redirect useful replaced guides."
+        ],
+        "failedApproaches": [],
+        "openQuestions": [],
+        "nextAction": "Record final onboarding and deployment verification.",
+        "sources": [
+          {
+            "path": "apps/site/publication.ts",
+            "sha256": "dc17ed0ff1015e6ad78316a818723cdfe81119600f67251ea696bb9b5ecdc23d"
+          }
+        ]
+      }
+    },
+    "T2.3": {
+      "commitGroup": "onboarding-verification",
+      "id": "T2.3",
+      "kind": "task",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "mergeCommit": null,
+      "verification": "Chrome live + Playwright desktop/mobile journeys, byte-identical home captures/links, 33 public files and regression crawl, 404s and redirects, exact notices, final archive + root Compose native echo/denial; fmt, clippy, site checks and 11 isolated PG cases passed. Evidence in docs/consumer-setup-verification.md.",
+      "approval": "Track mode, revision 2.",
+      "blocker": null,
+      "handoff": {
+        "decisions": [
+          "Use isolated real local deployments for startup, restore, native journey; use preview and Chrome to compare baseline and changed guide paths."
+        ],
+        "failedApproaches": [
+          "Initial site typecheck rejected .ts imports; enabled TypeScript import extensions in the noEmit site workspace and verified."
+        ],
+        "openQuestions": [],
+        "nextAction": "Present local preview and evidence for manual verification.",
+        "sources": [
+          {
+            "path": "docs/consumer-setup-verification.md",
+            "sha256": "c73b54003fcb0afb3b05905792b0ef87756ba2fd76117e9a4f9d1a48df19b168"
+          }
+        ]
+      }
+    },
+    "T2.4": {
+      "id": "T2.4",
+      "kind": "manual-verification",
+      "phaseId": "P2",
+      "dependencies": [
+        "P1",
+        "T2.1",
+        "T2.2",
+        "T2.3"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "mergeCommit": null,
+      "verification": "Chrome live + Playwright desktop/mobile journeys, byte-identical home captures/links, 33 public files and regression crawl, 404s and redirects, exact notices, final archive + root Compose native echo/denial; fmt, clippy, site checks and 11 isolated PG cases passed. Evidence in docs/consumer-setup-verification.md.",
+      "approval": "Track mode, revision 2.",
+      "blocker": null
+    },
+    "P3": {
+      "id": "P3",
+      "kind": "phase",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1",
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "mergeCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "verification": "Reviewed desktop and mobile guide paths, unchanged homepage, native build and tool call/denial, Compose initialization, restart and restore. Evidence recorded in docs/consumer-setup-verification.md.",
+      "approval": "User explicitly approved track-level verification for a1b88eb on 2026-11-03.",
+      "blocker": null
+    },
+    "T3.1": {
+      "id": "T3.1",
+      "kind": "manual-verification",
+      "phaseId": "P3",
+      "dependencies": [
+        "P1",
+        "P2"
+      ],
+      "status": "completed",
+      "workerId": null,
+      "workerHistory": [],
+      "worktreePath": null,
+      "branch": null,
+      "workerCommit": "a1b88eb7bb4213806fdf869510e5a92f0eaee526",
+      "mergeCommit": null,
+      "verification": "Reviewed desktop and mobile guide paths, unchanged homepage, native build and tool call/denial, Compose initialization, restart and restore. Evidence recorded in docs/consumer-setup-verification.md.",
+      "approval": "User explicitly approved track-level verification for a1b88eb on 2026-11-03.",
+      "blocker": null
+    }
+  }
+}

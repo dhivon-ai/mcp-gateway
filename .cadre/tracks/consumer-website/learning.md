@@ -21,12 +21,12 @@ Root phases read the Pattern Seed. Later phases read learning from their declare
 
 ## Phase 1: Simplify setup commands
 
-Pending implementation. Read the pattern seed.
+Read the three seeded patterns. The root Compose setup and Mac archive are integrated at 6414c595. Configure once with bash scripts/configure-gateway.sh; start with docker compose up -d --build --wait. The validated local reverse proxy terminates HTTPS, PostgreSQL stays private, and restore requires the saved vault plus deployment ID. Restart and interrupted bootstrap preserve accounts and credentials. Mac packaging with no output variables produces a private dist/macos-XXXXXXXX/releases archive and checksum. Actual extracted CLI, echo call, disable denial and scoped native cleanup passed. Guides bundled in the archive require a final package rebuild if edited.
 
 ## Phase 2: Simplify the detail pages and verify the setup journeys
 
-Pending Phase 1 evidence and learning.
+Read Phase 1 learning and checked both commands against the implemented entry points. Publish only listed pages/assets. The final site with 20 guides passed a synthetic unlisted-source regression, rendered link/fragment checks and byte-for-byte home screenshot comparisons at two widths. The guide contents are bundled in the archive, so the published verification checksum is kept in its own unbundled guide. See docs/consumer-setup-verification.md (a1b88eb) for the root-stack, native Mac, recovery and browser evidence.
 
 ## Phase 3: Track-level User Manual Verification
 
-Pending evidence from both delivery phases.
+The user approved track-level verification at a1b88eb on 2026-11-03 after receiving the Chrome preview and the verification record in docs/consumer-setup-verification.md.
