@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { brandAssets, guides, movedGuides } from "./publication.ts";
@@ -14,7 +15,10 @@ for (const asset of brandAssets) {
   await mkdir(dirname(destination), { recursive: true });
   await cp(join(root, "assets/brand", asset), destination);
 }
-await cp(join(root, "apps/site/style.css"), join(output, "style.css"));
+const css = await readFile(join(root, "apps/site/style.css"));
+const stylesheet = `style.${createHash("sha256").update(css).digest("hex").slice(0, 16)}.css`;
+await writeFile(join(output, stylesheet), css);
+await writeFile(join(output, "style.css"), css); // For previously served HTML.
 await cp(join(root, "LICENSE"), join(output, "LICENSE.txt"));
 await cp(join(root, "NOTICE"), join(output, "NOTICE.txt"));
 
@@ -68,7 +72,7 @@ function page(title: string, description: string, body: string) {
 <meta name="theme-color" content="#102C4C">
 <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg">
 <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png">
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/${stylesheet}">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>${header}${body}${footer}</body>

@@ -57,12 +57,16 @@ try {
   });
   assert.equal(build.status, 0, build.stderr);
 
+  const home = await readFile(join(site, "index.html"), "utf8");
+  const stylesheet = home.match(/href="\/(style\.[a-f0-9]{16}\.css)"/)?.[1];
+  assert.ok(stylesheet, "Expected a versioned site stylesheet");
   const expected = new Set([
     "index.html",
     "404.html",
     "_redirects",
     "_routes.json",
     "style.css",
+    stylesheet,
     "LICENSE.txt",
     "NOTICE.txt",
     ...Object.keys(guides).map((slug) => "docs/" + slug + ".html"),
