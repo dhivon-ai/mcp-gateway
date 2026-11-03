@@ -1164,8 +1164,8 @@ async fn unreadable_index_requires_independent_online_sign_in() {
         .create(&root)
         .expect("private root");
     let server = server().await;
-    let store = StateStore::native(root.clone(), MacKeychain::fixture(&root).expect("fixture"))
-        .expect("new");
+    let open = || StateStore::native(root.clone(), MacKeychain::fixture(&root).expect("fixture"));
+    let store = open().expect("new");
     let manager = SessionManager::new(store, true)
         .select_server(&server.client)
         .await
@@ -1182,6 +1182,36 @@ async fn unreadable_index_requires_independent_online_sign_in() {
         .expect("committed index")
         .path();
     std::fs::write(&index, b"truncated").expect("damage root");
+    let marker = root.join("identity.json");
+    let oversized = vec![b'X'; 65537];
+    for bytes in [b"".as_slice(), b"{broken", &oversized] {
+        std::fs::write(&marker, bytes).expect("damage private format marker");
+        let restart = SessionManager::new(open().expect("recovery bootstrap"), true)
+            .select_server(&server.client)
+            .await
+            .expect("explicit server selection");
+        assert_eq!(restart.status().expect("status").state, "login_required");
+        let mut wrong = login("bob");
+        wrong.password = "wrong-password".into();
+        assert!(matches!(
+            restart.login(&server.client, wrong).await,
+            Err(EndpointError::Rejected)
+        ));
+        assert_eq!(
+            std::fs::read(&marker).expect("no unauthenticated repair"),
+            bytes
+        );
+        assert_eq!(
+            std::fs::read(&index).expect("original damaged index"),
+            b"truncated"
+        );
+    }
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(&index, std::fs::Permissions::from_mode(0o644)).expect("unsafe index");
+    assert!(matches!(open(), Err(EndpointError::Storage)));
+    std::fs::set_permissions(&index, std::fs::Permissions::from_mode(0o600))
+        .expect("restore private index");
+    let manager = SessionManager::new(open().expect("restart after damage"), true);
     let disconnected = CentralClient::new("http://127.0.0.1:1", true).expect("unreachable fixture");
     let offline = manager
         .select_server(&disconnected)

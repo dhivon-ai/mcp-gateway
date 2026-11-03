@@ -64,17 +64,12 @@ impl StateStore {
         };
         let _guard = store.lock_file()?;
         let old = vault.current()?;
-        let identity = match read_legacy(&store.root.join("identity.json"), 65536) {
-            // An oversized private file cannot be a valid marker. Repair it only
-            // when the protected index proves there is no cutover in progress.
-            Err(EndpointError::Invalid)
-                if old.is_some() && vault.read_record(CLEANUP, true)?.is_none() =>
-            {
-                None
-            }
-            result => result?,
-        };
-        let lost_marker = old.is_some() && identity.is_none();
+        let (identity, oversized_marker) =
+            match read_legacy(&store.root.join("identity.json"), 65536) {
+                Ok(bytes) => (bytes, false),
+                Err(EndpointError::Invalid) if old.is_some() => (None, true),
+                Err(error) => return Err(error),
+            };
         let fenced = identity.as_ref().is_some_and(|v| v.as_slice() == FENCE);
         let source = Sha256::digest(identity.as_ref().map_or(&[][..], |b| b.as_slice())).to_vec();
         if !fenced && old.is_none() {
@@ -174,13 +169,18 @@ impl StateStore {
         let journal = match vault.read_record(CLEANUP, true) {
             Ok(j) => j,
             Err(EndpointError::InvalidCache | EndpointError::LoginRequired)
-                if (fenced || lost_marker) && legacy.accounts()?.is_empty() =>
+                if (old.is_some() || fenced) && legacy.accounts()?.is_empty() =>
             {
+                // The selected master establishes the current format even when
+                // both files are damaged. Sign-in must authenticate before rebuilding.
                 return Ok(store);
             }
             Err(e) => return Err(e),
         };
         if let Some(bytes) = journal {
+            if oversized_marker {
+                return Err(EndpointError::Invalid);
+            }
             let mut upgrade: Upgrade =
                 serde_json::from_slice(&bytes).map_err(|_| EndpointError::InvalidCache)?;
             let remaining = legacy.accounts()?;
