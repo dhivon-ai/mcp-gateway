@@ -32,5 +32,5 @@ alter a configuration timestamp; only a validated server snapshot can do that.
 
 OAuth records are scoped to user, MCP and native-client registration/installation;
 the initial provider profile uses a pre-registered public client ID and PKCE.
-Tokens are encrypted centrally, transported through endpoint-only credential
-APIs, and cached in Keychain. Central login sessions are never upstream tokens.
+The server encrypts the tokens and delivers them through endpoint-only credential
+APIs. The Mac caches them in encrypted files protected by its single Keychain master key. Central login sessions are never upstream tokens.

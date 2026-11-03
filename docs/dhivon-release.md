@@ -1,11 +1,14 @@
 # Dhivon release verification
 
-Version 0.1.0 was built and exercised locally on 2026-11-02 as Dhivon MCP Gateway,
-a product of Dhivon AI. The initial renamed artifacts are retained below;
-the HTTPS/OAuth remediation build supersedes the earlier builds for current distribution.
-The [original MVP report](release.md) preserves the earlier artifact identities.
+## Verified Mac archive — 2026-11-03
 
-## Artifacts and environment
+The locally built Apple Silicon archive `dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz` from commit `41d8c65` has SHA-256 `e2388fdf4af9371195a2307cdf4e654bb90fd604f62101c739606cdd4900ddc4`. This build uses one Keychain master key for encrypted local state.
+
+In the packaged first-fetch test, a delayed success could not override a newer refusal. The affected tool stayed unavailable after an offline restart until the server authorized a fresh request. The packaged console also recovered from simultaneous marker and index damage through independent sign-in. All 72 CLI tests and the PostgreSQL-backed OAuth regression passed. See [endpoint storage verification](testing.md#single-key-endpoint-storage).
+
+## Initial renamed artifacts and environment — 2026-11-02
+
+The [original MVP report](release.md) preserves the earlier artifact identities.
 
 | Item             | Verified identity                                                         |
 | ---------------- | ------------------------------------------------------------------------- |
@@ -69,7 +72,7 @@ above terminates TLS through nginx 1.30.6, pinned to
 A second TLS listener exposes the controlled MCP/OAuth fixture. Both publish only
 loopback ports. Certificate and hostname verification remain enabled.
 
-| Item                         | Current identity                                                          |
+| Item                         | HTTPS/OAuth build identity                                                          |
 | ---------------------------- | ------------------------------------------------------------------------- |
 | Mac archive SHA-256          | `e66ae212267e01f7af952db662c6da33edc284e8529e07bc40cb142134092799`        |
 | Extracted executable SHA-256 | `f36d5e229cf3fd2bf97ea780340b0304a605f6b848044755754ecee64c83d5d7`        |
@@ -121,7 +124,7 @@ Use the [reproducible HTTPS rehearsal](https-oauth-rehearsal.md) for a new run.
 ## Rehearsal cleanup remediation — 2026-11-02
 
 Review cycle 2, BUG-008, changes the verification harness and recovery runbook.
-The Mac executable, archive and service image retain the current identities above;
+The Mac executable, archive and service image retain the identities recorded for that build above;
 Rust application, embedded UI and license source bytes are unchanged. Exact archive
 and image notice comparisons pass again. The earlier HTTPS/native OAuth acceptance
 remains evidence for those unchanged artifacts; this cleanup cycle installs no

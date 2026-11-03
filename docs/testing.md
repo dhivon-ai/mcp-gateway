@@ -105,6 +105,13 @@ and cleanup, and labels controlled-provider evidence separately from public host
 
 `cargo test --locked -p dhivon-mcp-gateway-cli --test master_key` exercises two live processes and a full file rollback. The CLI library’s `cutover` tests interrupt preparation, fencing and deletion, exercise a signed-out handoff, and compare concurrent recovery attempts. The `identity` and `upstream_credentials` suites check independent online sign-in, failed offline repair, authenticated bearer refetch, rejection and exact expiry. The PostgreSQL `remote_oauth` integration uses the encrypted store on macOS.
 
+To reproduce the first-fetch refusal and damaged-index sign-in regressions on macOS, run:
+
+```sh
+cargo test --locked -p dhivon-mcp-gateway-cli --test upstream_credentials first_fetch_cannot_publish_after_an_authenticated_refusal
+cargo test --locked -p dhivon-mcp-gateway-cli --test identity unreadable_index_requires_independent_online_sign_in
+```
+
 For a package upgrade rehearsal, also set `DHIVON_MCP_GATEWAY_TEST_V1_CLI` to an absolute path to the original v1 executable and run the extracted CLI gateway suite above. It creates a signed-out v1 installation, migrates it, checks Keychain item counts without reading secrets, damages a synthetic snapshot, repairs through the running UI and verifies fixture retirement.
 
 The real locked-Keychain check is **manual**: macOS may show a password dialog. Run it only when prepared:

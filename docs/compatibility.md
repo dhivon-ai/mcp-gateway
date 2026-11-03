@@ -52,4 +52,4 @@ for a fresh installation.
 Current renamed artifact identities and verification are recorded in
 [Dhivon release evidence](dhivon-release.md).
 
-The single-key endpoint store supports upgrading the current Dhivon v1 storage format on the same Mac. Stop old clients first, retain the creating executable until cleanup completes, and see the endpoint identity guide for the signed-out handoff. This does not migrate historical pre-Dhivon product names or an installation copied from another Mac.
+The single-key endpoint store was verified for fresh Mac installations. Backward compatibility with v1 was outside the final review. For an existing v1 installation, see the [upgrade procedure and its prerequisites](endpoint-identity.md#upgrade-and-recovery).

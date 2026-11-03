@@ -49,8 +49,9 @@ MCP's **Manage** view, selects that owned secret and explicitly enables the MCP.
 The browser displays secret metadata only. Confirm the provider accepts that
 token for this exact MCP endpoint before sharing setup instructions.
 
-The gateway resolves the user's selected key into native Keychain and sends it
-only to the configured upstream. Expect an authentication status and discovered
+The native gateway fetches the selected bearer key from the server after checking
+the user’s assignment. It caches the key in an encrypted file and sends it only
+to the configured upstream. Keychain holds the installation’s master key. Expect an authentication status and discovered
 permitted tools after synchronization. Replace an invalid key through the secret
 flow, reload state and reconnect the affected MCP. See
 [native credentials](remote-credentials.md) and [vault operations](vault.md) for
