@@ -61,6 +61,7 @@ try {
     "index.html",
     "404.html",
     "_redirects",
+    "_routes.json",
     "style.css",
     "LICENSE.txt",
     "NOTICE.txt",
@@ -74,6 +75,20 @@ try {
       .map((f) => relative(site, join(f.parentPath, f.name))),
   );
   assert.deepEqual(actual, expected, "Unexpected or missing public files");
+
+  const routes = JSON.parse(await readFile(join(site, "_routes.json"), "utf8"));
+  assert.deepEqual(routes.include, ["/docs/*"]);
+  // Every exception bypasses the 404 Function. It must resolve to a file
+  // published in this build or a deliberate redirect.
+  for (const path of routes.exclude) {
+    assert.ok(path.startsWith("/docs/"));
+    const slug = path.slice(6).replace(/(?:\.html|\/)$/, "") || "index";
+    assert.ok(
+      expected.has("docs/" + slug + ".html") ||
+        Object.hasOwn(movedGuides, slug),
+      path,
+    );
+  }
 
   for (const file of expected) {
     if (!/\.(html|css)$/.test(file)) continue;

@@ -259,4 +259,21 @@ const redirects = Object.entries(movedGuides).flatMap(([old, destination]) =>
   ),
 );
 await writeFile(join(output, "_redirects"), redirects.join("\n") + "\n");
+
+// Keep public guides and redirects on Pages' static path. For other doc URLs,
+// the 404 Function must run before Pages can return a preserved, removed asset.
+const staticDocs = [
+  "/docs/",
+  ...Object.keys(guides).flatMap((slug) =>
+    ["", ".html", "/"].map((suffix) => `/docs/${slug}${suffix}`),
+  ),
+  ...Object.keys(movedGuides).flatMap((slug) => [
+    `/docs/${slug}`,
+    `/docs/${slug}.html`,
+  ]),
+];
+const routes = { version: 1, include: ["/docs/*"], exclude: staticDocs };
+if (routes.include.length + routes.exclude.length > 100)
+  throw new Error("Documentation routes exceed the Cloudflare Pages limit.");
+await writeFile(join(output, "_routes.json"), JSON.stringify(routes, null, 2));
 console.log("Built public website at " + output);
