@@ -711,6 +711,30 @@ pub async fn rotate_keys(state: &AppState) -> Result<u64, AppError> {
                 .map_err(|_| vault_error())?;
             sqlx::query("UPDATE oauth_credentials SET key_id=$4,nonce=$5,ciphertext=$6 WHERE user_id=$1 AND mcp_id=$2 AND installation_id=$3").bind(row.user_id).bind(row.mcp_id).bind(row.installation_id).bind(blob.key_id).bind(blob.nonce).bind(blob.ciphertext).execute(&mut *tx).await?;
         }
+        if count == 0 {
+            // The managed startup proof must survive retirement of the old key too.
+            let ring = &state.options.vault;
+            let proof: Option<serde_json::Value> = sqlx::query_scalar(
+                "SELECT proof FROM compose_setup WHERE proof->>'keyId' <> $1 FOR UPDATE",
+            )
+            .bind(ring.active_key_id())
+            .fetch_optional(&mut *tx)
+            .await?;
+            if let Some(proof) = proof {
+                let binding = state.deployment_id.to_string();
+                let old: Sealed = serde_json::from_value(proof).map_err(|_| vault_error())?;
+                let plain = ring
+                    .open(binding.as_bytes(), &old)
+                    .map_err(|_| vault_error())?;
+                let new = ring
+                    .seal(binding.as_bytes(), &plain)
+                    .map_err(|_| vault_error())?;
+                sqlx::query("UPDATE compose_setup SET proof = $1 WHERE singleton")
+                    .bind(serde_json::to_value(new).map_err(|_| vault_error())?)
+                    .execute(&mut *tx)
+                    .await?;
+            }
+        }
         tx.commit().await?;
         total += count as u64;
         if count == 0 {

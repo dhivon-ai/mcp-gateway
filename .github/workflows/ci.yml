@@ -74,3 +74,4 @@ jobs:
       - run: mkdir -p "$DHIVON_MCP_GATEWAY_BUILD_CACHE"
       - run: docker build -f deploy/Dockerfile -t dhivon-mcp-gateway-server:0.1.0 .
       - run: node scripts/verify-deployment.ts
+      - run: bash scripts/verify-compose-setup.sh

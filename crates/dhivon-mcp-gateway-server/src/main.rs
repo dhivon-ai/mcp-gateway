@@ -1,5 +1,7 @@
 use std::{net::SocketAddr, path::PathBuf};
 
+mod managed_setup;
+
 use clap::{Parser, Subcommand};
 use dhivon_mcp_gateway_server::{AppState, Options};
 
@@ -35,6 +37,10 @@ enum Command {
         #[arg(long)]
         output: PathBuf,
     },
+    /// Initialize or verify the private root Compose deployment.
+    Provision,
+    /// Verify the managed deployment before serving.
+    ServeManaged,
     /// Reencrypt records under the active key, retaining values and versions.
     RotateVault,
     /// Bootstrap the first administrator in an empty deployment.
@@ -76,11 +82,16 @@ async fn main() -> anyhow::Result<()> {
     let path = args.vault_key_file.as_ref().ok_or_else(|| {
         anyhow::anyhow!("Set DHIVON_MCP_GATEWAY_VAULT_KEY_FILE to an external private key file")
     })?;
-    let vault = dhivon_mcp_gateway_server::vault::load_key_file(path)?;
     let database_url = args
         .database_url
         .as_ref()
         .ok_or_else(|| anyhow::anyhow!("Set DATABASE_URL"))?;
+    let _setup_lock = if matches!(args.command, Some(Command::Provision)) {
+        Some(managed_setup::prepare(database_url).await?)
+    } else {
+        None
+    };
+    let vault = dhivon_mcp_gateway_server::vault::load_key_file(path)?;
     let public_url = args
         .public_url
         .ok_or_else(|| anyhow::anyhow!("Set DHIVON_MCP_GATEWAY_PUBLIC_URL"))?;
@@ -93,6 +104,18 @@ async fn main() -> anyhow::Result<()> {
         },
     )
     .await?;
+    if matches!(
+        args.command,
+        Some(Command::Provision | Command::ServeManaged)
+    ) {
+        let provision = matches!(args.command, Some(Command::Provision));
+        managed_setup::verify_or_bootstrap(&state, provision).await?;
+        if provision {
+            println!("Gateway prepared for {}", state.options.public_url);
+            state.pool.close().await;
+            return Ok(());
+        }
+    }
     if matches!(args.command, Some(Command::RotateVault)) {
         let count = dhivon_mcp_gateway_server::vault::rotate_keys(&state).await?;
         println!("Vault records reencrypted: {count}");

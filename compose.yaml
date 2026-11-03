@@ -1,0 +1,70 @@
+# Run bash scripts/configure-gateway.sh once, then docker compose up -d --build --wait.
+x-gateway: &gateway
+  build:
+    context: .
+    dockerfile: deploy/Dockerfile
+  user: "${DHIVON_MCP_GATEWAY_UID:?Run scripts/configure-gateway.sh}:${DHIVON_MCP_GATEWAY_GID:?Run scripts/configure-gateway.sh}"
+  environment:
+    DHIVON_MCP_GATEWAY_PUBLIC_URL: ${DHIVON_MCP_GATEWAY_PUBLIC_URL:?Set the external HTTPS origin}
+    DHIVON_MCP_GATEWAY_VAULT_KEY_FILE: /setup/gateway/keys/vault-keys.json
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+
+services:
+  postgres:
+    image: postgres:18.6@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    entrypoint: ["/bin/bash", "/managed-postgres.sh"]
+    environment:
+      SETUP_UID: ${DHIVON_MCP_GATEWAY_UID}
+      SETUP_GID: ${DHIVON_MCP_GATEWAY_GID}
+    volumes:
+      - postgres:/var/lib/postgresql
+      - ./deploy/managed-postgres.sh:/managed-postgres.sh:ro
+      - type: bind
+        source: ${DHIVON_MCP_GATEWAY_SETUP_DIR:?Run scripts/configure-gateway.sh}/postgres
+        target: /private
+        bind: { create_host_path: false }
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "dhivon", "-d", "dhivon"]
+      interval: 2s
+      timeout: 2s
+      retries: 60
+    restart: unless-stopped
+  setup:
+    <<: *gateway
+    entrypoint: ["/bin/sh", "/usr/local/bin/managed-gateway", "provision"]
+    volumes:
+      - type: bind
+        source: ${DHIVON_MCP_GATEWAY_SETUP_DIR}
+        target: /setup
+        bind: { create_host_path: false }
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck: { disable: true }
+  dhivon:
+    <<: *gateway
+    entrypoint: ["/bin/sh", "/usr/local/bin/managed-gateway"]
+    volumes:
+      - type: bind
+        source: ${DHIVON_MCP_GATEWAY_SETUP_DIR}/gateway
+        target: /setup/gateway
+        read_only: true
+        bind: { create_host_path: false }
+      - type: bind
+        source: ${DHIVON_MCP_GATEWAY_SETUP_DIR}/postgres
+        target: /setup/postgres
+        read_only: true
+        bind: { create_host_path: false }
+    ports:
+      - "127.0.0.1:${DHIVON_MCP_GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    stop_grace_period: 15s
+    restart: unless-stopped
+volumes:
+  postgres:
