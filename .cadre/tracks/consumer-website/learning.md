@@ -6,11 +6,11 @@ Root phases read the Pattern Seed. Later phases read learning from their declare
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":2,"planRevision":2,"patterns":[{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"}]}
+{"schemaVersion":1,"specRevision":2,"planRevision":3,"patterns":[{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 2
-- Plan revision: 2
+- Plan revision: 3
 
 | Pattern | Relevance | Constraints |
 | --- | --- | --- |
@@ -30,3 +30,7 @@ Read Phase 1 learning and checked both commands against the implemented entry po
 ## Phase 3: Track-level User Manual Verification
 
 The user approved track-level verification at a1b88eb on 2026-11-03 after receiving the Chrome preview and the verification record in docs/consumer-setup-verification.md.
+
+## Review cycle 1 handoff
+
+All three seed patterns still apply. Include a Linux-native password-file permission test; test setup publication separately from database interruption. Test backup failure before restore and the distributed guide links outside the checkout. Measure the second default Mac build. An OrbStack bind mount and a site crawl alone did not exercise these cases.
