@@ -2,7 +2,7 @@
 
 - Track: `consumer-website`
 - Spec revision: 2
-- Plan revision: 3
+- Plan revision: 4
 - Status: planned
 
 ## Phase 1: Simplify setup commands
@@ -94,6 +94,27 @@ Verify all seven blockers against bugs/review-1.md. Record platform, commit and 
 - [x] T6.1 User Manual Verification <!-- commit: be6570c62bf88048a74f30545de77088e9410904 -->
 
 - Phase completion commit: `be6570c62bf88048a74f30545de77088e9410904`
+
+## Phase 7: Align setup and health checks with the gateway's HTTPS origin
+
+- Phase dependencies: P6
+
+- [ ] T7.1 Resolve BUG-004 and BUG-008. Align hostname validation and port normalization with the server. Cover padded default and nondefault ports, their ordinary spellings, a valid ASCII internationalized hostname and an invalid one. Check the saved settings and run the shipped health check against the actual service. Keep invalid inputs correctable before publication.
+  - Task dependencies: none
+  - Commit group: gateway-origin
+- [ ] T7.2 User Manual Verification
+
+- Phase completion commit: pending
+
+## Phase 8: Track-level User Manual Verification
+
+### Outcome
+
+Run the documented fresh start and restart, verify health and first-admin HTTPS sign-in using the corrected origins, and record the results against both findings. Reuse passing evidence for unaffected acceptance criteria.
+
+- [ ] T8.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 

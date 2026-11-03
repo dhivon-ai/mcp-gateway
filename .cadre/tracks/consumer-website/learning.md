@@ -6,11 +6,11 @@ Root phases read the Pattern Seed. Later phases read learning from their declare
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":2,"planRevision":3,"patterns":[{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"}]}
+{"schemaVersion":1,"specRevision":2,"planRevision":4,"patterns":[{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 2
-- Plan revision: 3
+- Plan revision: 4
 
 | Pattern | Relevance | Constraints |
 | --- | --- | --- |
@@ -46,3 +46,7 @@ At phase head 9e353dd, a checkout-local private Cargo target served two default 
 ## Phase 6: Track-level User Manual Verification
 
 The user approved the integrated product at be6570c after reviewing the seven remediation results. Regenerating the archive guides from that commit matched the extracted bytes. The final site crawl, desktop and mobile checks passed. See docs/consumer-setup-verification.md for environment and coverage.
+
+## Review cycle 2 handoff
+
+The seed patterns still apply. Compare the saved origin with the actual health probe and server parser, including a padded port and an ASCII internationalized hostname. A successful parser or admin request alone does not establish that the shipped health check passes.

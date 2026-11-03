@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-a7100eabd2156d0345cbce6c652d47f3",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "16da2a8e4899c077d31fee67797a69d3fc2f971764da6c84d0ac9d704b322b15",
+  "baseCommit": "49612a49c005e3ab3934b243347d88f8aee7d1e9",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "b4aecce7c5a91b6d43644515befe97038d790299a5583b6cb568043794eef9c1"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/bugs/review-2.md",
+      "sha256": "f91af6d64f27790df2af1149556f28d88575839a9c3d18f45737bf8c9508c790"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/dependency-context.json",
+      "sha256": "628613c06bafadf64b099196c105d7164ca421af58947e602ded04211458a1a3"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/learning.md",
+      "sha256": "a18dccc899aaa6be9af824bb6275cae314120853c03cf5b1f84f2688584e51cf"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/plan.md",
+      "sha256": "5f97dc26c1ed4852d8d7614bdd969d8071cd534f96e0748126cdb6a377abc420"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/state.json",
+      "sha256": "8519b20aafba14eaad8afd0d7ae6602d33c9527eb171dc83241efb4ba9ab576e"
+    }
+  ]
+}
