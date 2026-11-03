@@ -2,7 +2,7 @@
 
 - Track: `single-key-endpoint-store`
 - Spec revision: 1
-- Plan revision: 2
+- Plan revision: 3
 - Status: proposed
 
 ## Phase 1: Prove the single-key encrypted store
@@ -96,6 +96,26 @@ Verify BUG-001 and BUG-002 on the current Mac package, including the scoped deni
 - [x] T6.1 User Manual Verification <!-- commit: 519aa1973ced5137070d630c995cd446ee0504c0 -->
 
 - Phase completion commit: `519aa1973ced5137070d630c995cd446ee0504c0`
+
+## Phase 7: Close first-fetch and damaged-directory recovery gaps
+
+- Phase dependencies: P6
+
+- [ ] T7.1 Record refusals for an MCP before its first credential is cached. Reproduce the overlapping authenticated 200 and 403, deny late publication and offline reuse after restart, then verify a new authorized pull and an unrelated grant.
+  - Task dependencies: none
+  - Commit group: first-fetch-refusal
+- [ ] T7.2 Allow independent sign-in when the current encrypted index and ordinary marker are both damaged. Rehearse the packaged UI with empty, malformed and oversized markers, a failed login, a successful rebuild and denial of replay. Keep unsafe filesystem and Keychain access fail-closed.
+  - Task dependencies: none
+  - Commit group: damaged-bootstrap-recovery
+- [ ] T7.3 User Manual Verification
+
+- Phase completion commit: pending
+
+## Phase 8: Track-level User Manual Verification
+
+- [ ] T8.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 
