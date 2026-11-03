@@ -50,3 +50,11 @@ The user approved the integrated product at be6570c after reviewing the seven re
 ## Review cycle 2 handoff
 
 The seed patterns still apply. Compare the saved origin with the actual health probe and server parser, including a padded port and an ASCII internationalized hostname. A successful parser or admin request alone does not establish that the shipped health check passes.
+
+## Phase 7: Align setup and health checks with the gateway's HTTPS origin
+
+At 43f9c18 the gateway's own origin parser validated the internationalized hostname before private publication and supplied the health probe's Host header. The setup helper stores canonical port spellings and can recover valid older settings. Verified both padded HTTPS ports, the malformed control, fresh sign-in with a matching certificate, the shipped probe, restart and saved-credential access. See docs/consumer-setup-verification.md.
+
+## Phase 8: Track-level User Manual Verification
+
+The user approved revision 4 at 43f9c18 after reviewing the fresh Compose installs, restarts, health checks and HTTPS sign-in results. Both padded port cases retained access to the saved credential after restart.

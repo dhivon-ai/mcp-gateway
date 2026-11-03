@@ -99,12 +99,12 @@ Verify all seven blockers against bugs/review-1.md. Record platform, commit and 
 
 - Phase dependencies: P6
 
-- [ ] T7.1 Resolve BUG-004 and BUG-008. Align hostname validation and port normalization with the server. Cover padded default and nondefault ports, their ordinary spellings, a valid ASCII internationalized hostname and an invalid one. Check the saved settings and run the shipped health check against the actual service. Keep invalid inputs correctable before publication.
+- [x] T7.1 Resolve BUG-004 and BUG-008. Align hostname validation and port normalization with the server. Cover padded default and nondefault ports, their ordinary spellings, a valid ASCII internationalized hostname and an invalid one. Check the saved settings and run the shipped health check against the actual service. Keep invalid inputs correctable before publication. <!-- commit: 43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff -->
   - Task dependencies: none
   - Commit group: gateway-origin
-- [ ] T7.2 User Manual Verification
+- [x] T7.2 User Manual Verification <!-- commit: 43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff -->
 
-- Phase completion commit: pending
+- Phase completion commit: `43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff`
 
 ## Phase 8: Track-level User Manual Verification
 
@@ -112,9 +112,9 @@ Verify all seven blockers against bugs/review-1.md. Record platform, commit and 
 
 Run the documented fresh start and restart, verify health and first-admin HTTPS sign-in using the corrected origins, and record the results against both findings. Reuse passing evidence for unaffected acceptance criteria.
 
-- [ ] T8.1 User Manual Verification
+- [x] T8.1 User Manual Verification <!-- commit: 43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff -->
 
-- Phase completion commit: pending
+- Phase completion commit: `43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff`
 
 ## Approval
 
