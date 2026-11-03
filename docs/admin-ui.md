@@ -154,7 +154,7 @@ PostgreSQL/API regression. Strict TypeScript, lint, formatting and embedded buil
 pass; previously verified layout/keyboard interactions are unchanged.
 
 
-## Email identity and display names (BUG-005)
+## Email identity and display names
 
 User creation requires Name, Email and Password. Name is display-only; Email is
 the unique sign-in identifier. Name/email can be edited independently, with the

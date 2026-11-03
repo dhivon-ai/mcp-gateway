@@ -196,12 +196,22 @@ await writeFile(
   ),
 );
 
+await writeFile(
+  join(output, "404.html"),
+  page(
+    "Page not found",
+    "This page could not be found.",
+    '<main id="main"><section class="why"><h1>Page not found</h1><p><a href="/docs/index.html">Browse the documentation</a></p></section></main>',
+  ),
+);
+
 async function renderDirectory(relative = "") {
   for (const entry of await readdir(join(root, "docs", relative), {
     withFileTypes: true,
   })) {
     const name = join(relative, entry.name);
     if (entry.isDirectory()) {
+      if (name === "bugs") continue;
       await renderDirectory(name);
       continue;
     }

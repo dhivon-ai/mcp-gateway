@@ -61,7 +61,7 @@ container/Node/Keychain rehearsal. Fresh deployment, restart, backup, fresh rest
 and independent wrong/matching-key recovery were repeated with this image and
 archive. Current source includes email identity commit `fabb614`.
 
-## Email identity correction (BUG-005)
+## Email identity correction
 
 Name is display-only; email is the sole login identifier in both websites and all
 login APIs. User creation requires Name, Email and Password; profile edits preserve
@@ -81,8 +81,7 @@ create/edit separate name/email, normalized central/native login, duplicate-emai
 sheet footer, no page overflow and no relevant console errors. Current screenshots
 are `email-users-desktop.png`, `email-user-form-mobile.png`,
 `email-local-mobile.png` and `email-duplicate-feedback.png` in the task's external
-visualization directory. See [identity contract](identity.md),
-[admin evidence](admin-ui.md) and [bug resolution](bugs/bug-005.md).
+visualization directory. See the [identity contract](identity.md) and [administrator guide](admin-ui.md).
 
 ## Review corrections
 

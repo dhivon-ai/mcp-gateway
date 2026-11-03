@@ -31,7 +31,7 @@ distribution remain [roadmap candidates](roadmap.md).
 
 ## Notice-bearing remediation build — 2026-11-02
 
-Review cycle 1, BUG-007, adds the owner-selected Apache-2.0 source license and
+This build adds the Apache-2.0 source license and
 Dhivon AI copyright/ownership, without changing third-party licenses.
 
 | Item                         | Notice-only intermediate identity                                         |
@@ -66,7 +66,7 @@ with the pinned Node toolchain before final evidence was recorded.
 
 ## HTTPS/native OAuth remediation build — 2026-11-02
 
-The owner selected a Docker HTTPS simulation for review BUG-006. The service image
+The HTTPS verification uses a Docker simulation. The service image
 above terminates TLS through nginx 1.30.6, pinned to
 `sha256:0e52bd054126cdc040b1276c0af347aeb02a41b9cfe305d6094767ac30e97949`.
 A second TLS listener exposes the controlled MCP/OAuth fixture. Both publish only
@@ -123,7 +123,7 @@ Use the [reproducible HTTPS rehearsal](https-oauth-rehearsal.md) for a new run.
 
 ## Rehearsal cleanup remediation — 2026-11-02
 
-Review cycle 2, BUG-008, changes the verification harness and recovery runbook.
+This update changes the verification harness and recovery runbook.
 The Mac executable, archive and service image retain the identities recorded for that build above;
 Rust application, embedded UI and license source bytes are unchanged. Exact archive
 and image notice comparisons pass again. The earlier HTTPS/native OAuth acceptance
@@ -161,7 +161,7 @@ remain explicit in the [cleanup and recovery instructions](https-oauth-rehearsal
 
 ## Recovery ownership follow-ups — 2026-11-02
 
-Review cycle 3, BUG-009 and BUG-010, changes only rehearsal supervision, regression
+This update changes only rehearsal supervision, regression
 fixtures and recovery documentation. The Mac executable/archive, service image,
 product Rust/UI and license bytes retain the identities above. Prior controlled
 HTTPS/native OAuth acceptance and public-provider limits remain in effect. These

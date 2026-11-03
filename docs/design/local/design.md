@@ -2,7 +2,7 @@
 
 T7.1 design specification for FR-023. Generated with the built-in ImageGen tool, inspected before implementation. These references guide code-native React/TypeScript/shadcn interfaces; no screenshot is shipped as UI. The existing vector GatewayMark is the brand authority.
 
-BUG-005 supersedes identity copy in the historical reference images below: login
+The identity fields have changed since the reference images below. Login
 uses Email (`you@company.com`) and Password; the account label uses display name.
 Name never authenticates. Current compiled-browser evidence is in `docs/local-ui.md`.
 

@@ -4,7 +4,7 @@ T6.1 design baseline for the approved mac-mvp specification, accepted by the
 coordinator under persisted policy-v2 Autonomous authority. This is a design
 artifact, not a claim that the website is implemented or browser-tested.
 
-BUG-005 supersedes identity copy in the original baseline below: sign-in uses
+The identity fields have changed since the original design. Sign-in uses
 Email and Password; user creation requires Name, Email and Password, and edits
 keep Name (display-only) separate from Email (sign-in). User tables show both.
 Current implementation and browser evidence are in `docs/admin-ui.md`.
