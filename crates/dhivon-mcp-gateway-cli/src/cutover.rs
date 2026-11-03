@@ -63,10 +63,20 @@ impl StateStore {
             vault: Some(vault.clone()),
         };
         let _guard = store.lock_file()?;
-        let identity = read_legacy(&store.root.join("identity.json"), 65536)?;
+        let old = vault.current()?;
+        let identity = match read_legacy(&store.root.join("identity.json"), 65536) {
+            // An oversized private file cannot be a valid marker. Repair it only
+            // when the protected index proves there is no cutover in progress.
+            Err(EndpointError::Invalid)
+                if old.is_some() && vault.read_record(CLEANUP, true)?.is_none() =>
+            {
+                None
+            }
+            result => result?,
+        };
+        let lost_marker = old.is_some() && identity.is_none();
         let fenced = identity.as_ref().is_some_and(|v| v.as_slice() == FENCE);
         let source = Sha256::digest(identity.as_ref().map_or(&[][..], |b| b.as_slice())).to_vec();
-        let old = vault.current()?;
         if !fenced && old.is_none() {
             let abandoned = fs::read_dir(store.root.join("endpoint-v2"))
                 .map_err(|_| EndpointError::Storage)?
@@ -164,7 +174,7 @@ impl StateStore {
         let journal = match vault.read_record(CLEANUP, true) {
             Ok(j) => j,
             Err(EndpointError::InvalidCache | EndpointError::LoginRequired)
-                if fenced && legacy.accounts()?.is_empty() =>
+                if (fenced || lost_marker) && legacy.accounts()?.is_empty() =>
             {
                 return Ok(store);
             }
@@ -349,7 +359,10 @@ impl StateStore {
     }
     pub fn finish_fixture_retirement(root: &Path) -> Result<bool> {
         let _ = MacKeychain::fixture(root)?;
-        let marker = read_legacy(&root.join("identity.json"), 65536)?;
+        let marker = match read_legacy(&root.join("identity.json"), RETIRED.len()) {
+            Err(EndpointError::Invalid) => return Ok(false),
+            result => result?,
+        };
         if marker
             .as_ref()
             .is_some_and(|m| matches!(m.as_slice(), RETIRED | RETIRING))
