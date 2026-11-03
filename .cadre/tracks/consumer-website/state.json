@@ -3,8 +3,8 @@
   "trackId": "consumer-website",
   "title": "Simpler product guides and two-command setup",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "completed",
+  "checkpoint": "completed",
   "revision": 2,
   "dependencies": [],
   "commits": {
@@ -48,6 +48,23 @@
       "bugs": [
         "tracks/consumer-website/bugs/review-2.md"
       ]
+    },
+    {
+      "cycle": 3,
+      "reviewedAt": "2026-11-03T07:11:12.414Z",
+      "outcome": "clean",
+      "executionId": "2026-11-03T07-02-14-146Z",
+      "planRevision": 4,
+      "graphDigest": "2c16c9dfce5179dcbd3e81ab110132c270fedc1b529f7fb4c94a863eb4db100b",
+      "reviewedHead": "43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff",
+      "commitRange": "e6e28e9aad7593ef61d8732f3061ad3836e22f5a..43f9c181d9b4ccab2a5403d07ce47172e8ebe9ff",
+      "reviewEvidence": "Cycle 3 reviewed e6e28e9..43f9c18 against revision 4. Both remaining findings (BUG-004 and BUG-008) are resolved. Independent rerun passed all 11 setup cases, the managed Linux/Compose startup, shipped health probe, restart and wrong-key recovery, and the 33-file publication check. Reviewed recorded verified-TLS first-admin sign-in and saved credential read before/after restart for padded default and nondefault HTTPS ports on the valid ASCII internationalized hostname. Malformed input failed before publication. Prior unchanged website, backup/restore and Mac journey evidence remains applicable. No outstanding findings.",
+      "approvalConfirmation": {
+        "status": "approved",
+        "proposalDigest": "8eb7d600d2f56fa689b6e84c17e1e749bebb3f0d5635e993ce835b3762086677",
+        "confirmedAt": "2026-11-03T07:12:14.498Z",
+        "method": "explicit-apply"
+      }
     }
   ],
   "history": [
@@ -78,6 +95,10 @@
     {
       "action": "implement",
       "commit": "op:implement-2c483a11ffcb6428931a2b8eaa8a9204"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-8f62b2aa216c6f97e90836a2871db435"
     }
   ]
 }

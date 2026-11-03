@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-8f62b2aa216c6f97e90836a2871db435",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "8eb7d600d2f56fa689b6e84c17e1e749bebb3f0d5635e993ce835b3762086677",
+  "baseCommit": "a48257d2d15b2e2b5d4d1d6e161ae0265d68dc62",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "608ae3e02d0812e88eb53a1e0264c71e038d1d07dff6321127a07640b9cb8739"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/state.json",
+      "sha256": "ec86ff3644e2433f0b6f1ee1cb3e3a7f0f4a214957d40137b6cca074f3b8261f"
+    }
+  ]
+}
