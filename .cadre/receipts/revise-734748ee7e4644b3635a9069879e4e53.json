@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "operationId": "revise-734748ee7e4644b3635a9069879e4e53",
+  "kind": "revise",
+  "status": "completed",
+  "approvalDigest": "90008aed8bfe10e70caa2431e9fd46646230879de74c898c647b2ee49571d499",
+  "baseCommit": "2b22358e4721e404aeef4c8196e52158385e4e68",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "049d0f55b832d9c49562bd27c28ba83b675d727df35fa890cf2a08f21d02ce52"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/dependency-context.json",
+      "sha256": "968903ff410c44be9af2ea044d68d4d183cb5577000f4c9db6cf9d84c07db854"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/learning.md",
+      "sha256": "2b81f8dbf5daba8408de7aac5d1d0e71dfbe2a6fd9921f9df7b136fb1bc60c74"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/plan.md",
+      "sha256": "d466c12d85d0ed2490006b9e501f0c9778d97cdfc650a6c62fe13a52f33401d4"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/revisions/revision-2.md",
+      "sha256": "2ccced9be03234e93431e75f790bd83d0ed266f41524f50bacee9c4c467ac3d1"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/spec.md",
+      "sha256": "25367f5ea6cf8f8ba27ed0c689b6ce504c06f7ade34b4df35d08b7b68ab144c4"
+    },
+    {
+      "path": ".cadre/tracks/consumer-website/state.json",
+      "sha256": "28c5867b497dd419f75d04d37467214dec988dec24a497a49235a3529e90a85b"
+    }
+  ]
+}

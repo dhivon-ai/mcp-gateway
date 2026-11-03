@@ -1,9 +1,9 @@
-# Plan: A simpler product website and two-command setup
+# Plan: Simpler product guides and two-command setup
 
 - Track: `consumer-website`
-- Spec revision: 1
-- Plan revision: 1
-- Status: proposed
+- Spec revision: 2
+- Plan revision: 2
+- Status: planned
 
 ## Phase 1: Simplify setup commands
 
@@ -23,21 +23,21 @@ An operator can launch the server stack and a Mac developer can produce a workin
 
 - Phase completion commit: pending
 
-## Phase 2: Design the public experience and verify delivery
+## Phase 2: Simplify the detail pages and verify the setup journeys
 
 - Phase dependencies: P1
 
 ### Outcome
 
-First-time visitors understand the value, find their own setup path and complete it from the published instructions.
+Visitors entering from the existing homepage find their own setup path and complete it from the public guides.
 
-- [ ] T2.1 Rewrite homepage, navigation and canonical start guides. Show one concrete use case, one primary action and two short audience paths using verified Phase 1 commands. Move detailed operations to secondary references.
+- [ ] T2.1 Simplify the documentation index, quickstart and linked detail guides. Give developers joining a team and operators starting a gateway separate short paths using the verified Phase 1 commands. Show prerequisites, the next action and expected result. Link advanced operations separately. Scope presentation changes to guide pages.
   - Task dependencies: none
   - Commit group: consumer-site
 - [ ] T2.2 Make publishing explicit for pages and assets, remove internal copy and links, preserve supported deep links and user-facing release facts. Cover exclusion with a regression check, crawl the build and verify notices and 404s.
   - Task dependencies: T2.1
   - Commit group: consumer-site
-- [ ] T2.3 Run site formatting, typecheck and build, rendered desktop/390px keyboard/navigation checks and both documented journeys including first tool call and disable. Record screenshots, evidence and remaining limits, and check all acceptance criteria against the finished output.
+- [ ] T2.3 Run site formatting, typecheck and build, rendered desktop/390px keyboard/navigation checks and both documented journeys including first tool call and disable. Compare the homepage with the baseline on both viewports and check its destinations. Record guide screenshots, evidence and remaining limits, and check all acceptance criteria against the finished output.
   - Task dependencies: T2.2
   - Commit group: onboarding-verification
 - [ ] T2.4 User Manual Verification
@@ -48,7 +48,7 @@ First-time visitors understand the value, find their own setup path and complete
 
 ### Outcome
 
-Review the rendered landing page and both paths, the two working commands, credential-safe reruns, and evidence for AC-001 through AC-005 before accepting delivery.
+Review both detail-page journeys from the existing homepage, the two working commands, credential-safe reruns, and evidence for AC-001 through AC-005 before accepting delivery.
 
 - [ ] T3.1 User Manual Verification
 
@@ -56,4 +56,4 @@ Review the rendered landing page and both paths, the two working commands, crede
 
 ## Approval
 
-Pending combined track approval.
+Proposed in revision 2; see revisions/revision-2.md.
