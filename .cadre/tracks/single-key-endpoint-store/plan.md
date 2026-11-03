@@ -101,21 +101,21 @@ Verify BUG-001 and BUG-002 on the current Mac package, including the scoped deni
 
 - Phase dependencies: P6
 
-- [ ] T7.1 Record refusals for an MCP before its first credential is cached. Reproduce the overlapping authenticated 200 and 403, deny late publication and offline reuse after restart, then verify a new authorized pull and an unrelated grant.
+- [x] T7.1 Record refusals for an MCP before its first credential is cached. Reproduce the overlapping authenticated 200 and 403, deny late publication and offline reuse after restart, then verify a new authorized pull and an unrelated grant. <!-- commit: e35171a72023e2e5276d933660344abafd477453 -->
   - Task dependencies: none
   - Commit group: first-fetch-refusal
-- [ ] T7.2 Allow independent sign-in when the current encrypted index and ordinary marker are both damaged. Rehearse the packaged UI with empty, malformed and oversized markers, a failed login, a successful rebuild and denial of replay. Keep unsafe filesystem and Keychain access fail-closed.
+- [x] T7.2 Allow independent sign-in when the current encrypted index and ordinary marker are both damaged. Rehearse the packaged UI with empty, malformed and oversized markers, a failed login, a successful rebuild and denial of replay. Keep unsafe filesystem and Keychain access fail-closed. <!-- commit: cbf5fbba1a33002750587ff1a0e01ccabf2430d8 -->
   - Task dependencies: none
   - Commit group: damaged-bootstrap-recovery
-- [ ] T7.3 User Manual Verification
+- [x] T7.3 User Manual Verification <!-- commit: 41d8c65a1ac2720a0b1919b91172ce00e21345f2 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `41d8c65a1ac2720a0b1919b91172ce00e21345f2`
 
 ## Phase 8: Track-level User Manual Verification
 
-- [ ] T8.1 User Manual Verification
+- [x] T8.1 User Manual Verification <!-- commit: 41d8c65a1ac2720a0b1919b91172ce00e21345f2 -->
 
-- Phase completion commit: pending
+- Phase completion commit: `41d8c65a1ac2720a0b1919b91172ce00e21345f2`
 
 ## Approval
 

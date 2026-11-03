@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "operationId": "implement-22ac7e9e3602e7acdddad97a7fd887e3",
+  "kind": "implement",
+  "status": "completed",
+  "approvalDigest": "ecf06c589852ba9cff9a0ddb3921ad29875e033431cdf81ace42a8d3faf3b63f",
+  "baseCommit": "41d8c65a1ac2720a0b1919b91172ce00e21345f2",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "38cf311405e2096c8a5d314861e505b2a2a1fc536b1e22c68b3bc28b60a9d3a6"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/executions/execution-2026-11-03T05-05-27-563Z.json",
+      "sha256": "e92169f4e4c27f15f7e51840f24f8309bf5445dd3e51ef4eef769d3f845ef48b"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/learning.md",
+      "sha256": "95aa46a06ad2dd027e809717acdcdb9254c5d06d6458294c0c4c1906520c7d7a"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/plan.md",
+      "sha256": "45228b4a5228317f11c8859e7fc774d61d85b66daa4ef31aed2b81ecacaf95ee"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/state.json",
+      "sha256": "e45b7d2653e2998eb76d6d38d5dd21edd9f36c3c3020f8b61bc752c96e7e2d32"
+    }
+  ]
+}

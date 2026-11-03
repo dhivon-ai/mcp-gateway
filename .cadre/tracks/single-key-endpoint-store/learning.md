@@ -66,3 +66,13 @@ The owner approved final verification for integrated commit `519aa1973ced5137070
 ## Review cycle 2
 
 Retain the six approved patterns. Test the first authorization decision before any credential has been stored, including an earlier response arriving after a refusal. Packaged recovery coverage also needs a present but unrecognizable nonsecret marker together with an unreadable encrypted index.
+
+## Phase 7: First credential fetch and recovery after simultaneous file damage
+
+The selected account identifies the first negative credential decision before a refusal stamp exists. T7.1 compares the request's original selection and stamp before publication. A concurrent identical success may only reuse an already-usable head. An interrupted initial denial selects its negative head in the same write as its pending journal. This uses the existing bounded metadata. T7.2 uses the present master to recognize current-format recovery even when the private marker and encrypted index are both damaged. Access errors continue to propagate, and rebuilding still requires independent authentication.
+
+At integrated commit `41d8c65a1ac2720a0b1919b91172ce00e21345f2`, a four-process rehearsal with the Apple Silicon package verified the first-fetch race against a real loopback control plane and MCP. The old package exposed the bearer on the delayed 200 and the cold 503. The new package denied both, then exposed it only after a fresh authorized response. The unrelated tool stayed available throughout. The packaged console served sign-in for empty, malformed and oversized private markers combined with a truncated index. Rejected sign-in preserved the old master, independent login rebuilt the installation, and replay of the original directory was denied. Fixtures were retired using their creating binaries. The PostgreSQL OAuth regression, CLI Clippy, formatting, archive notices and checksum passed. Archive SHA-256: `e2388fdf4af9371195a2307cdf4e654bb90fd604f62101c739606cdd4900ddc4`.
+
+## Phase 8: Track verification
+
+The owner approved final verification of integrated commit `41d8c65a1ac2720a0b1919b91172ce00e21345f2`. All 72 CLI tests and the PostgreSQL OAuth regression passed. The tested Apple Silicon archive passed its checksum check again at approval.
