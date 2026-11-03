@@ -372,6 +372,29 @@ impl NativeCredentials {
             }
             let signature =
                 digest(format!("{}:{}:{}", scope.binding, version, fingerprint).as_bytes());
+            let id = &scope.mcp.definition.id;
+            let refusal = self.refusal(metadata, id)?;
+            if refusal != scope.refusal {
+                return Err(EndpointError::IdentityChanged);
+            }
+            let pending = metadata.upstream_publication_pending.contains(id);
+            let selected = metadata.upstream_heads.get(id);
+            if selected != scope.session.metadata.upstream_heads.get(id) {
+                // The first refusal selects a negative head even when neither request
+                // observed a refusal stamp. Never publish over a different selection.
+                // Concurrent identical grants may reuse the already-authorized head.
+                if !pending
+                    && refusal.is_none()
+                    && let Some(account) = selected
+                    && let Ok(current) = self.read(account, scope)
+                    && current.source_revision == scope.revision
+                    && current.signature() == signature
+                    && current.access(self.cache.sample()?).is_ok()
+                {
+                    return Ok(());
+                }
+                return Err(EndpointError::IdentityChanged);
+            }
             if self
                 .cache
                 .sessions
@@ -382,13 +405,6 @@ impl NativeCredentials {
             {
                 return Err(EndpointError::UpstreamRejected);
             }
-            let refusal = self.refusal(metadata, &scope.mcp.definition.id)?;
-            if refusal != scope.refusal {
-                return Err(EndpointError::IdentityChanged);
-            }
-            let pending = metadata
-                .upstream_publication_pending
-                .contains(&scope.mcp.definition.id);
             if pending
                 && !scope
                     .session
@@ -705,6 +721,13 @@ impl NativeCredentials {
         }
         if metadata.credential_accounts.len() > 2048 {
             return Err(EndpointError::Storage);
+        }
+        // Select an initial denial with its pending journal. Even if writing its
+        // sealed files is interrupted, older first-fetch scopes have lost the CAS.
+        if old.is_none() && record.fault.is_some() {
+            metadata
+                .upstream_heads
+                .insert(record.mcp_id.clone(), account.clone());
         }
         store.write(metadata)?;
         if let Some(marker) = &marker
