@@ -131,13 +131,11 @@ Retain every key required by retained database backups. Test the restore before
 changing live routing. Losing the matching keys makes encrypted values unusable.
 
 ```sh
-umask 077
-mkdir -p "$gateway_deploy/backups"
-gateway_compose exec -T postgres pg_dump -U dhivon -d dhivon -Fc \
-  > "$gateway_deploy/backups/database.dump"
+COMPOSE_ENV_FILES="$gateway_deploy/deployment.env" COMPOSE_PROJECT_NAME=dhivon-mcp-gateway \
+  COMPOSE_FILE=deploy/compose.yaml bash scripts/backup-gateway.sh "$gateway_deploy/backups"
 ```
 
-Use a fresh Compose project/empty database for restoration, a separate loopback
+Save the full dump path printed by the command. Use a fresh Compose project/empty database for restoration, a separate loopback
 port and the matching separately recovered key file. Do not restore over the
 running deployment. For example, create another private `restore.env` from the
 original settings with `DHIVON_MCP_GATEWAY_PORT=18080` and its recovered key path, then:
@@ -147,9 +145,10 @@ restore_compose() {
   docker compose --env-file "$gateway_deploy/restore.env" \
     -p dhivon-mcp-gateway-restore -f deploy/compose.yaml "$@"
 }
+dump="/absolute/path/to/the/saved-backup.dump"
 restore_compose up -d --wait postgres
 restore_compose exec -T postgres pg_restore -U dhivon -d dhivon \
-  --no-owner --exit-on-error < "$gateway_deploy/backups/database.dump"
+  --no-owner --exit-on-error < "$dump"
 # Invalidate sessions copied from the restore point before exposing the service.
 restore_compose exec -T postgres psql -U dhivon -d dhivon -v ON_ERROR_STOP=1 \
   -c 'DELETE FROM sessions;'

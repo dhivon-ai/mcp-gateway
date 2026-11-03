@@ -4,21 +4,25 @@ These steps apply to the root Compose deployment. Run commands as the deployment
 
 ## Back up
 
+From the repository root, give the backup command an absolute directory outside the checkout on a filesystem that supports hard links. It creates the directory with mode 0700 if needed. If it already exists, it must belong to you and have mode 0700.
+
 ```sh
-umask 077
-docker compose exec -T postgres pg_dump -U dhivon -d dhivon -Fc > database.dump
+bash scripts/backup-gateway.sh "$HOME/dhivon-backups"
 ```
 
-Move the dump to your protected backup store. Separately back up the private directory printed during configuration, including `gateway/keys/vault-keys.json` and `gateway/keys/deployment-id`. Keep the matching key ring for every retained backup. A database dump alone cannot recover encrypted credentials.
+On success, the command prints the full path to a new owner-only dump. Save that path for recovery. A failed export leaves earlier dumps intact.
+
+Separately back up the private directory printed during configuration, including `gateway/keys/vault-keys.json` and `gateway/keys/deployment-id`. Keep the matching key ring for every retained backup. A database dump alone cannot recover encrypted credentials.
 
 ## Restore to a fresh deployment
 
 1. Choose a fresh checkout, private setup directory and Compose project on an isolated host or loopback port. Use a separate `XDG_CONFIG_HOME` if testing on the same host. Run the [configuration prompts](deployment.md#configure-once). Keep routing away from this project during recovery.
 2. Start **only PostgreSQL** in the fresh project with `docker compose up -d --wait postgres`. This creates the new database password and physical cluster identity. Keep using the same project name and environment for every step.
-3. Restore the dump and invalidate sessions copied from the backup:
+3. Set `dump` to the full path of the backup you want to recover. Restore it and invalidate sessions copied from the backup.
 
    ```sh
-   docker compose exec -T postgres pg_restore -U dhivon -d dhivon --no-owner --exit-on-error < database.dump
+   dump="/absolute/path/to/the/saved-backup.dump"
+   docker compose exec -T postgres pg_restore -U dhivon -d dhivon --no-owner --exit-on-error < "$dump"
    docker compose exec -T postgres psql -U dhivon -d dhivon -v ON_ERROR_STOP=1 -c 'DELETE FROM sessions;'
    ```
 
