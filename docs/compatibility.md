@@ -1,55 +1,15 @@
-# Compatibility and release limits
+# Supported platforms
 
-| Surface               | Validated baseline                                                                                                                                                                                            |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Endpoint              | Apple Silicon arm64, macOS 27.0.1 (26A434); deployment target 27.0.1. Older releases/Intel/Windows/Linux endpoints are not shipped.                                                                           |
-| Native toolchain      | Rust/cargo 1.95.0, edition 2024; macOS Keychain and continuous native clock/process APIs exercised on the actual Mac.                                                                                         |
-| Website build         | Node 24.19.0 LTS, pnpm 11.4.0, React 19.3.0, TypeScript 6.0.3, Vite 8.3.4, shadcn/Radix/Tailwind with committed lockfile.                                                                                     |
-| Browser               | Codex in-app Chromium on the validated Mac; desktop/laptop/390px flows. Safari/Firefox not independently validated.                                                                                           |
-| Control plane         | Rust/Axum/SQLx, PostgreSQL 18.6; self-hosted one enterprise per deployment. Linux arm64 container on Docker29.8.2/OrbStack and Compose5.5.0; fresh deployment/restore is recorded in release evidence.        |
-| MCP                   | Official rmcp 3.5.1 client/server, protocol 2025-11-25, STDIO (native pipes and Node-style Unix stream socket pairs) and Streamable HTTP. Tools/list, ordinary tools/call and list-change notifications only. |
-| Remote authentication | None, owned per-user bearer secret, or preregistered public OAuth client with the supported discovery/PKCE/resource/issuer/refresh profile. Controlled providers only; see OAuth runbook.                     |
-| Client/agent          | Standard official rmcp client spawning only the CLI `mcp` entry. Commercial agent adapters are examples, not verified integrations.                                                                           |
-| Distribution          | Local arm64 archive/checksum with embedded assets; not Developer ID signed, notarized or publicly published.                                                                                                  |
+| Component | Supported or tested setup |
+| --- | --- |
+| Mac gateway | Apple Silicon, tested on macOS 27.0.1. The native CLI includes its browser console. |
+| Server | Self-hosted Linux arm64 container and PostgreSQL 18.6. The root Compose stack was exercised with Docker 29.8.2 and Compose 5.5.0. |
+| Agent connection | MCP tools over STDIO, protocol 2025-11-25. The official rmcp client is tested. Adapt the [agent example](agent-configuration.md) to your client. |
+| Tool servers | Local STDIO commands and remote Streamable HTTP. Remote authentication supports no credentials, per-user bearer keys or the supported public-client OAuth flow. |
+| Archive | Unsigned Apple Silicon archive built locally. Use an artifact supplied through your organization’s trusted channel or [build from source](mac-install.md#build-your-own-archive). |
 
-No SAML, SaaS multi-tenancy, legacy HTTP+SSE, provider-specific grants, confidential
-OAuth clients, resources, prompts, subscriptions, sampling, elicitation or tasks
-are forwarded. Task-required upstream tools are omitted. Stable aliases preserve
-routing for original MCP/tool IDs. Arbitrary vendor protocol extensions may not
-survive typed SDK decoding.
-
-Actual machine sleep/reboot and hosted CI have not been run. Deterministic
-continuous-clock/boot/rollback tests plus an actual Keychain subprocess restart
-cover conservative freshness. Unknown clocks/boot state require online sync.
-The software trusts the OS/Keychain and does not resist privileged replacement.
-Cancellation is best effort and cannot undo completed upstream side effects.
-Owned process-group cleanup does not supervise deliberately escaped descendants.
-
-Bounded MVP behavior: config TTL <=3600s, session <=12h, polling 60s/control10s,
-install300s/startup30s/call60s/16 calls/shutdown5s. Discovery limits and HTTP/frame
-bounds are specified in `docs/gateway-aggregation.md` in the source repository.
-Native credential metadata tracks at most 128 MCP identities per login generation,
-including retired assignments. Capacity rejection preserves existing credentials
-and shared identity; online logout/sign-in clears the retired generation state.
-
-Identity uses email/password for sign-in and a separate display name. Email is
-trimmed and ASCII-lowercased, unique, and limited to 254 bytes: an unquoted ASCII
-dot-atom mailbox with a hostname domain. Quoted/Unicode mailboxes and domain
-literals are unsupported. Display names are trimmed nonempty Unicode, at most
-200 UTF-8 bytes, and never authenticate. Profile edits revoke affected sessions.
+Resources, prompts, legacy SSE transport, Intel Macs and Windows/Linux endpoints are outside the supported profile. Compatibility with a named agent or OAuth provider depends on its implementation and registration.
 
 ## Fresh installation
 
-Dhivon installations use a fresh database, native state directory and Keychain
-namespace. Use the new package and executable names throughout setup. Schema
-initialization runs automatically on the fresh database. Historical populated
-username schemas are refused safely by the initialization checks. The rename
-provides no old-name aliases, compatibility reads or data-conversion procedure.
-Existing unrelated databases, files and Keychain entries are left under their
-owner's control. Follow [deployment](deployment.md) and [Mac setup](mac-install.md)
-for a fresh installation.
-
-Current renamed artifact identities and verification are recorded in
-[Dhivon release evidence](dhivon-release.md).
-
-The single-key endpoint store was verified for fresh Mac installations. Backward compatibility with v1 was outside the final review. For an existing v1 installation, see the [upgrade procedure and its prerequisites](endpoint-identity.md#upgrade-and-recovery).
+Start the server with a fresh database. Existing Mac users should read the [upgrade and recovery guide](endpoint-identity.md#upgrade-and-recovery) and retain the executable that created their credentials. Check a distributed archive using its matching checksum.

@@ -1,3 +1,4 @@
+import { movedGuides } from "./publication.ts";
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, resolve, sep } from "node:path";
@@ -21,9 +22,20 @@ createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     const pathname = decodeURIComponent(url.pathname);
+    const guide = /^\/docs\/([a-z0-9-]+)(?:\.html)?$/.exec(pathname)?.[1];
+    if (guide && Object.hasOwn(movedGuides, guide)) {
+      const [slug, fragment] = movedGuides[guide]!.split("#");
+      response
+        .writeHead(301, {
+          Location:
+            "/docs/" + slug + ".html" + (fragment ? "#" + fragment : ""),
+        })
+        .end();
+      return;
+    }
     const file = resolve(
       root,
-      "." + pathname,
+      "." + (guide ? "/docs/" + guide + ".html" : pathname),
       pathname.endsWith("/") ? "index.html" : "",
     );
     if (!file.startsWith(root + sep)) {

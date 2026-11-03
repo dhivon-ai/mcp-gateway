@@ -19,8 +19,3 @@ are distributed unchanged.
 | Mac archive    | `LICENSE` and `NOTICE` beside the executable             | `licenses/Manrope-OFL.txt`                                   |
 | Service image  | `/usr/share/doc/dhivon-mcp-gateway/LICENSE` and `NOTICE` | `/usr/share/doc/dhivon-mcp-gateway/licenses/Manrope-OFL.txt` |
 | Public website | Linked license and notice above                          | Linked font notice above                                     |
-
-Maintainers verify the emitted files against source bytes with
-`node scripts/check-notices.ts --archive <archive> --image <image> --site <site-directory>`.
-Each option can also be run separately. Mac packaging, the deployment rehearsal
-and website CI run these checks for their respective outputs.

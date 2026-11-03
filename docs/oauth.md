@@ -1,73 +1,21 @@
-# Remote OAuth profile
+# Connect an OAuth provider
 
-The gateway uses rmcp3.5.1's OAuth authorization manager for protected-resource and authorization-server discovery, authorization code with S256 PKCE, state and issuer validation, resource indicators, and rotating refresh tokens. Interactive consent belongs to the local management process; `dhivon-mcp-gateway mcp` never opens a consent page. The remote MCP transport receives only the scoped access token.
+Use this guide when a remote MCP server requires sign-in through its provider. You need the remote HTTPS MCP URL, the provider’s public client ID, permitted scopes and a registered loopback callback.
 
-## Hosted control plane and native callback
+## Register the callback
 
-The control plane runs at the enterprise's HTTPS origin. The developer starts
-the local client against that origin. Substitute the real deployment hostname
-in this example.
+The provider sends the developer back to the Mac running the console. For a provider that requires a fixed port, register `http://127.0.0.1:8765/oauth/callback` with the public client (substitute an allowed port), and start the Mac console with the same port:
 
 ```sh
-dhivon-mcp-gateway ui --server https://controlplane.example.com --port 19001
+dhivon-mcp-gateway ui --server https://gateway.example.com --port 8765
 ```
 
-The local management origin is `http://127.0.0.1:19001` and its OAuth redirect
-URI is `http://127.0.0.1:19001/oauth/callback`. The callback uses the same
-listening port as the local management process. The client includes this URI in
-the upstream provider's authorization request.
+The URL passed to `--server` is the team’s HTTPS address. The loopback URL is the provider’s callback. Check the provider’s registration rules for matching hosts, paths and ports.
 
-After authentication and consent, the provider redirects the user's browser
-to that local URI with an authorization code and state. The browser runs on the
-same machine as the client, so it reaches the client's loopback listener.
-The native client validates the pending response, exchanges the code over HTTPS
-using S256 PKCE, and persists credentials through the protected native/central
-flow. The code and state travel in the callback. Access and refresh tokens are
-obtained through the token exchange.
+## Connect the tool
 
-This completes upstream MCP authorization. Dhivon account sign-in occurs before
-this flow, and MCP enablement still requires its explicit action.
+1. The administrator creates a Streamable HTTP catalog entry for the remote URL, selects OAuth and enters the registered public client ID and scopes. Assign the entry to the developer.
+2. The developer opens **Manage → Connect**, signs in at the provider and returns to the console.
+3. Refresh the entry, enable it, then discover its tools from the agent. To remove access, disconnect the provider in **Manage**.
 
-[RFC 8252 section 7.3](https://www.rfc-editor.org/rfc/rfc8252.html#section-7.3)
-permits HTTP loopback IP callbacks and requires support for variable native
-loopback ports. Verify the provider's native-client registration behavior. A
-provider requiring an exact fixed callback can use the explicit port shown above.
-The current client uses preregistered public clients. Its tested provider
-profile and discovery requirements follow below.
-
-## Provider registration
-
-The [isolated Docker HTTPS rehearsal](https-oauth-rehearsal.md) exercises this
-topology with the actual Mac client and a controlled public-client OAuth fixture.
-It verifies TLS using an explicitly approved temporary localhost trust anchor.
-This is simulated deployment evidence, not external-provider certification.
-
-Register a **public native client** with the provider before configuring the catalog. Allow authorization-code and refresh grants, S256 PKCE, the configured scopes, and the callback `http://127.0.0.1:19001/oauth/callback`. Start management with `dhivon-mcp-gateway ui --server https://gateway.example --port 19001`. A different fixed port requires its matching callback registration. The CLI's default ephemeral port works only when the provider's native-client registration permits varying loopback ports. The management API never supplies an arbitrary callback URL.
-
-An administrator selects OAuth, enters this preregistered client ID and the allowed scopes, sets the canonical HTTPS MCP URL, and grants access. The client requires published protected-resource metadata with an exact matching `resource` and `authorization_servers`, validated issuer metadata, S256 support, public-client token authentication, bearer tokens and an explicit positive expiry. Both RFC8414 and OIDC metadata discovery are handled by the SDK. Legacy synthesized endpoints, client secrets, other grant types, implicit scope expansion, provider adapters, dynamic registration and client metadata hosting are outside this profile. Unsupported requirements produce a fixed setup error.
-
-OAuth discovery requests carry no ambient authentication. Token POSTs are allowed only at the endpoint published by the validated discovery chain, with the configured resource indicator. HTTPS certificates are verified, proxies and redirects are disabled, operations are bounded to10seconds, discovery has a10second aggregate bound, metadata/token bodies are limited to1MiB, and outbound bodies to64KiB. The isolated loopback HTTP fixture exception requires explicit fixture configuration. Cross-origin protected-resource metadata is not supported by this profile.
-
-The local routes are protected by the existing Host/Origin/cookie/CSRF boundary:
-
-| Route                                   | Contract                                                                                                                                                                                                 |
-| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POST /api/oauth/{id}/connect`          | `LocalAction<OAuthConnectInput>` with displayed generation and revision; returns a flow ID and provider authorization URL.                                                                               |
-| `GET /oauth/callback`                   | Separate, exact callback URL; validates one pending state, duplicate parameters, issuer, native five-minute deadline, current identity/assignment/registration and online revision before code exchange. |
-| `POST /api/oauth/flows/{flowId}/cancel` | `LocalAction` with empty input; cancels a pending flow without changing a stored credential.                                                                                                             |
-| `GET /api/oauth/{id}/status`            | Generation header; returns central connection/version/expiry and native readiness only.                                                                                                                  |
-| `POST /api/oauth/{id}/disconnect`       | `LocalAction<OAuthDisconnectInput>` with revision/version; confirms deletion and central disablement after complete synchronization.                                                                     |
-
-Only one consent per MCP/generation remains pending; at most 16 are retained. A new connect action cancels the earlier pending flow, including an exchange already in progress. The callback consumes state once; a forged or missing required issuer cannot consume the legitimate flow. Login changes, cancellation and the exclusive 300-second native deadline invalidate pending consent. A successful consent does not silently enable the MCP.
-
-Complete OAuth credentials are encrypted centrally under the external vault key and scoped to `(user, MCP, installation)`. Endpoint copies and complete pending save responses live in the encrypted endpoint store, scoped additionally to login generation and runtime registration. Only the master key lives in Keychain; ordinary browser APIs return no access token, refresh token or verifier. The native-only consent credential route permits an assigned, active OAuth MCP before enablement; it cannot return generic bearer secrets and does not authorize agent execution.
-
-Refresh performs complete online policy validation, reads the current credential version, acquires the server's exclusive60second lease, and uses that version/lease for the atomic central replacement. An expired native token triggers this non-interactive path during an online gateway reconciliation. An expired central OAuth record is refreshed before attempting to republish its old access token, so a scoped rejection of that old token cannot suppress the version/lease-checked refresh. A rejected token is never reused. Expired credentials immediately fail closed; discovery can temporarily omit the tool until the next scheduled synchronization/reconciliation (the policy polling interval is 60 seconds). Offline access uses only an existing usable access token and policy lease; refresh cannot run offline. The SDK preserves a refresh token when the provider omits a replacement. A definitive `invalid_grant` requires reauthorization and does not overwrite a newer credential.
-
-A complete issued response is journaled in an authenticated encrypted file before a central save. An unknown save outcome fences the old native credential. Recovery first validates current online identity, assignment, registration and central version; it confirms an already committed result or retries the same complete version-checked central save. It never repeats the provider exchange or a tool call. The original token time anchor survives recovery. Changed registrations discard obsolete local candidates. Logout clears candidates with other scoped credentials. Disconnect retires the native credential and pending saves before its central request, protects the old policy receipt against late consent publication, and advances the central revision even if no token record exists yet. A subsequent explicit connect may create a new record starting at version 1.
-
-Canceling before a central save leaves existing central credentials unchanged, including when a code exchange is already in progress. A central request already sent may have committed; reload the confirmed connection status. Cancellation after the provider processes a request cannot undo token issuance or refresh-token consumption; an interrupted exchange without a complete recoverable response can require fresh consent. No partial token response replaces a working central record. A failed or expired refresh lease cannot overwrite a concurrently reauthorized record.
-
-The controlled SDK fixture verifies PKCE, resource/client binding, exact callback/duplicate state, required and mismatched issuer, five-minute equality expiry, one-use callback and refresh rotation. The real PostgreSQL/native gateway journey verifies encrypted persistence, explicit enablement, a protected tool call, concurrent refresh, failed-save and unknown-commit recovery, restart of the controller, and disconnect. On macOS27.0.1 arm64 it uses real isolated Keychain accounts and clears them through the creating test binary. These fixtures do not establish compatibility with a named external provider or a named commercial agent.
-
-See [native credentials](remote-credentials.md), [central vault](vault.md), [agent setup](agent-configuration.md), and the [MCP authorization specification](https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization).
+The supported profile uses discovery, a public client and authorization code with S256 PKCE. Check the provider’s support before setup. A failed or cancelled consent does not enable a tool. [Troubleshoot OAuth](troubleshooting.md#oauth-consent-or-refresh-failed).

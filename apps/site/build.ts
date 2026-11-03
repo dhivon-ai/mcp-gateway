@@ -1,5 +1,6 @@
-import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { brandAssets, guides, movedGuides } from "./publication.ts";
 import { Marked } from "marked";
 
 const root = resolve(import.meta.dirname, "../..");
@@ -8,9 +9,11 @@ const output = process.env.DHIVON_MCP_GATEWAY_BUILD_CACHE
   : join(root, "apps/site/dist");
 await rm(output, { recursive: true, force: true });
 await mkdir(join(output, "docs"), { recursive: true });
-await cp(join(root, "assets/brand"), join(output, "brand"), {
-  recursive: true,
-});
+for (const asset of brandAssets) {
+  const destination = join(output, "brand", asset);
+  await mkdir(dirname(destination), { recursive: true });
+  await cp(join(root, "assets/brand", asset), destination);
+}
 await cp(join(root, "apps/site/style.css"), join(output, "style.css"));
 await cp(join(root, "LICENSE"), join(output, "LICENSE.txt"));
 await cp(join(root, "NOTICE"), join(output, "NOTICE.txt"));
@@ -22,23 +25,13 @@ const escape = (value: string) =>
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;");
 const navigation = [
-  ["index", "Documentation"],
-  ["quickstart", "Quickstart"],
-  ["architecture", "Why a gateway"],
-  ["deployment", "Deploy and recover"],
-  ["admin-ui", "Administration"],
-  ["mac-install", "Mac setup"],
-  ["agent-configuration", "Connect your agent"],
-  ["integrations", "MCP integrations"],
-  ["security", "Security"],
-  ["configuration", "Configuration"],
-  ["oauth", "OAuth"],
-  ["troubleshooting", "Troubleshooting"],
-  ["compatibility", "Compatibility"],
-  ["contributing", "Contributing"],
-  ["roadmap", "Roadmap"],
-  ["licensing", "License and ownership"],
-];
+  "index",
+  "quickstart",
+  "mac-install",
+  "deployment",
+  "agent-configuration",
+  "troubleshooting",
+] as const;
 const header = `<header class="site-header">
 <a class="identity" href="/" aria-label="Dhivon MCP Gateway home">
 <img src="/brand/dhivon.svg" alt="dhivon" width="142" height="40">
@@ -205,79 +198,65 @@ await writeFile(
   ),
 );
 
-async function renderDirectory(relative = "") {
-  for (const entry of await readdir(join(root, "docs", relative), {
-    withFileTypes: true,
-  })) {
-    const name = join(relative, entry.name);
-    if (entry.isDirectory()) {
-      if (name === "bugs") continue;
-      await renderDirectory(name);
-      continue;
-    }
-    const source = join(root, "docs", name);
-    const target = join(output, "docs", name.replace(/\.md$/, ".html"));
-    await mkdir(dirname(target), { recursive: true });
-    if (!entry.name.endsWith(".md")) {
-      if (/\.(png|svg|jpg|jpeg|webp)$/.test(entry.name))
-        await cp(source, target);
-      continue;
-    }
-    const markdown = await readFile(source, "utf8");
-    const slugs = new Map<string, number>();
-    const parser = new Marked({
-      gfm: true,
-      renderer: {
-        heading({ tokens, depth }) {
-          const text = this.parser.parseInline(tokens);
-          const base = text
-            .replace(/<[^>]*>/g, "")
-            .toLowerCase()
-            .replace(/[^\p{L}\p{N}\s_-]/gu, "")
-            .trim()
-            .replace(/\s/g, "-");
-          const count = slugs.get(base) ?? 0;
-          slugs.set(base, count + 1);
-          const id = count ? base + "-" + count : base;
-          return `<h${depth} id="${escape(id)}">${text}</h${depth}>\n`;
-        },
-        link({ href, title, tokens }) {
-          const notices: Record<string, string> = {
-            "../LICENSE": "/LICENSE.txt",
-            "../NOTICE": "/NOTICE.txt",
-            "../assets/brand/fonts/OFL.txt": "/brand/fonts/OFL.txt",
-          };
-          const url = notices[href] ?? href.replace(/\.md(?=#|$)/, ".html");
-          if (/^(javascript|data):/i.test(url))
-            throw new Error("Unsafe documentation URL");
-          return `<a href="${escape(url)}"${title ? ' title="' + escape(title) + '"' : ""}>${this.parser.parseInline(tokens)}</a>`;
-        },
+for (const current of Object.keys(guides)) {
+  const name = current + ".md";
+  const source = join(root, "docs", name);
+  const target = join(output, "docs", current + ".html");
+  const markdown = await readFile(source, "utf8");
+  const slugs = new Map<string, number>();
+  const parser = new Marked({
+    gfm: true,
+    renderer: {
+      heading({ tokens, depth }) {
+        const text = this.parser.parseInline(tokens);
+        const base = text
+          .replace(/<[^>]*>/g, "")
+          .toLowerCase()
+          .replace(/[^\p{L}\p{N}\s_-]/gu, "")
+          .trim()
+          .replace(/\s/g, "-");
+        const count = slugs.get(base) ?? 0;
+        slugs.set(base, count + 1);
+        const id = count ? base + "-" + count : base;
+        return `<h${depth} id="${escape(id)}">${text}</h${depth}>\n`;
       },
-    });
-    // Keep Marked's built-in table renderer and wrap its output for narrow screens.
-    const html = (await parser.parse(markdown))
-      .replaceAll("<table>", '<div class="table-scroll"><table>')
-      .replaceAll("</table>", "</table></div>");
-    const title = markdown.match(/^# (.+)$/m)?.[1] ?? entry.name;
-    const current = name.replace(/\.md$/, "");
-    const sidebar = navigation
-      .map(
-        ([slug, label]) =>
-          `<a href="/docs/${slug}.html"${current === slug ? ' aria-current="page"' : ""}>${label}</a>`,
-      )
-      .join("");
-    const body = `<main id="main" class="docs-layout">
-<aside>
-<nav aria-label="Documentation">${sidebar}</nav>
-</aside>
-<article class="docs-article">${html}<p class="doc-source">Maintained in docs/${escape(name)} in the project repository.</p>
-</article>
+      link({ href, title, tokens }) {
+        const notices: Record<string, string> = {
+          "../LICENSE": "/LICENSE.txt",
+          "../NOTICE": "/NOTICE.txt",
+          "../assets/brand/fonts/OFL.txt": "/brand/fonts/OFL.txt",
+        };
+        const url = notices[href] ?? href.replace(/\.md(?=#|$)/, ".html");
+        if (/^(javascript|data):/i.test(url))
+          throw new Error("Unsafe documentation URL");
+        return `<a href="${escape(url)}"${title ? ' title="' + escape(title) + '"' : ""}>${this.parser.parseInline(tokens)}</a>`;
+      },
+    },
+  });
+  // Keep Marked's built-in table renderer and wrap its output for narrow screens.
+  const html = (await parser.parse(markdown))
+    .replaceAll("<table>", '<div class="table-scroll"><table>')
+    .replaceAll("</table>", "</table></div>");
+  const title = markdown.match(/^# (.+)$/m)?.[1] ?? name;
+  const sidebar = navigation
+    .map(
+      (slug) =>
+        `<a href="/docs/${slug}.html"${current === slug ? ' aria-current="page"' : ""}>${guides[slug]}</a>`,
+    )
+    .join("");
+  const body = `<main id="main" class="docs-layout">
+<article class="docs-article">${html}</article>
+<aside><nav aria-label="Documentation">${sidebar}</nav></aside>
 </main>`;
-    await writeFile(
-      target,
-      page(title, title + " for Dhivon MCP Gateway.", body),
-    );
-  }
+  await writeFile(
+    target,
+    page(title, title + " for Dhivon MCP Gateway.", body),
+  );
 }
-await renderDirectory();
+const redirects = Object.entries(movedGuides).flatMap(([old, destination]) =>
+  [`/docs/${old}`, `/docs/${old}.html`].map(
+    (path) => `${path} /docs/${destination} 301`,
+  ),
+);
+await writeFile(join(output, "_redirects"), redirects.join("\n") + "\n");
 console.log("Built public website at " + output);

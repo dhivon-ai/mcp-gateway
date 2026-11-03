@@ -1,90 +1,48 @@
-# Apple Silicon installation
+# Connect your Mac to your team
 
-This MVP archive targets Apple Silicon and is validated on macOS 27.0.1 (26A434).
-It contains one Rust executable with both local React UI assets and STDIO gateway;
-Node, Rust and a frontend development server are not needed on an end-user Mac.
-Distribution is not Developer ID signed/notarized or published. Use the locally
-built trusted artifact; follow your enterprise's policy for unsigned software.
+Ask your administrator for the gateway’s HTTPS address, your account, and a trusted Apple Silicon CLI archive with its checksum. The CLI is the Mac application. It includes the browser console and the connection your coding agent uses.
 
-Verify the supplied checksum before extracting:
+## Install the CLI
+
+On a supported Apple Silicon Mac, place the archive and its matching checksum in the same folder. From that folder, run:
 
 ```sh
 shasum -a 256 -c dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz.sha256
+```
+
+Continue only if the result is **OK**. For a fresh installation:
+
+```sh
 tar -xzf dhivon-mcp-gateway-0.1.0-macos-arm64.tar.gz
 mkdir -p "$HOME/.local/bin"
-cp dhivon-mcp-gateway-0.1.0-macos-arm64/dhivon-mcp-gateway "$HOME/.local/bin/dhivon-mcp-gateway"
+cp dhivon-mcp-gateway-0.1.0-macos-arm64/dhivon-mcp-gateway "$HOME/.local/bin/"
 "$HOME/.local/bin/dhivon-mcp-gateway" --version
+```
+
+Expect `dhivon-mcp-gateway 0.1.0`. The archive is unsigned. Follow your organization’s software policy. If you already have the CLI, retain the old executable until you’ve completed the [upgrade procedure](endpoint-identity.md#upgrade-and-recovery).
+
+## Open the console
+
+Replace the example URL with the address from your administrator:
+
+```sh
 "$HOME/.local/bin/dhivon-mcp-gateway" ui --server https://gateway.example.com
 ```
 
-Use the actual enterprise HTTPS origin. The CLI opens a loopback page in your
-browser; keep the command running while using management. Log in with the email and password
-created by an administrator. Name is display-only. The operating system may ask for Keychain access.
-Keychain holds one random master key. The gateway encrypts its saved server URL, identity, credentials, settings cache and install receipts in private files. Passwords are not saved locally. When upgrading, stop old gateways and retain their executable until cleanup succeeds; see the endpoint identity guide in the repository. For a provider requiring a registered callback,
-use `ui --server <origin> --port <registered-port>`; register
-`http://127.0.0.1:<registered-port>/oauth/callback` with the OAuth public client.
+Keep the command running. It opens a local page in your browser. Enter your work email and gateway password. Under **MCPs**, open **Manage** for an assigned tool server and enable it. If it needs an installation, review and confirm the command first. For a bearer key or OAuth sign-in, follow the instructions in **Manage**.
 
-The assigned catalog starts disabled. Manage an MCP to inspect its original tool
-policy and native availability. Installation is explicit and uses your user
-privileges. Choose Install, review the administrator's command summary and
-confirm; enable separately or explicitly choose enable after successful install.
-Failed installation never performs automatic enablement. Successful local work
-with an unconfirmed server write stays recoverable: reload current settings,
-then explicitly enable, without rerunning the installer. Another client's
-confirmed enablement may differ from an earlier installation receipt.
+When you see **Enabled**, [connect your coding agent](agent-configuration.md). Each time you launch the console, supply the team URL. Your agent uses the saved account and needs just the path to the CLI and the argument `mcp`.
 
-For bearer MCPs, create a key/value in Secrets and select your own key in Manage.
-Values are write-only; replace them rather than trying to reveal them. Rename
-preserves the stable binding ID. Remove enabled references before deleting a key.
-For OAuth, choose Connect, complete the provider's consent, reload current state,
-then explicitly enable. Connected, native credential readiness and central
-Enabled are separate states. Disconnect affects this Mac installation's tokens
-and disables the user's MCP; other endpoints learn the confirmed setting on sync.
+## Build your own archive
 
-Configure your coding agent with one absolute executable and the argument `mcp`.
-For agents using JSON `mcpServers`, adapt the enclosing configuration:
-
-```json
-{
-  "mcpServers": {
-    "dhivon-mcp-gateway": {
-      "command": "/Users/your-name/.local/bin/dhivon-mcp-gateway",
-      "args": ["mcp"]
-    }
-  }
-}
-```
-
-Use the absolute path from your installation. Never add passwords/tokens to the
-agent entry. Restart its gateway process after switching account/deployment.
-Only tools are forwarded; policies refer to original names, while the agent sees
-stable `gw_` aliases. Named commercial agents are not independently validated;
-the official rmcp 3.5.1 client is tested with this single command.
-
-Each running process refreshes at startup and every 60 seconds, with a 10-second
-request deadline. Only a complete durable authenticated snapshot renews the
-lease. During an outage, eligible tools can use the last encrypted cache for at
-most 3600 seconds from validation, further limited by session/token expiry.
-Exact expiry fails closed and cancels/closes owned work where possible. Every
-configuration, secret, installation and new OAuth change requires connectivity;
-there is no offline queue. Status shows the fixed validation/expiry and remaining
-time. A failed refresh or token refresh cannot extend it.
+If your administrator has supplied the archive, you can skip this step. To build from a source checkout, use an Apple Silicon Mac with Xcode command-line tools, Rust 1.95.0, Node 24.19.0 and pnpm 11.4.0. From the repository root run:
 
 ```sh
-"$HOME/.local/bin/dhivon-mcp-gateway" status
-"$HOME/.local/bin/dhivon-mcp-gateway" logout
+bash scripts/package-macos.sh
 ```
 
-Logout removes the signed-in generation’s cache and credentials and revokes the central session when
-reachable. It remains available offline. Exit the UI with Ctrl-C. The agent owns
-its STDIO process; EOF/SIGTERM also requests cleanup. If a session is rejected,
-log in again. If clock/cache integrity is uncertain, synchronize online. The
-local browser authorization cookie lasts one hour; reload the page to obtain a
-new local cookie. This does not extend the policy lease. Troubleshooting and
-operator/provider details are in the repository's deployment, local UI, OAuth and
-agent configuration guides.
+The command builds the CLI and its console, then prints the full **Archive** and **Checksum** paths. By default each build gets a private directory under `dist/`. Verify and install the archive using the steps above. Node and Rust are only required on the build machine.
 
-A login generation tracks up to 128 credential-bearing MCP identities, including
-formerly assigned ones. If a new MCP reports local credential capacity, log out
-and sign in again online to clear retired local credentials. Existing credentials,
-status, synchronization and logout remain available at this boundary.
+## Sign out
+
+Stop agent connections, then run `"$HOME/.local/bin/dhivon-mcp-gateway" logout`. The gateway clears the signed-in generation’s local credentials and requests session revocation when online.

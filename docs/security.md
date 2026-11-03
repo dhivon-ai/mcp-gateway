@@ -1,91 +1,21 @@
-# Security and trust boundaries
+# How access is protected
 
-Dhivon MCP Gateway enforces administrator assignments, explicit user enablement
-and tool policy at the central service and the Mac gateway. Administrators should
-review a server definition before assigning it because installation and local MCP
-commands execute with the developer's OS privileges after explicit action.
+Administrators decide who can use each tool. Developers sign in and enable the tool servers they want. Both decisions must allow a call.
 
 ## Identity and permissions
 
-An operator bootstraps the first administrator explicitly. Users sign in with a
-canonical email and password. Display names never authenticate. Passwords use
-Argon2id, sessions expire within 12 hours, and account/password edits revoke the
-affected sessions. The service enforces administrator roles independently of the
-browser. See [identity](identity.md) for validation, rate limits and exact APIs.
-
-Grants are additive across user, group and all-user assignments. No assignment
-means no MCP access. A grant still requires the user's explicit enablement and a
-permitted original tool name. An empty allowlist exposes no tools. The same
-checks govern discovery and direct calls. [Configuration](configuration.md)
-defines revocation, changed transport/authentication and revision conflicts.
+Your email is your sign-in identity. A display name is only a label. Changing account details or resetting a password revokes affected sessions. Administrators can assign access without seeing users’ secret values.
 
 ## Credentials and data at rest
 
-| Data                                                                      | Owner and protection                                                 |
-| ------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Central catalog, assignments, enablement and ordinary metadata            | PostgreSQL, under operator database controls                         |
-| User bearer secrets and managed OAuth values                              | Owner/version-bound authenticated encryption in PostgreSQL           |
-| Central encryption keys                                                   | External operator-held private key file, backed up separately        |
-| Native configuration, session tokens, upstream credentials and cache keys | Authenticated encrypted files scoped to the installation and login   |
-| Native master key                                                         | One random 32-byte value in macOS Keychain                           |
-| Native authorization snapshot                                             | Authenticated encryption in private user-scoped files                |
-| Browser state                                                             | HttpOnly session cookies and in-memory CSRF, metadata-only read APIs |
-
-Administrator access does not reveal another user's secret values. Browser APIs
-expose credential metadata only. Native credential resolution checks current
-assignment, enablement, ownership and version, then pins the result to the exact
-configured upstream. A central login token is never sent as upstream
-authentication. [Vault operations](vault.md) and
-[native credentials](remote-credentials.md) specify publication, ownership,
-rotation, capacity and recovery.
-
-Keep database dumps and their matching key backups under separate access
-controls. Losing the matching vault keys makes encrypted values unusable. Test a
-fresh restore and credential resolution before switching traffic. The
-[deployment recovery procedure](deployment.md#backup-and-restore) includes copied
-session invalidation and review of policy changes since the restore point.
+The server encrypts per-user secrets with its external vault key. On the Mac, one random master key in Keychain protects the gateway’s encrypted files, including the saved server URL, login state and credentials. Your login password is never saved on the Mac. [Manage secrets and vault keys](vault.md).
 
 ## Network and browser protection
 
-Use verified HTTPS for the enterprise origin and remote production MCPs. The
-Compose service binds loopback behind the operator's HTTPS proxy. Preserve the
-public Host and Origin. The service and loopback management server enforce exact
-Host/Origin, session and CSRF checks. The local management API binds loopback and
-requires the active login generation on account-scoped actions.
-
-Both protected interfaces serve their bundled assets locally with restrictive
-content security policy. Secrets and session capabilities belong outside URLs,
-frontend storage, logs and ordinary configuration. Controlled HTTP fixtures use
-an explicit loopback exception limited to the
-[fixture workflow](testing.md#mcp-and-oauth-fixtures).
+Use the team’s verified HTTPS origin for the server. The Mac console runs on a separate loopback address in your browser. Your agent starts the local CLI and passes tool requests over standard input and output. Local tools run with your Mac permissions. Remote tools execute at their configured service.
 
 ## Policy leases and offline behavior
 
-A complete authenticated, validated and durably installed snapshot can authorize
-eligible tool use for at most 3,600 seconds from server validation. Session and
-credential deadlines can shorten that interval. Only successful complete
-synchronization renews it. Failed requests, process restart, token refresh and
-file copying cannot extend the lease. Equality with the expiry deadline denies
-use. Unknown clock or protected-state integrity requires online recovery.
+The gateway refreshes access at startup and normally every 60 seconds. With the server offline, a tool can keep working only while its last verified settings and credentials remain valid, for at most one hour. Settings changes and new sign-ins require a connection. The gateway checks access again before each call and never automatically repeats a tool call.
 
-Each gateway synchronizes at startup and normally every 60 seconds, with a
-10-second control-plane request bound. A known session rejection invalidates the
-matching identity immediately. A connectivity outage permits only previously
-valid authorization within its existing lease. Settings, installation, secret
-writes and new OAuth connections require connectivity and have no offline queue.
-Logout and local cancellation remain available.
-
-Read [policy cache](endpoint-cache.md) for precise clock, generation and
-publication fences. The OS and Keychain are trusted. Current evidence covers
-actual Mac process restart and deterministic time cases, with platform limits
-listed in [compatibility](compatibility.md).
-
-## Tool execution
-
-Inputs, schemas, names and results from upstream MCPs are untrusted. The gateway
-bounds discovery, frames, startup, calls and concurrency. Tool calls are never
-automatically replayed. Disablement, expiry, cancellation and shutdown retire
-owned work where possible. Cancellation cannot undo an upstream side effect.
-Escaped descendants or abrupt termination require the operator's process
-supervision policy. See [gateway aggregation](gateway-aggregation.md) for the
-implemented transport profile and exact limits.
+[Recover access on your Mac](endpoint-identity.md#upgrade-and-recovery) or [troubleshoot a missing tool](troubleshooting.md).

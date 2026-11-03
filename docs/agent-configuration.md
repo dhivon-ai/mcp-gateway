@@ -1,137 +1,26 @@
-# One STDIO gateway for a coding agent
+# Connect your coding agent
 
-Install the Apple Silicon CLI and authenticate using the local management command:
+You need the absolute path to the installed Mac CLI and one tool enabled in the [Mac console](mac-install.md). The agent launches the CLI and talks to it over standard input and output (STDIO).
 
-```sh
-dhivon-mcp-gateway ui --server https://gateway.example.com
-```
+## Add the connection
 
-The local page supports login and assigned MCP management. An administrator must grant access, and the user must explicitly enable an MCP before it exposes tools. An optional installer runs only through the explicit management action. Finish remote authentication in management before starting the coding agent; agent STDIO never opens a browser or asks for a password.
-
-Configure the agent with one STDIO server. For clients using a JSON `mcpServers` configuration, the entry has this shape; replace the executable with the actual absolute installed path and adapt the enclosing file format to your agent:
+Open your agent’s MCP settings. Choose a local command, use the absolute path to `dhivon-mcp-gateway`, and pass one argument, `mcp`. In clients with an `mcpServers` JSON setting, the entry looks like this:
 
 ```json
 {
   "mcpServers": {
     "dhivon-mcp-gateway": {
-      "command": "/absolute/path/to/dhivon-mcp-gateway",
+      "command": "/Users/your-name/.local/bin/dhivon-mcp-gateway",
       "args": ["mcp"]
     }
   }
 }
 ```
 
-Do not put the central URL, passwords, bearer tokens, or OAuth tokens in agent configuration or environment variables. The gateway uses the deployment/account already selected by `ui`. A different login generation requires restarting the agent's gateway process; an old process cannot silently adopt a new user's identity. The gateway supports native pipes and the connected Unix stream socket pairs used by Node child_process on macOS. It does not provide terminal-based interactive login or file-based protocol playback.
-
-The tested client is the standard official rmcp 3.5.1 client configured with only this CLI entry point on macOS 27.0.1 arm64. The negotiated protocol is MCP 2025-11-25. Named commercial coding agents and other macOS versions have not yet been independently verified. See [deployment](deployment.md) and [Mac installation](mac-install.md) for the self-hosted service and locally built unsigned arm64 archive. Signing/notarization remains later scope.
-
-The gateway advertises tools and tool-list changes. Resources, prompts, sampling, elicitation, subscriptions, and tasks are not forwarded. Tool names are deterministic aliases; [gateway aggregation](gateway-aggregation.md) describes mapping, original-name policy, bounds, and error isolation. Both input and output schemas and supported typed results are retained. The agent should follow `nextCursor` until exhausted; a changed catalog invalidates an old cursor and requires restarting discovery.
-
-At startup, the gateway attempts one complete configuration refresh, then uses only a usable encrypted cache if that request fails. Without usable authorization it exits with a fixed diagnostic on stderr and no protocol bytes on stdout. After the handshake, discovery runs in the background. The first listing waits up to 30 seconds for initial discovery; slower remaining upstreams appear through tool-list notifications when the bounded discovery wave finishes. Individual MCP startup has a 30-second bound and at most four starts run concurrently. Existing healthy routes remain usable while rediscovery runs.
-
-Every running gateway refreshes at startup and every 60 seconds with a 10-second control-plane deadline. Outage retries and reconnection attempts cannot renew freshness. Only a complete, validated, durably committed snapshot can renew the lease. The encrypted cache is usable for at most 3,600 seconds from server validation, further shortened by session and credential expiry; exact equality is expired. New listing/call authorization reads the latest shared snapshot, including same-Mac confirmed settings. During a control-plane outage the still-valid lease permits eligible tool use, while all configuration/install/auth mutations remain online-only.
-
-Calls have a 60-second native sleep-aware deadline and at most 16 are admitted concurrently. Excess calls are refused immediately; there is no local call queue. Caller cancellation, learned policy denial, token/policy expiry, and gateway shutdown cancel the exact upstream request where possible. A dropped handler also sends best-effort cancellation. The runtime checks running-call policy/deadline at most every 50 ms and connection retirement at most every 250 ms while awake, and checks again before accepting a completed result. A side effect already performed upstream cannot be undone. Calls are never automatically replayed after reconnect or HTTP session expiry.
-
-SIGTERM, Ctrl-C, and agent EOF trigger owned cleanup. Shutdown shares a five-second deadline; only gateway-owned upstream processes/connections are closed. Mac process-group ownership retains unreaped leaders through termination and reap. Nonblocking native stdin/stdout adapters avoid waiting indefinitely for an idle or blocked agent. Escaped or inaccessible descendants require external supervision, and abrupt SIGKILL cannot execute graceful shutdown handlers.
-
-You can reduce the call/startup/concurrency limits:
-
-```sh
-dhivon-mcp-gateway mcp --call-timeout-seconds 30 --startup-timeout-seconds 15 --concurrency 8
-```
-
-The CLI rejects zero or larger-than-default bounds. `dhivon-mcp-gateway status` prints redacted identity/freshness status; `dhivon-mcp-gateway logout` clears local credentials/cache and requests central session revocation when reachable. Ordinary gateway diagnostics stay on stderr and include fixed policy/outcome categories, correlation IDs, durations, and validated identifiers without arguments, results, or credential values.
+Replace the example path with yours. The CLI uses the login you selected in the console. Keep your URL, password and tokens out of the agent configuration.
 
 ## Make a first fixture call
 
-Complete the [echo quickstart](quickstart.md) and keep its local management
-process running. The following Node 24 client starts only the installed gateway,
-initializes MCP, discovers the fixture's permitted alias and calls it. Set
-`DHIVON_CLI` to the absolute installed executable path. Use a controlled account
-with exactly one permitted tool described as **Echo a fixture message**.
+Restart the agent connection and list its tools. Ask it to use a tool you enabled. The gateway gives tools unique names beginning with `gw_`, so select the one the agent discovered. In the [echo example](quickstart.md#try-an-echo-tool), send **Hello from Dhivon** and expect the same message back.
 
-```sh
-DHIVON_CLI="$HOME/.local/bin/dhivon-mcp-gateway" node --input-type=module <<'JS'
-import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { createInterface } from "node:readline";
-
-const child = spawn(process.env.DHIVON_CLI, ["mcp"], {
-  stdio: ["pipe", "pipe", "inherit"],
-});
-const lines = createInterface({ input: child.stdout });
-const pending = new Map();
-let sequence = 0;
-function send(value) {
-  child.stdin.write(JSON.stringify(value) + "\n");
-}
-function request(method, params) {
-  const id = ++sequence;
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      pending.delete(id);
-      reject(new Error(`Timed out waiting for ${method}`));
-    }, 35000);
-    pending.set(id, { resolve, reject, timeout });
-    send({ jsonrpc: "2.0", id, method, params });
-  });
-}
-lines.on("line", (line) => {
-  const response = JSON.parse(line);
-  const waiter = pending.get(response.id);
-  if (!waiter) return;
-  clearTimeout(waiter.timeout);
-  pending.delete(response.id);
-  if (response.error) waiter.reject(new Error(response.error.message));
-  else waiter.resolve(response.result);
-});
-child.on("error", (error) => {
-  for (const waiter of pending.values()) {
-    clearTimeout(waiter.timeout);
-    waiter.reject(error);
-  }
-  pending.clear();
-});
-try {
-  await request("initialize", {
-    protocolVersion: "2025-11-25",
-    capabilities: {},
-    clientInfo: { name: "dhivon-quickstart", version: "1" },
-  });
-  send({ jsonrpc: "2.0", method: "notifications/initialized" });
-  const tools = [];
-  let cursor;
-  do {
-    const page = await request("tools/list", cursor ? { cursor } : {});
-    tools.push(...page.tools);
-    cursor = page.nextCursor;
-  } while (cursor);
-  const matches = tools.filter((tool) => tool.description === "Echo a fixture message");
-  assert.equal(matches.length, 1, "Enable exactly one echo fixture for this walkthrough");
-  const result = await request("tools/call", {
-    name: matches[0].name,
-    arguments: { message: "Hello from Dhivon" },
-  });
-  assert.notEqual(result.isError, true);
-  assert.equal(result.structuredContent.message, "Hello from Dhivon");
-  console.log(JSON.stringify(result, null, 2));
-} finally {
-  lines.close();
-  child.stdin.end();
-  child.kill("SIGTERM");
-}
-JS
-```
-
-Expect text content and `structuredContent.message` equal to **Hello from Dhivon**.
-An unavailable fixture should be diagnosed through local status, assignment,
-enablement and the original-name allowlist before repeating the command. The
-script sends one tool call and never retries it. After disabling the MCP in local
-management, running the script again should fail its discovery assertion because
-the fixture is absent. Follow the quickstart's retained-alias check to confirm
-direct-call denial through an agent that keeps its gateway connection open.
-
-Isolated tests can use `--allow-fixture-http --fixture-state-path <existing absolute private directory>`. This creates a separate real-Keychain service and state scope; never use that flag for production. Fixture cleanup must run through the creating CLI's `logout` and `fixture-retire --fixture-state-path <directory>`, and retain the journal if cleanup fails. No existing user agent configuration is modified by these tests.
-
-Verification covers actual Mac Keychain login, real CLI STDIO local/SDK HTTP tools, current shared settings, cold offline restart and immediate reconnect refresh, SDK capability accuracy, cursor/schema changes, native call deadlines, caller cancellation, the 16-call admission limit, direct-call denial, one-hour expiry, malformed upstream isolation, no HTTP call replay, and native signal/owned descendant cleanup with idle input and blocked output. See [testing](testing.md) for the full test entry points and the limits of platform evidence.
+After switching accounts, restart the agent connection. If the tool is missing, check its assignment and enablement in [troubleshooting](troubleshooting.md).

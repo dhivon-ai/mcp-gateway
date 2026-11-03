@@ -75,7 +75,7 @@ Failure retains its private recovery directory. See [deployment](deployment.md).
 
 On the validated Apple Silicon Mac, run `bash scripts/package-macos.sh`. It builds
 the compiled frontend and release target, embeds assets and creates a versioned
-archive/checksum under `$DHIVON_MCP_GATEWAY_BUILD_CACHE/releases`. Builds keep Rust symbols
+archive/checksum in a fresh `dist/macos-XXXXXXXX/releases` directory by default, or under `$DHIVON_MCP_GATEWAY_BUILD_CACHE/releases` when set. Builds keep Rust symbols
 because the pinned Rust toolchain's Mach-O strip step can produce unloadable
 proc-macro libraries on macOS27 ([upstream issue](https://github.com/rust-lang/rust/issues/157750)).
 No signing, publication or existing agent configuration edits occur.

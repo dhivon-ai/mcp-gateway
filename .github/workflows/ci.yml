@@ -42,6 +42,7 @@ jobs:
       - run: pnpm --filter @dhivon/mcp-gateway-site typecheck
       - run: pnpm exec prettier --check apps/site
       - run: pnpm site:build
+      - run: node apps/site/check.ts
       - run: node scripts/check-notices.ts --site "$DHIVON_MCP_GATEWAY_BUILD_CACHE/site"
   database:
     runs-on: ubuntu-24.04
