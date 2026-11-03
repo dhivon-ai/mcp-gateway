@@ -2,7 +2,7 @@
 
 - Track: `single-key-endpoint-store`
 - Spec revision: 1
-- Plan revision: 1
+- Plan revision: 2
 - Status: proposed
 
 ## Phase 1: Prove the single-key encrypted store
@@ -68,6 +68,34 @@ Verify AC-001 through AC-005 using the packaged Mac flow and recorded failure/up
 - [x] T4.1 User Manual Verification <!-- commit: 43bae33639e41bd0154486fc3436df6945c092be -->
 
 - Phase completion commit: `43bae33639e41bd0154486fc3436df6945c092be`
+
+## Phase 5: Protect credential refusals and restore sign-in on fresh installations
+
+- Phase dependencies: P4
+
+### Outcome
+
+A known server refusal remains effective when damaged credential files are restored. A fresh-format installation can open the console after losing its local files without trusting those files to authenticate. Verification uses only the current storage format; no migration or compatibility work is requested.
+
+- [ ] T5.1 Persist a scoped denial even if the bearer head and its recovery evidence are both unreadable. Bind it to the current identity, generation, MCP and binding, preserve unrelated grants, and require fresh authorized resolution before reuse. Test a real authenticated 403 followed by restoration of both files, an outage and process restart; the old bearer must stay unavailable. Also verify a delayed denial cannot affect a new identity or binding.
+  - Task dependencies: none
+  - Commit group: durable-credential-denial
+- [ ] T5.2 Let a current-format console reach independent sign-in when the master is present but the private state directory is lost. When the encrypted index and identity are healthy, handle a damaged ordinary format marker without discarding them. Preserve ownership and symlink checks, deny offline access to unverified data and do not replace an inaccessible Keychain item. Test the packaged UI at an explicitly supplied server, failed and successful authentication after loss, and continued use of healthy encrypted state after marker damage.
+  - Task dependencies: none
+  - Commit group: current-store-recovery
+- [ ] T5.3 User Manual Verification
+
+- Phase completion commit: pending
+
+## Phase 6: Track-level User Manual Verification
+
+### Outcome
+
+Verify BUG-001 and BUG-002 on the current Mac package, including the scoped denial after disk restore and recovery through the loopback console. Record targeted regression results, fixture cleanup, and any remaining limits.
+
+- [ ] T6.1 User Manual Verification
+
+- Phase completion commit: pending
 
 ## Approval
 

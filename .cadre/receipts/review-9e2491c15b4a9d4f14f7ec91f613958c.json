@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "operationId": "review-9e2491c15b4a9d4f14f7ec91f613958c",
+  "kind": "review",
+  "status": "completed",
+  "approvalDigest": "f978967ef7595f11c9bb22916fa2e1af477ccf6a7bff009c76090b70dbb61fd7",
+  "baseCommit": "55925d9c096290eca24f46a173edf964dd7ad41c",
+  "artifacts": [
+    {
+      "path": ".cadre/tracks.md",
+      "sha256": "2f6e547f414cd170197e2ed95d847b593f24a4dae30e8c11c2f4c9161b1ad1df"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/bugs/review-1.md",
+      "sha256": "2b74f8145a98f8fd965ecd59f92acfad8bf28b6db8a4f05616eb7be4f435dd05"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/dependency-context.json",
+      "sha256": "2ef8aed07fe925298a056ccb43bdd3ecce35e80fded285fd27994411bfa333dc"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/learning.md",
+      "sha256": "1d476f058fbc204b9cb1190be06cd46967d80e848843bf96980ddba17c397d0e"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/plan.md",
+      "sha256": "375b0e8b192556128d9662e7afacea6b78cf5cdf3099c1605258a66ca662b15f"
+    },
+    {
+      "path": ".cadre/tracks/single-key-endpoint-store/state.json",
+      "sha256": "250fec54658f9971188d0d1476e303ee32e2dc6c74202d619e4ef141e4f9dc02"
+    }
+  ]
+}

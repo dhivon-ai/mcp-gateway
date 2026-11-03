@@ -3,14 +3,14 @@
   "trackId": "single-key-endpoint-store",
   "title": "Single Keychain master key for all local gateway state",
   "type": "feature",
-  "status": "ready_for_review",
-  "checkpoint": "ready_for_review",
+  "status": "in_progress",
+  "checkpoint": "ready",
   "revision": 1,
   "dependencies": [],
   "commits": {
     "spec": "op:track-799b0bdaec6b8aca92a337aeb1bb1926",
-    "plan": "op:track-799b0bdaec6b8aca92a337aeb1bb1926",
-    "dependencyContext": "op:track-799b0bdaec6b8aca92a337aeb1bb1926"
+    "plan": "op:review-9e2491c15b4a9d4f14f7ec91f613958c",
+    "dependencyContext": "op:review-9e2491c15b4a9d4f14f7ec91f613958c"
   },
   "artifactProgress": [],
   "operation": null,
@@ -24,7 +24,20 @@
     "headCommit": "43bae33639e41bd0154486fc3436df6945c092be",
     "completedAt": "2026-11-02T13:09:26.646Z"
   },
-  "reviewCycles": [],
+  "reviewCycles": [
+    {
+      "cycle": 1,
+      "outcome": "changes_requested",
+      "executionId": "2026-11-02T12-28-13-759Z",
+      "planRevision": 1,
+      "graphDigest": "6f5d1f25f17bd1574e9d083d3574db88a0733e5a866a862e90c05f9bc5c1e3b4",
+      "reviewedHead": "43bae33639e41bd0154486fc3436df6945c092be",
+      "commitRange": "1d5aa125ee6b7643192f3dd5fe8bf58e2ef0dbff..43bae33639e41bd0154486fc3436df6945c092be",
+      "bugs": [
+        "tracks/single-key-endpoint-store/bugs/review-1.md"
+      ]
+    }
+  ],
   "history": [
     {
       "action": "track",
@@ -33,6 +46,10 @@
     {
       "action": "implement",
       "commit": "op:implement-b3545fee331f6c2b145f5366b612457a"
+    },
+    {
+      "action": "review",
+      "commit": "op:review-9e2491c15b4a9d4f14f7ec91f613958c"
     }
   ]
 }

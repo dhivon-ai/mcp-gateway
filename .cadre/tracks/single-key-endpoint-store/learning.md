@@ -6,11 +6,11 @@ Root phases read this seed; later phases read each declared dependency phase's l
 ## Pattern Seed
 
 <!-- cadre:memory:start -->
-{"schemaVersion":1,"specRevision":1,"planRevision":1,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/credential-publication.md","sha256":"e7bc09e68d460cd5aa68cdf0298ba67b314ff894d318eb748153e10426d2be91"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"},{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"}]}
+{"schemaVersion":1,"specRevision":1,"planRevision":2,"patterns":[{"path":"patterns/authorization-leases.md","sha256":"a949846db0786cbcc3b82b93a073f6a0427175fc8c02033d7fcc771db11360c8"},{"path":"patterns/credential-publication.md","sha256":"e7bc09e68d460cd5aa68cdf0298ba67b314ff894d318eb748153e10426d2be91"},{"path":"patterns/owned-mcp-transports.md","sha256":"d407bb97d2b46c96f9b109e6c18af6fcb769a2d4ed52051c4d4d6f8f808083a3"},{"path":"patterns/isolated-release-verification.md","sha256":"7759aa6f770fd16bbf94ddbb113d0bce6c2eae3a6a8bf2cae02fb382a30cfec6"},{"path":"patterns/rehearsal-recovery-ownership.md","sha256":"1e1084ae00877e10b9a7d8ce72e97bfcb2c1d36e3aaf55fa4d23baae0a749147"},{"path":"patterns/canonical-product-guides.md","sha256":"2b6a6ed1e2585a7b89530c6475c47295b561393cbaf6a7ab4fcc53874c69e6a5"}]}
 <!-- cadre:memory:end -->
 
 - Spec revision: 1
-- Plan revision: 1
+- Plan revision: 2
 
 - `patterns/authorization-leases.md`: Preserve expiry, online-only renewal, pinned login and rollback across restarts.
 - `patterns/credential-publication.md`: Replace per-secret Keychain placement. Preserve its publication/rejection barriers, capacity and complete-response CAS recovery.
@@ -44,3 +44,7 @@ Verified on Apple Silicon macOS 27.0.1 (26A434), Rust 1.95.0, Node 24.19.0 and p
 ## Phase 4: Track verification
 
 The user approved the AC-001 through AC-005 verification evidence for 43bae33. At handoff, product HEAD was unchanged and the packaged archive matched its recorded SHA-256.
+
+## Review cycle 1: Fresh-install recovery
+
+Retain the same six patterns and hashes. Apply credential-publication and authorization-leases to the refusal itself even when both the credential and its recovery evidence are unreadable. Exercise missing private files and damaged format markers through the packaged UI with an explicit server. Review scope is current-format installations only, per the owner; legacy migration is not a remediation task. Keep the completed historical verification intact.
